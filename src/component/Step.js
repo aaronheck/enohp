@@ -11,6 +11,7 @@ export default class Step extends React.Component {
   static propTypes = {
     audioRecorder: PropTypes.object,
     text: PropTypes.string,
+    subtext: PropTypes.string,
     buttonClick: PropTypes.func,
     blob: PropTypes.object,
     onStepCompletion: PropTypes.func,
@@ -30,6 +31,7 @@ export default class Step extends React.Component {
       blob: blob,
       isRecording: false
     }));
+    this.props.onStepCompletion && this.props.onStepCompletion();
   };
 
   onStart = () => {
@@ -47,15 +49,14 @@ export default class Step extends React.Component {
   };
 
   render() { 
-
-    //        {this.state.recordingComplete && <Playback blob={this.state.blob} playBackwards={true} />}
     let showRecord = this.props.audioRecorder && (!this.state.recordingComplete || this.state.isRecording);
     return (
       <div className={this.props.className + " step"}>
       	<h3>{this.props.text}</h3>
+        {this.props.subtext && <span className="subtext">{this.props.subtext}</span>}
 
         <Waveform audioRecorder={this.props.audioRecorder} isRecording={this.state.isRecording} />
-        {!this.state.recordingStarted && <span>Click to start recording...</span>}
+        {!this.state.recordingStarted && <span style={{ 'padding-bottom': '15px'}}>Click to start recording...</span>}
         {this.recordingComplete && <Player blob={this.state.blob} />}
         <div  style={{ display: showRecord ? 'block' : 'none' }}>
           <Record 

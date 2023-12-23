@@ -30,13 +30,17 @@ export default class Game extends React.Component {
       <header className="App-header steps">
         <Step text="Step 1: Say 'Doorknob' Forwards"
         	  audioRecorder={this.state.audioRecorder}
-            blob={this.state.forwardsBlob}
+              blob={this.state.forwardsBlob}
             buttonText="Ok Sounds Good"
-            buttonClick={()=>{this.setState({step:2})}} />
-       	<Step className={this.state.step < 2 ? "hidden" : "nope"} text="Step 2: Record Backwards"
-       		blob={this.state.forwardsBlob}
-       		playBackwards={true}
-            buttonText="Ok Sounds Good" buttonClick={()=>{}}/>
+            onStepCompletion={()=>{this.setState({step:2})}} />
+       	<Step className={this.state.step < 2 ? "hidden" : "nope"}
+              text="Step 2: Say 'Doorknob' Backwards"
+            audioRecorder={this.state.audioRecorder}
+              blob={this.state.forwardsBlob}
+            buttonText="Ok Sounds Good"
+            subtext="Try to mimic the reversed audio from step 1."
+            onStepCompletion={()=>{this.setState({step:3})}} />
+
        
       </header>
     </div>

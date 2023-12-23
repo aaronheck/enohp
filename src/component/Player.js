@@ -1,10 +1,11 @@
-import React, { useState, useEffect } from "react";
+import React, { useState, useEffect, useCallback } from "react";
 var toWav = require("audiobuffer-to-wav");
 
 function Player(props) {
   const [count, setCount] = useState(0);
   const [playedPercentage, setPlayedPercentage] = useState(0);
   const [processedBlob, setProcessedBlob] = useState(null);
+  const [audio, setAudio] = useState(null);
   const [duration, setDuration] = useState(0);
   const [playbackSpeed, setPlaybackSpeed] = useState(1);
   const [playbackSpeedClicks, setPlaybackSpeedClicks] = useState(0);
@@ -13,27 +14,35 @@ function Player(props) {
   const CURRENT_MARKER_OFFSET = 4;
   const PLAYBACK_SPEEDS = [0.5, 1];
 
-
-  // Similar to componentDidMount and componentDidUpdate:
-  useEffect(() => {
-    // Update the document title using the browser API
-    document.title = `You clicked ${count} times`;
-  });
-
   async function play(onEnd) {
+  	stop();
   	var url = window.URL.createObjectURL(processedBlob);
-    var a = new Audio(url);
-    a.playbackRate = playbackSpeed;
-    a.onended = onEnd;
+  	var newAudio = new Audio(url)
+    setAudio(newAudio);
+
+    newAudio.playbackRate = playbackSpeed;
+    newAudio.onended = onEnd;
 
 	var progressBarUpdateInterval = setInterval(function () {
-		if(a.paused) {
+		if(newAudio.paused) {
 			clearInterval(progressBarUpdateInterval);
 		}
-	  setPlayedPercentage(a.currentTime * 100 / duration);
+	  setPlayedPercentage(newAudio.currentTime * 100 / duration);
 	}, 10);
 
-    await a.play();
+    await newAudio.play();
+  }
+
+  function stop() {
+  	if(audio) {
+  		audio.pause();
+  		audio.currentTime = 0;
+  	}
+  }
+
+  function recordAgain() {
+  	stop();
+  	props.onRecordAgain && props.onRecordAgain();
   }
 
   async function processAudio() {
@@ -58,9 +67,15 @@ function Player(props) {
     );
   }
 
-  useEffect(() => {
-    processAudio();
+  useEffect(async () => {
+    await processAudio();
   }, [props.blob]);
+
+  useEffect(() => {
+  	if(processedBlob) {
+  		play()
+  	}    
+  }, [processedBlob]);
 
   function getCurrentLocation() {
   	return PLAYER_WIDTH * (playedPercentage / 100) - CURRENT_MARKER_OFFSET;
@@ -81,7 +96,7 @@ function Player(props) {
 	    </div>
 	    <div class="player-controls">
 	    	<div class="button-and-label">
-	    		<div class="secondary-player-button" onClick={props.onRecordAgain}><div class="small-record"></div></div>
+	    		<div class="secondary-player-button" onClick={recordAgain}><div class="small-record"></div></div>
 	    		<span class="button-label">Record Again</span>
 	    	</div>
 	    	<div class="button-and-label">

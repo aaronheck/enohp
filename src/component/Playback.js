@@ -8,7 +8,12 @@ export default class Playback extends React.Component {
   static propTypes = {
     blob: PropTypes.object,
     playBackwards: PropTypes.bool,
+    setTriggerPlayback: PropTypes.bool,
   };
+
+  componentDidMount() {
+    this.props.setTriggerPlayback && this.props.setTriggerPlayback(this.play);
+  }
 
   handleClick = async (buttonName) => {
     if (this.state.isRecording) {
