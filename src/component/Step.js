@@ -1,7 +1,7 @@
 import Record from "./Record";
 import Player from "./Player";
 import Waveform from "./Waveform";
-import Playback from "./Playback";
+// import Playback from "./Playback";
 import React from "react";
 import PropTypes from "prop-types";
 import "./Record.css";
@@ -43,7 +43,9 @@ export default class Step extends React.Component {
 
   onRecordAgain = () => {
     this.setState(prevState => ({
-      recordingComplete: false
+      recordingComplete: false,
+      // blob: null,
+      // isRecording: true
     }));
     this.triggerRecord();
   };
@@ -54,16 +56,16 @@ export default class Step extends React.Component {
       <div className={this.props.className + " step"}>
       	<h3>{this.props.text}</h3>
         {this.props.subtext && <span className="subtext">{this.props.subtext}</span>}
-
         <Waveform audioRecorder={this.props.audioRecorder} isRecording={this.state.isRecording} />
         {!this.state.recordingStarted && <span style={{ 'padding-bottom': '15px'}}>Click to start recording...</span>}
-        {this.recordingComplete && <Player blob={this.state.blob} />}
+        {/* Not needed? */}
+        {/* {this.recordingComplete && <Player blob={this.state.blob} />} */}
         <div  style={{ display: showRecord ? 'block' : 'none' }}>
           <Record 
-          onStart={this.onStart} 
-          onStop={this.onStop} 
-          audioRecorder={this.props.audioRecorder}
-          setTriggerRecord={triggerRecord => this.triggerRecord = triggerRecord}/>
+            onStart={this.onStart} 
+            onStop={this.onStop} 
+            audioRecorder={this.props.audioRecorder}
+            setTriggerRecord={triggerRecord => this.triggerRecord = triggerRecord}/>
         </div>
         {this.state.recordingComplete && <Player blob={this.state.blob} playBackwards={true} onRecordAgain={this.onRecordAgain} />}
       </div>

@@ -21,6 +21,7 @@ function Player(props) {
     setAudio(newAudio);
 
     newAudio.playbackRate = playbackSpeed;
+    newAudio.autoplay = true;
     newAudio.onended = onEnd;
 
 	var progressBarUpdateInterval = setInterval(function () {
@@ -29,7 +30,6 @@ function Player(props) {
 		}
 	  setPlayedPercentage(newAudio.currentTime * 100 / duration);
 	}, 10);
-
     await newAudio.play();
   }
 
@@ -67,13 +67,20 @@ function Player(props) {
     );
   }
 
-  useEffect(async () => {
-    await processAudio();
+  useEffect(() => {
+    processAudio();
   }, [props.blob]);
 
   useEffect(() => {
   	if(processedBlob) {
-  		play()
+  		try {
+        var isSafari = /^((?!chrome|android).)*safari/i.test(navigator.userAgent);
+        if(!isSafari) {
+          play();
+        }
+      } catch (e) {
+        
+      }
   	}    
   }, [processedBlob]);
 

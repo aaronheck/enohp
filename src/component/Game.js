@@ -9,14 +9,13 @@ export default class Game extends React.Component {
   state = {
   	forwardsBlob: null,
     backwardsBlob: null,
-  	step: 1,
+  	step: 0,
     audioRecorder: null
   };
 
-  componentDidMount () {
-    var audioRecorder = AudioRecorder();
-    audioRecorder.then(a => this.setState({audioRecorder: a}))
-  }
+  // componentDidMount () {
+   
+  // } 
 
   // console.log(audioRecorder);
 
@@ -27,8 +26,18 @@ export default class Game extends React.Component {
   render() {
     return (
       <div className="App">
+        
       <header className="App-header steps">
-        <Step text="Step 1: Say 'Doorknob' Forwards"
+        <span onClick={()=>{
+           var audioRecorder = AudioRecorder();
+           audioRecorder.then(a => this.setState({audioRecorder: a}));
+          this.setState({step:1});
+          // console.log("hey");
+          // alert("hit");
+
+          }}>Start</span>
+          
+          <Step text="Step 1: Say 'Doorknob' Forwards"
         	  audioRecorder={this.state.audioRecorder}
               blob={this.state.forwardsBlob}
             buttonText="Ok Sounds Good"
@@ -40,8 +49,7 @@ export default class Game extends React.Component {
             buttonText="Ok Sounds Good"
             subtext="Try to mimic the reversed audio from step 1."
             onStepCompletion={()=>{this.setState({step:3})}} />
-
-       
+  
       </header>
     </div>
     );

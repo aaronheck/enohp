@@ -6,8 +6,12 @@
 
 	    async function getMediaRecorder(constraints) {
 	        try {
+				console.log("asking");
+				// navigator.getUserMedia = navigator.getUserMedia || navigator.webkitGetUserMedia ||
+				// navigator.mozGetUserMedia || navigator.msGetUserMedia || navigator.mediaDevices.getUserMedia;
 	            let stream = await navigator.mediaDevices.getUserMedia({audio: true});
-                let audioContent = new AudioContext();
+                console.log("granted");
+				let audioContent = new AudioContext();
                 let audioStream = audioContent.createMediaStreamSource( stream );
                 analyzer = audioContent.createAnalyser();
                 audioStream.connect(analyzer);
@@ -16,6 +20,12 @@
 	            /* use the stream */
 	        } catch (err) {
 	            /* handle the error */
+				// alert("E: ");
+				alert("e");
+				navigator.getUserMedia = ( navigator.getUserMedia || navigator.webkitGetUserMedia || navigator.mozGetUserMedia || navigator.msGetUserMedia || navigator.mediaDevices?.getUserMedia);
+				alert("E: " + navigator.getUserMedia);
+
+				// alert(err);
 	        }
 	    }
 

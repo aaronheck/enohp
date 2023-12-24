@@ -36,6 +36,8 @@ export default class Playback extends React.Component {
     } else {
       const audioURL = window.URL.createObjectURL(this.props.blob);
       var a = new Audio(audioURL);
+      // autoplay="" muted="" playsinline=""
+      a.autoplay = true;
       a.play();
     }
   };

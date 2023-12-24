@@ -17,10 +17,14 @@ export default class Record extends React.Component {
 
   handleClick = async buttonName => {
     console.log(this.state);
+    // stops recording if recording
     if(this.state.isRecording) {
       (await this.props.audioRecorder).stop(this.props.onStop);
     } else {
-      (await this.props.audioRecorder).start();
+      // start recording.
+      var x = (await this.props.audioRecorder);
+      console.log(x);
+      x.start();
       this.props.onStart();
     }
     this.setState(prevState => ({
@@ -36,7 +40,6 @@ export default class Record extends React.Component {
 
 
   render() {
-
     return (
       <span>
         <span class="record-button" onClick={this.handleClick}>
