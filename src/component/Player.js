@@ -1,4 +1,6 @@
 import React, { useState, useEffect, useCallback } from "react";
+import saveAudioFile from "../logic/recording-storage";
+
 var toWav = require("audiobuffer-to-wav");
 
 function Player(props) {
@@ -9,7 +11,7 @@ function Player(props) {
   const [duration, setDuration] = useState(0);
   const [playbackSpeed, setPlaybackSpeed] = useState(1);
   const [playbackSpeedClicks, setPlaybackSpeedClicks] = useState(0);
-  const { blob, playBackards, onRecordAgain, ...rest } = props;
+  const { blob, playBackards, onRecordAgain,hideRecordAgain, ...rest } = props;
   const PLAYER_WIDTH = 350;
   const CURRENT_MARKER_OFFSET = 4;
   const PLAYBACK_SPEEDS = [0.5, 1];
@@ -61,7 +63,6 @@ function Player(props) {
         var blob = new window.Blob([new DataView(wav)], {
           type: "audio/wav",
         });
-
         setProcessedBlob(blob); 
       }
     );
@@ -71,6 +72,7 @@ function Player(props) {
     processAudio();
   }, [props.blob]);
 
+  // Auto play when receive new blob for not safari.
   useEffect(() => {
   	if(processedBlob) {
   		try {
@@ -102,10 +104,11 @@ function Player(props) {
 	      <div class="current" style={{left: getCurrentLocation()}}></div>
 	    </div>
 	    <div class="player-controls">
-	    	<div class="button-and-label">
+	    	{!hideRecordAgain && <div class="button-and-label" >
 	    		<div class="secondary-player-button" onClick={recordAgain}><div class="small-record"></div></div>
 	    		<span class="button-label">Record Again</span>
 	    	</div>
+        }
 	    	<div class="button-and-label">
 	    		<div class="play" onClick={play}><img src="/play.svg" /></div>
 	    		<span class="button-label">Play in reverse</span>

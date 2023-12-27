@@ -175,3 +175,8 @@ h3 {
 
 ::-moz-selection { background:transparent; }
 ::selection { background:transparent; }
+
+.share {
+    size: 50%;
+    margin-top: 20px;
+}

@@ -5,6 +5,7 @@ import Waveform from "./Waveform";
 import React from "react";
 import PropTypes from "prop-types";
 import "./Record.css";
+import saveAudioFile from "../logic/recording-storage";
 
 export default class Step extends React.Component {
   // Step Completion should be a callback.
@@ -13,25 +14,24 @@ export default class Step extends React.Component {
     text: PropTypes.string,
     subtext: PropTypes.string,
     buttonClick: PropTypes.func,
-    blob: PropTypes.object,
     onStepCompletion: PropTypes.func,
-    playBackwards: PropTypes.bool
+    playBackwards: PropTypes.bool,
   };
 
   state = {
     recordingComplete: false,
     blob: null,
     recordingStarted: false,
-    isRecording: false
+    isRecording: false,
   };
 
-  onStop = blob => {
+  onStop = async blob => {
     this.setState(prevState => ({
       recordingComplete: true,
       blob: blob,
-      isRecording: false
+      isRecording: false,
     }));
-    this.props.onStepCompletion && this.props.onStepCompletion();
+   this.props.onStepCompletion && this.props.onStepCompletion(blob);
   };
 
   onStart = () => {

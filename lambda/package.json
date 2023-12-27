@@ -1,0 +1,12 @@
+{
+    "name": "enohp-lambda",
+    "version": "1.0.0",
+    "description": "Lambada",
+    "main": "index.js",
+    "author": "rosenduckboat",
+    "license": "ISC",
+    "dependencies": {
+        "aws-sdk": "^2.1525.0",
+        "uuid": "^9.0.1"
+    }
+}
