@@ -60,6 +60,4 @@ export default class Game extends React.Component {
   }
 }
 
-// 1. Record Forwards & Listen Backwards
-// 2. Listen Backwards & Record Backwards
-// 3. Listen Backwards Reversed & Submit
+// Game is configurable. Has X turns and other turns.

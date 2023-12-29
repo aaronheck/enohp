@@ -1,7 +1,4 @@
-import Record from "./Record";
 import Player from "./Player";
-import Waveform from "./Waveform";
-// import Playback from "./Playback";
 import React from "react";
 import PropTypes from "prop-types";
 import "./Record.css";
