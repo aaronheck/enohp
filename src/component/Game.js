@@ -21,6 +21,7 @@ export default class Game extends React.Component {
     const id = urlParams.get('id');
     var audioRecorder = AudioRecorder();
     audioRecorder.then(a => this.setState({audioRecorder: a, seedId: id}));
+    document.title = "Yelnats Game";
   } 
 
   render() {

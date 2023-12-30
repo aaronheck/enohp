@@ -44,7 +44,6 @@ exports.handler = async function handler(event, context) {
             Expires: signedUrlExpireSeconds
         })
 
-        console.log(url);
         context.succeed({ statusCode: 200, body: JSON.stringify({url:url, key:myKey}), headers });
         return;
     }
