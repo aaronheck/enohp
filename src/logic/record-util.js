@@ -7,25 +7,21 @@
 	    async function getMediaRecorder(constraints) {
 	        try {
 				console.log("asking");
-				// navigator.getUserMedia = navigator.getUserMedia || navigator.webkitGetUserMedia ||
-				// navigator.mozGetUserMedia || navigator.msGetUserMedia || navigator.mediaDevices.getUserMedia;
+				// TODO: figure this out.
+				// let getUser = navigator.mediaDevices.getUserMedia || 
+				// navigator.getUserMedia || navigator.webkitGetUserMedia ||
+				// navigator.mozGetUserMedia || navigator.msGetUserMedia;
 	            let stream = await navigator.mediaDevices.getUserMedia({audio: true});
                 console.log("granted");
 				let audioContent = new AudioContext();
                 let audioStream = audioContent.createMediaStreamSource( stream );
                 analyzer = audioContent.createAnalyser();
                 audioStream.connect(analyzer);
-                analyzer.fftSize = 1024;
+				// play with gain?
+                analyzer.fftSize = 512;
 	            return new MediaRecorder(stream);
-	            /* use the stream */
 	        } catch (err) {
-	            /* handle the error */
-				// alert("E: ");
-				alert("e");
-				navigator.getUserMedia = ( navigator.getUserMedia || navigator.webkitGetUserMedia || navigator.mozGetUserMedia || navigator.msGetUserMedia || navigator.mediaDevices?.getUserMedia);
-				alert("E: " + navigator.getUserMedia);
-
-				// alert(err);
+				alert("E: " + err);
 	        }
 	    }
 

@@ -6,7 +6,11 @@ import {saveAudioFile} from "../logic/recording-storage";
 
 
 export default class ShareStep extends React.Component {
-  // Step Completion should be a callback.
+  copyText = ["Copy", "Copying...", "Copied"];
+  shareText = ["Share", "...", "Share"];
+
+  shareOrCopyText = navigator.share ? this.shareText : this.copyText;
+
   static propTypes = {
     text: PropTypes.string,
     subtext: PropTypes.string,
@@ -14,17 +18,24 @@ export default class ShareStep extends React.Component {
   };
 
   state = {
-    buttonText: "Copy Link to Send",
+    buttonText: "",
     url: null
   };
   
+  componentDidMount() {
+    this.setState({buttonText: this.shareOrCopyText[0]});
+  }
   saveAndCopyUrl = async () => {
-    this.setState({buttonText: "Copying..."});
+    this.setState({buttonText: this.shareOrCopyText[1]});
     let id = await saveAudioFile(this.props.blobToSave);
     let url = window.location.origin + '?id=' + id;
-    navigator.clipboard.writeText(url);
-    this.setState({buttonText: "Copied!", url: url});
-    navigator.share({url:url})
+    if(navigator.share) {
+        navigator.share({url:url});
+    } else {
+        navigator.clipboard.writeText(url);
+    }
+    
+    this.setState({buttonText: this.shareOrCopyText[2], url: url});
   };
 
   render() { 
