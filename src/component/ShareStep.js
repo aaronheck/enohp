@@ -7,7 +7,7 @@ import {saveAudioFile} from "../logic/recording-storage";
 
 export default class ShareStep extends React.Component {
   copyText = ["Copy", "Copying...", "Copied"];
-  shareText = ["Share", "...", "Share"];
+  shareText = ["Share", "Opening...", "Share"];
 
   shareOrCopyText = navigator.share ? this.shareText : this.copyText;
 
