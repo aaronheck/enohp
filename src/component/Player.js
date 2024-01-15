@@ -1,5 +1,4 @@
 import React, { useState, useEffect, useCallback } from "react";
-import saveAudioFile from "../logic/recording-storage";
 
 var toWav = require("audiobuffer-to-wav");
 
@@ -77,7 +76,7 @@ function Player(props) {
   	if(processedBlob) {
   		try {
         var isSafari = /^((?!chrome|android).)*safari/i.test(navigator.userAgent);
-        if(!isSafari) {
+        if(false && !isSafari) {
           play();
         }
       } catch (e) {
