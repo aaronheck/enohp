@@ -28,6 +28,7 @@ export default class Game extends React.Component {
     return (
       <div className="App">
       <header className="App-header steps">
+        {/* // For new game this should be a "pick a word" step. */}
       <ListenAndGuessStep text="Step 1: What do you think your friend is saying?"
                   subtext="Reversed audio of backwards speaking."
         	  audioRecorder={this.state.audioRecorder}

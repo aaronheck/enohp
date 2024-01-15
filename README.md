@@ -66,3 +66,32 @@ This section has moved here: https://facebook.github.io/create-react-app/docs/de
 ### `npm run build` fails to minify
 
 This section has moved here: https://facebook.github.io/create-react-app/docs/troubleshooting#npm-run-build-fails-to-minify
+
+
+Design on the ddb
+// gameId in url.
+// game returns most recent recording.
+// when you save it, it saves to the game.
+let tableName = 'enohp-games';
+let a = {
+  "key": "game-loasdjflajl",
+  "value": {
+    "settings": {
+      "length": 12
+    },
+    "turns":[
+      {
+        // for turn one this is the seed word. others this is the guess.
+        "word": "Meatball",
+        // s3 key
+        "recording": "x.wav",
+        // nickname of player from cookies.
+        "nickname": "aaron",
+        // dynamically inserted s3 get url when needed.
+        "signedGet": "",
+        // dynamically inserted s3 get url when needed.
+        "signedPut": ""
+      }
+    ]
+  }
+};
