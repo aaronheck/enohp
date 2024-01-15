@@ -16,7 +16,6 @@
                 let audioStream = audioContent.createMediaStreamSource( stream );
                 analyzer = audioContent.createAnalyser();
                 audioStream.connect(analyzer);
-				// play with gain?
                 analyzer.fftSize = 512;
 	            return new MediaRecorder(stream);
 	        } catch (err) {
