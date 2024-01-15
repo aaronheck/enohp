@@ -9,11 +9,16 @@ export default class Home extends React.Component {
     componentDidMount() {
     }
 
-    create() {
-        alert(this.state.turnsValue + " " + this.state.allowReRecords);
+   
+    async create() {
+        // alert(this.state.turnsValue + " " + this.state.allowReRecords);
         // makes a request to lambda
         // lambda saves configuration in s3 or ddb
         // lambda returns the game id
+
+        await fetch('https://b7tfgad8z3.execute-api.us-east-2.amazonaws.com/test/game', {
+            method: 'POST',
+        });
     }
 
     updateInputValue(evt) {
