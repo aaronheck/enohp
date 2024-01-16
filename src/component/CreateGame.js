@@ -1,6 +1,8 @@
 import React from 'react';
+import { useNavigate } from "react-router-dom";
 
 export default class Home extends React.Component {
+    // navigate = useNavigate();
     state = {
         turnsValue: 5,
         allowReRecords: true
@@ -15,10 +17,18 @@ export default class Home extends React.Component {
         // makes a request to lambda
         // lambda saves configuration in s3 or ddb
         // lambda returns the game id
-
-        await fetch('https://b7tfgad8z3.execute-api.us-east-2.amazonaws.com/test/game', {
+        let body = {};
+        body.turns = this.state.turnsValue;
+        body.allowReRecords = this.state.allowReRecords;
+        let response = await fetch('https://b7tfgad8z3.execute-api.us-east-2.amazonaws.com/test/game', {
             method: 'POST',
+            body: JSON.stringify(body)
         });
+
+        let res = await response.json();
+        let id = res.id;
+        // this.navigate("/game?id=" + id);
+        window.location.href = "/game?id=" + id;
     }
 
     updateInputValue(evt) {
@@ -38,7 +48,7 @@ export default class Home extends React.Component {
         return (
             <div style={{ display: "flex", flexDirection: "column", width: "250px" }}>
                 <h1>Create Game</h1>
-                Number of Turns: <input type="number" id="tentacles" name="tentacles" min="4" max="25"
+                Number of Turns: <input type="number" id="num-turns" name="num-turns" min="4" max="25"
                     value={this.state.turnsValue} onChange={evt => this.updateInputValue(evt)} />
 
                 <label>

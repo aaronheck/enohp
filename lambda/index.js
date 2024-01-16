@@ -43,7 +43,7 @@ function handleRecording(event, context) {
   // https://insecurity.blog/2021/03/06/securing-amazon-s3-presigned-urls/#:~:text=S3%20has%20a%20cap%20of,bit%20more%20than%20you%20expect.
   if (event.httpMethod == 'POST') {
     const myKey = uuidv4() + '.wav';
-    
+
     const url = s3.getSignedUrl('putObject', {
       Bucket: RECORDING_BUCKET,
       Key: myKey,
@@ -72,12 +72,36 @@ async function createGame(title, rtScore) {
 
   try {
     await DynamoDB.putItem(params).promise();
-  } catch(e) {
+  } catch (e) {
     console.log("cannot create game");
     console.log(e);
     return null;
   }
   return gameId;
+}
+
+async function getGame(id) {
+  console.log("Getting game");
+  var params = {
+    Key: {
+      "id": {
+        S: id
+      }
+    },
+    TableName: "enohp-games"
+  };
+
+  try { 
+    let item = await DynamoDB.getItem(params).promise();
+    console.log(item);
+    let game = AWS.DynamoDB.Converter.unmarshall(item.Item);
+    console.log(game);
+    return game;
+  } catch (e) {
+    console.log("cannot get game");
+    console.log(e);
+    return null;
+  }
 }
 
 async function handleGame(event, context) {
@@ -86,7 +110,7 @@ async function handleGame(event, context) {
   if (event.httpMethod == 'POST') {
     let res = {};
     let id = await createGame();
-    if(id === null) {
+    if (id === null) {
       context.succeed({ statusCode: 500, body: JSON.stringify(res), headers });
       return;
     }
@@ -95,9 +119,21 @@ async function handleGame(event, context) {
     return;
   }
 
-   // gets game.
-   if (event.httpMethod == 'GET') {
+  // gets game.
+  if (event.httpMethod == 'GET') {
+    console.log("GET!!!");
+    if (!event["queryStringParameters"] || !event["queryStringParameters"]["id"]) {
+      context.succeed({ statusCode: 404, body: "Game not found", headers });
+      return;
+    }
+
     let res = {};
+    let game = await getGame(event["queryStringParameters"]["id"]);
+    if(!game) {
+      context.succeed({ statusCode: 404, body: "Game not found", headers });
+      return;
+    }
+    res.game = game;
     context.succeed({ statusCode: 200, body: JSON.stringify(res), headers });
     return;
   }
