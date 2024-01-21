@@ -6,7 +6,6 @@
     "author": "rosenduckboat",
     "license": "ISC",
     "dependencies": {
-        "aws-sdk": "^2.1525.0",
         "uuid": "^9.0.1"
     },
     "devDependencies": {

@@ -22,7 +22,7 @@ const RECORDING_BUCKET = 'enohp';
 const SIGNED_URL_EXPIRY_SECONDS = 60 * 5
 
 
-function handleRecording(event, context) {
+async function handleRecording(event, context) {
   if (event.httpMethod == "GET") {
     if (!event["queryStringParameters"] || !event["queryStringParameters"]["id"]) {
       context.succeed({ statusCode: 400, body: "Unsupported type", headers });
@@ -42,16 +42,44 @@ function handleRecording(event, context) {
   // this should use file hash: 
   // https://insecurity.blog/2021/03/06/securing-amazon-s3-presigned-urls/#:~:text=S3%20has%20a%20cap%20of,bit%20more%20than%20you%20expect.
   if (event.httpMethod == 'POST') {
-    const myKey = uuidv4() + '.wav';
+    let body = JSON.parse(event.body);
+    // this is the game id.
+    if(!body.id) {
+      context.succeed({ statusCode: 400, body: "Missing gameid.", headers });
+    }
+
+    const gameId = body.id;
+
+    const recordingKey = uuidv4() + '.wav';
 
     const url = s3.getSignedUrl('putObject', {
       Bucket: RECORDING_BUCKET,
-      Key: myKey,
+      Key: recordingKey,
       ContentType: "audio/wav",
       Expires: SIGNED_URL_EXPIRY_SECONDS
-    })
+    });
+    let game = await getGame(gameId, false);
+    console.log("brosenheck: game")
+    console.log(game);
+    game.turns = game.turns || [];
+    // we should have an idea for a turn so that it does not look like a turn can be played twice.
+    game.turns.push(
+      {
+        "guess": body.guess || "Meatball",
+        // s3 key
+        "recording": recordingKey,
+        // nickname of player from cookies.
+        "nickname": body.nickname || "aaron"
+      }
+    );
 
-    context.succeed({ statusCode: 200, body: JSON.stringify({ url: url, key: myKey }), headers });
+    if(!await saveGame(gameId, game)) {
+      context.succeed({ statusCode: 500, body: "Could not save game.", headers });
+    }
+
+
+
+    context.succeed({ statusCode: 200, body: JSON.stringify({ url: url, key: recordingKey }), headers });
     return;
   }
 
@@ -59,28 +87,35 @@ function handleRecording(event, context) {
   return false;
 }
 
-async function createGame(title, rtScore) {
-  let gameId = uuidv4();
-  let item = AWS.DynamoDB.Converter.marshall({
-    id: gameId
-  });
+
+async function saveGame(gameId, game) {
+
   console.log("Game id: " + gameId);
   const params = {
     TableName: "enohp-games",
-    Item: item,
+    Item: AWS.DynamoDB.Converter.marshall(game),
   };
-
   try {
     await DynamoDB.putItem(params).promise();
   } catch (e) {
-    console.log("cannot create game");
+    console.log("cannot save game");
     console.log(e);
-    return null;
+    return false;
   }
-  return gameId;
+  return true;
+}
+async function createGame() {
+  let gameId = uuidv4();
+  let game = {
+    id: gameId
+  };
+  if(await saveGame(gameId, game)) {
+    return id;
+  }
+  return null;
 }
 
-async function getGame(id) {
+async function getGame(id, getSignedUrl=false) {
   console.log("Getting game");
   var params = {
     Key: {
@@ -91,11 +126,24 @@ async function getGame(id) {
     TableName: "enohp-games"
   };
 
+  console.log(params); 
+
   try { 
     let item = await DynamoDB.getItem(params).promise();
     console.log(item);
     let game = AWS.DynamoDB.Converter.unmarshall(item.Item);
     console.log(game);
+    if(game.turns && getSignedUrl) {
+      game.turns.forEach(turn => {
+        // might not want to actually sign all turns if not needed. 
+        const url = s3.getSignedUrl('getObject', {
+          Bucket: RECORDING_BUCKET,
+          Key: id,
+          Expires: SIGNED_URL_EXPIRY_SECONDS
+        });
+        turn.signedGet = url;
+      });
+    }
     return game;
   } catch (e) {
     console.log("cannot get game");
@@ -144,9 +192,8 @@ async function handleGame(event, context) {
 
 exports.handler = async function handler(event, context) {
   console.log(event);
-  // legacy for turn based.
   if (event.path === "/recording") {
-    handleRecording(event, context);
+    await handleRecording(event, context);
     return;
   }
 

@@ -23,7 +23,6 @@ export default class Record extends React.Component {
     } else {
       // start recording.
       var x = (await this.props.audioRecorder);
-      console.log(x);
       x.start();
       this.props.onStart();
     }

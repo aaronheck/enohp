@@ -26,8 +26,13 @@ export default class ShareStep extends React.Component {
     this.setState({buttonText: this.shareOrCopyText[0]});
   }
   saveAndCopyUrl = async () => {
+    // this is game id
+    // todo get this in props.
+    const urlParams = new URLSearchParams(window.location.search);
+    const id = urlParams.get('id');
     this.setState({buttonText: this.shareOrCopyText[1]});
-    let id = await saveAudioFile(this.props.blobToSave);
+    await saveAudioFile(this.props.blobToSave, id);
+    // this is saving the 
     let url = window.location.origin + '/game?id=' + id;
     if(navigator.share) {
         navigator.share({url:url});
