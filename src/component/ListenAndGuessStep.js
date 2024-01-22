@@ -44,7 +44,7 @@ export default class ListenAndGuessStep extends React.Component {
       }
 
     guess() {
-        if(this.state.inputValue && this.state.inputValue.length > 0) {
+        if(!this.state.inputValue) {
             return;
         }
         this.props.onStepCompletion(this.state.inputValue);
