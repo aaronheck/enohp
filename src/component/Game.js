@@ -61,7 +61,6 @@ export default class Game extends React.Component {
             buttonText="Ok Sounds Good"
             onStepCompletion={(guess) => {
               this.setState({ step: 1, guess });
-
             }} />}
           <Step className={this.state.step < 1 ? "hidden" : "nope"}
             text={`Step 2: Say '${this.state.guess}' Forwards`}
@@ -80,6 +79,7 @@ export default class Game extends React.Component {
           <ShareStep className={this.state.step < 3 ? "hidden" : "nope"} text="Send it on."
             subtext="Keep the game going and send a link to the next person."
             audioRecorder={this.state.audioRecorder}
+            guess={this.state.guess}
             consistencyToken={this.state.lastTurn? this.state.lastTurn.consistencyToken : ""}
             blobToSave={this.state.blobToSave} />
         </header>

@@ -16,7 +16,8 @@ export default class ShareStep extends React.Component {
     text: PropTypes.string,
     subtext: PropTypes.string,
     blobToSave: PropTypes.any,
-    consistencyToken: PropTypes.string
+    consistencyToken: PropTypes.string,
+    guess: PropTypes.string
   };
 
   state = {
@@ -36,8 +37,7 @@ export default class ShareStep extends React.Component {
 
     // TODO test consistency token with two tabs open.
     this.setState({ buttonText: this.shareOrCopyText[1] });
-    let guess = "meatball!!";
-    await saveAudioFile(this.props.blobToSave, gameId, this.props.consistencyToken, nickname, guess);
+    await saveAudioFile(this.props.blobToSave, gameId, this.props.consistencyToken, nickname, this.props.guess);
     // this is saving the 
     let url = window.location.origin + '/game?' + new URLSearchParams({
       id: gameId,
