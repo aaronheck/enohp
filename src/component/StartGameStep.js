@@ -38,13 +38,20 @@ export default class StartGameStep extends React.Component {
         });
       }
 
+      guess() {
+        if(!this.state.inputValue) {
+            return;
+        }
+        this.props.onStepCompletion(this.state.inputValue);
+    }
+
     render() {
         return (
             <div className={this.props.className + " step"}>
                 <h3>Start Game</h3>
                 {<span className="subtext">Pick a word/ phrase to start the game.</span>}
                 <input type="text" style={{ 'margin-top': '25px' }} value={this.state.inputValue} onChange={evt => this.updateInputValue(evt)}/>
-                <input type="submit" value="Start Game" onClick={() => { this.props.onStepCompletion(this.state.inputValue) }} />
+                <input type="submit" value="Start Game" onClick={() => { this.guess(); }} />
             </div>
         );
     }
