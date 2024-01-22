@@ -46,6 +46,7 @@ async function handleRecording(event, context) {
     // this is the game id.
     if (!body.id) {
       context.succeed({ statusCode: 400, body: "Missing gameid.", headers });
+      return;
     }
 
     const gameId = body.id;
@@ -54,11 +55,13 @@ async function handleRecording(event, context) {
     let game = await getGame(gameId, false);
     if (!game) {
       context.succeed({ statusCode: 404, body: "Game not found", headers });
+      return;
     }
 
     if (game.turns && game.turns.length > 0
       && game.turns[game.turns.length - 1].recordingKey !== consistencyToken + ".wav") {
       context.succeed({ statusCode: 400, body: "Turn key is not right.", headers });
+      return;
     }
 
     const recordingId = uuidv4();
@@ -85,6 +88,7 @@ async function handleRecording(event, context) {
 
     if (!await saveGame(gameId, game)) {
       context.succeed({ statusCode: 500, body: "Could not save game.", headers });
+      return;
     }
 
 
@@ -145,13 +149,15 @@ async function getGame(id, getSignedUrl = false) {
     console.log(game);
     if (game.turns && getSignedUrl) {
       game.turns.forEach(turn => {
+        console.log(turn.recording);
         // might not want to actually sign all turns if not needed. 
         const url = s3.getSignedUrl('getObject', {
           Bucket: RECORDING_BUCKET,
-          Key: id,
+          Key: turn.recording,
           Expires: SIGNED_URL_EXPIRY_SECONDS
         });
         turn.signedGet = url;
+        turn.consistencyToken = turn.recording.split(".wav")[0]
       });
     }
     return game;
@@ -186,7 +192,7 @@ async function handleGame(event, context) {
     }
 
     let res = {};
-    let game = await getGame(event["queryStringParameters"]["id"]);
+    let game = await getGame(event["queryStringParameters"]["id"], true);
     if (!game) {
       context.succeed({ statusCode: 404, body: "Game not found", headers });
       return;

@@ -4,8 +4,7 @@ async function getGame(id) {
         method: 'GET',
     })
     let game = await res.json();
-    
-    return game;
+    return game.game;
 }
 
 module.exports = {

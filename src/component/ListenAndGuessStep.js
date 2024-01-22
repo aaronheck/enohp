@@ -2,7 +2,7 @@ import Player from "./Player";
 import React from "react";
 import PropTypes from "prop-types";
 import "./Record.css";
-import { getAudioFile } from "../logic/recording-storage";
+import { getAudioFileWithSignedUrl } from "../logic/recording-storage";
 
 export default class ListenAndGuessStep extends React.Component {
     // Step Completion should be a callback.
@@ -14,7 +14,8 @@ export default class ListenAndGuessStep extends React.Component {
         blob: PropTypes.object,
         onStepCompletion: PropTypes.func,
         playBackwards: PropTypes.bool,
-        id: PropTypes.string
+        id: PropTypes.string,
+        audioUrl: PropTypes.string
     };
 
     state = {
@@ -26,13 +27,11 @@ export default class ListenAndGuessStep extends React.Component {
     };
 
     componentDidMount() {
-        const urlParams = new URLSearchParams(window.location.search);
-        const id = urlParams.get('id');
-        this.getAudioFileInternal(id);
+        this.getAudioFileInternal();
     }
 
-    getAudioFileInternal = async (id) => {
-        let file = await getAudioFile(id);
+    getAudioFileInternal = async () => {
+        let file = await getAudioFileWithSignedUrl(this.props.audioUrl);
         let blob = await file.blob();
         this.setState({ blob: blob });
     };

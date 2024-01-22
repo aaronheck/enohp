@@ -56,5 +56,5 @@ async function getAudioFile(id) {
 }
 
 module.exports = {
-    getAudioFile, saveAudioFile
+    getAudioFile, saveAudioFile, getAudioFileWithSignedUrl
 }

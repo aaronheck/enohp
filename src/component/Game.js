@@ -22,6 +22,7 @@ export default class Game extends React.Component {
 
   async fetchGame(id) {
     let game = await getGame(id);
+    console.log(game);
     let lastTurn = null;
     if(game && game.turns && game.turns.length !== 0) {
       lastTurn = game.turns.slice(-1)[0];
@@ -47,7 +48,7 @@ export default class Game extends React.Component {
           {this.state.lastTurn && <ListenAndGuessStep text="Step 1: What do you think your friend is saying?"
             subtext="Reversed audio of backwards speaking."
             audioRecorder={this.state.audioRecorder}
-            id={this.state.seedId}
+            audioUrl={this.state.lastTurn.signedGet}
             buttonText="Ok Sounds Good"
             onStepCompletion={(guess) => {
               this.setState({ step: 1, guess });
@@ -79,6 +80,7 @@ export default class Game extends React.Component {
           <ShareStep className={this.state.step < 3 ? "hidden" : "nope"} text="Send it on."
             subtext="Keep the game going and send a link to the next person."
             audioRecorder={this.state.audioRecorder}
+            consistencyToken={this.state.lastTurn? this.state.lastTurn.consistencyToken : ""}
             blobToSave={this.state.blobToSave} />
         </header>
       </div>
