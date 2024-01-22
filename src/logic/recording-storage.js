@@ -1,15 +1,14 @@
-const getPresignedPutUrl = (id) => {
+const getPresignedPutUrl = (gameId, consistencyToken, nickname, guess) => {
     return fetch('https://b7tfgad8z3.execute-api.us-east-2.amazonaws.com/test/recording', {
         method: 'POST',
         headers: {
             "Content-Type": "application/json",
-            // 'Content-Type': 'application/x-www-form-urlencoded',
         },
-        // TODO - pipe through guesses
         body: JSON.stringify({
-            id: id,
-            guess: "Telephone",
-            nickname: "Rosenheck"
+            id: gameId,
+            consistencyToken,
+            guess,
+            nickname
         })
     });
 };
@@ -40,8 +39,8 @@ const getAudioFileWithSignedUrl = (url) => {
 
 
 // returns generated file id
-async function saveAudioFile(audioBlob, id) {
-    let res = await getPresignedPutUrl(id);
+async function saveAudioFile(audioBlob, gameId, consistencyToken, nickname, guess) {
+    let res = await getPresignedPutUrl(gameId, consistencyToken, nickname, guess);
     let body = await res.json();
     let presignedUrl = body.url;
     await sendAudioFile(presignedUrl, audioBlob);

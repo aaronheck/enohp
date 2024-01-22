@@ -44,21 +44,31 @@ async function handleRecording(event, context) {
   if (event.httpMethod == 'POST') {
     let body = JSON.parse(event.body);
     // this is the game id.
-    if(!body.id) {
+    if (!body.id) {
       context.succeed({ statusCode: 400, body: "Missing gameid.", headers });
     }
 
     const gameId = body.id;
+    const consistencyToken = body.consistencyToken;
 
-    const recordingKey = uuidv4() + '.wav';
+    let game = await getGame(gameId, false);
+    if (!game) {
+      context.succeed({ statusCode: 404, body: "Game not found", headers });
+    }
 
+    if (game.turns && game.turns.length > 0
+      && game.turns[game.turns.length - 1].recordingKey !== consistencyToken + ".wav") {
+      context.succeed({ statusCode: 400, body: "Turn key is not right.", headers });
+    }
+
+    const recordingId = uuidv4();
+    const recordingFileName = recordingId + '.wav';
     const url = s3.getSignedUrl('putObject', {
       Bucket: RECORDING_BUCKET,
-      Key: recordingKey,
+      Key: recordingFileName,
       ContentType: "audio/wav",
       Expires: SIGNED_URL_EXPIRY_SECONDS
     });
-    let game = await getGame(gameId, false);
     console.log("brosenheck: game")
     console.log(game);
     game.turns = game.turns || [];
@@ -67,19 +77,19 @@ async function handleRecording(event, context) {
       {
         "guess": body.guess || "Meatball",
         // s3 key
-        "recording": recordingKey,
+        "recording": recordingFileName,
         // nickname of player from cookies.
         "nickname": body.nickname || "aaron"
       }
     );
 
-    if(!await saveGame(gameId, game)) {
+    if (!await saveGame(gameId, game)) {
       context.succeed({ statusCode: 500, body: "Could not save game.", headers });
     }
 
 
 
-    context.succeed({ statusCode: 200, body: JSON.stringify({ url: url, key: recordingKey }), headers });
+    context.succeed({ statusCode: 200, body: JSON.stringify({ url: url, key: recordingId }), headers });
     return;
   }
 
@@ -109,13 +119,13 @@ async function createGame() {
   let game = {
     id: gameId
   };
-  if(await saveGame(gameId, game)) {
-    return id;
+  if (await saveGame(gameId, game)) {
+    return gameId;
   }
   return null;
 }
 
-async function getGame(id, getSignedUrl=false) {
+async function getGame(id, getSignedUrl = false) {
   console.log("Getting game");
   var params = {
     Key: {
@@ -126,14 +136,14 @@ async function getGame(id, getSignedUrl=false) {
     TableName: "enohp-games"
   };
 
-  console.log(params); 
+  console.log(params);
 
-  try { 
+  try {
     let item = await DynamoDB.getItem(params).promise();
     console.log(item);
     let game = AWS.DynamoDB.Converter.unmarshall(item.Item);
     console.log(game);
-    if(game.turns && getSignedUrl) {
+    if (game.turns && getSignedUrl) {
       game.turns.forEach(turn => {
         // might not want to actually sign all turns if not needed. 
         const url = s3.getSignedUrl('getObject', {
@@ -177,7 +187,7 @@ async function handleGame(event, context) {
 
     let res = {};
     let game = await getGame(event["queryStringParameters"]["id"]);
-    if(!game) {
+    if (!game) {
       context.succeed({ statusCode: 404, body: "Game not found", headers });
       return;
     }

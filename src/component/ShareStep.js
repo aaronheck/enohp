@@ -3,6 +3,7 @@ import React from "react";
 import PropTypes from "prop-types";
 import "./Record.css";
 import {saveAudioFile} from "../logic/recording-storage";
+import {getNickname} from "../logic/user-storage";
 
 
 export default class ShareStep extends React.Component {
@@ -26,14 +27,20 @@ export default class ShareStep extends React.Component {
     this.setState({buttonText: this.shareOrCopyText[0]});
   }
   saveAndCopyUrl = async () => {
+    let nickname = await getNickname();
     // this is game id
     // todo get this in props.
     const urlParams = new URLSearchParams(window.location.search);
-    const id = urlParams.get('id');
+    const gameId = urlParams.get('id');
+    const consistencyToken = urlParams.get('consistencyToken');
     this.setState({buttonText: this.shareOrCopyText[1]});
-    await saveAudioFile(this.props.blobToSave, id);
+    let guess = "meatball!!";
+    let newConsistencyToken = await saveAudioFile(this.props.blobToSave, gameId, consistencyToken, nickname, guess);
     // this is saving the 
-    let url = window.location.origin + '/game?id=' + id;
+    let url = window.location.origin + '/game?' + new URLSearchParams({
+      id: gameId,
+      consistencyToken: newConsistencyToken 
+  });
     if(navigator.share) {
         navigator.share({url:url});
     } else {
