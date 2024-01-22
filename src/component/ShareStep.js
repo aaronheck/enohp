@@ -17,7 +17,8 @@ export default class ShareStep extends React.Component {
     subtext: PropTypes.string,
     blobToSave: PropTypes.any,
     consistencyToken: PropTypes.string,
-    guess: PropTypes.string
+    guess: PropTypes.string,
+    gameId: PropTypes.string
   };
 
   state = {
@@ -30,18 +31,14 @@ export default class ShareStep extends React.Component {
   }
   saveAndCopyUrl = async () => {
     let nickname = await getNickname();
-    // this is game id
-    // todo get this in props.
-    const urlParams = new URLSearchParams(window.location.search);
-    const gameId = urlParams.get('id');
+    const gameId = this.props.gameId;
 
-    // TODO test consistency token with two tabs open.
     this.setState({ buttonText: this.shareOrCopyText[1] });
     await saveAudioFile(this.props.blobToSave, gameId, this.props.consistencyToken, nickname, this.props.guess);
-    // this is saving the 
     let url = window.location.origin + '/game?' + new URLSearchParams({
       id: gameId,
     });
+    // TODO: Allison says this does not work anymore.
     if (navigator.share) {
       navigator.share({ url: url });
     } else {

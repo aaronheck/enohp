@@ -80,6 +80,7 @@ export default class Game extends React.Component {
             subtext="Keep the game going and send a link to the next person."
             audioRecorder={this.state.audioRecorder}
             guess={this.state.guess}
+            gameId={this.state.seedId}
             consistencyToken={this.state.lastTurn? this.state.lastTurn.consistencyToken : ""}
             blobToSave={this.state.blobToSave} />
         </header>
