@@ -57,7 +57,6 @@ export default class ShareStep extends React.Component {
           style={{ color: 'blue', cursor: 'pointer' }}>
           {this.state.buttonText}
         </div>
-        {this.state.url != null && this.state.url}
       </div>
 
     );

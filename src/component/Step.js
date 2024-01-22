@@ -5,7 +5,6 @@ import Waveform from "./Waveform";
 import React from "react";
 import PropTypes from "prop-types";
 import "./Record.css";
-import saveAudioFile from "../logic/recording-storage";
 
 export default class Step extends React.Component {
   // Step Completion should be a callback.
@@ -44,8 +43,6 @@ export default class Step extends React.Component {
   onRecordAgain = () => {
     this.setState(prevState => ({
       recordingComplete: false,
-      // blob: null,
-      // isRecording: true
     }));
     this.triggerRecord();
   };
@@ -58,8 +55,6 @@ export default class Step extends React.Component {
         {this.props.subtext && <span className="subtext">{this.props.subtext}</span>}
         <Waveform audioRecorder={this.props.audioRecorder} isRecording={this.state.isRecording} />
         {!this.state.recordingStarted && <span style={{ 'padding-bottom': '15px'}}>Click to start recording...</span>}
-        {/* Not needed? */}
-        {/* {this.recordingComplete && <Player blob={this.state.blob} />} */}
         <div  style={{ display: showRecord ? 'block' : 'none' }}>
           <Record 
             onStart={this.onStart} 
