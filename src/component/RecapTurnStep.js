@@ -28,8 +28,8 @@ export default class RecapTurnStep extends React.Component {
     render() {
         return (
             <div className={this.props.className + " step"}>
-                <h3>{this.props.turn.nickname}</h3>
-                {this.props.subtext && <span className="subtext">{this.props.subtext}</span>}
+                <h3>{this.props.turn.guess}</h3>
+                {<span className="subtext">{this.props.turn.nickname}</span>}
                 {!this.state.recordingStarted && <span style={{ 'padding-bottom': '15px' }}></span>}
                 {this.state.blob && <Player blob={this.state.blob} playBackwards={true} hideRecordAgain={true} />}
             </div>
