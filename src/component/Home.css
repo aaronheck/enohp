@@ -1,0 +1,112 @@
+.home-page {
+    min-height: 100vh;
+    width: 100%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    padding: 32px 16px;
+    box-sizing: border-box;
+}
+
+.home-content {
+    width: 100%;
+    max-width: 420px;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 28px;
+}
+
+.home-title {
+    margin: 0;
+    font-size: 42px;
+    font-weight: 800;
+    color: #f1f5f9;
+    letter-spacing: -0.04em;
+}
+
+.home-subtitle {
+    margin: -16px 0 0;
+    font-size: 16px;
+    color: rgba(226, 232, 240, 0.5);
+}
+
+.home-options {
+    width: 100%;
+    display: flex;
+    flex-direction: column;
+    gap: 12px;
+}
+
+.option-card {
+    display: flex;
+    align-items: center;
+    gap: 16px;
+    padding: 20px;
+    background: rgba(255, 255, 255, 0.08);
+    backdrop-filter: blur(24px);
+    -webkit-backdrop-filter: blur(24px);
+    border: 1px solid rgba(255, 255, 255, 0.15);
+    border-radius: 16px;
+    box-shadow: 0 4px 20px rgba(0, 0, 0, 0.25);
+    text-decoration: none;
+    cursor: pointer;
+    transition: background 0.2s, transform 0.15s, box-shadow 0.2s;
+}
+
+.option-card:hover {
+    background: rgba(255, 255, 255, 0.13);
+    transform: translateY(-2px);
+    box-shadow: 0 8px 28px rgba(0, 0, 0, 0.35);
+}
+
+.option-card:active {
+    transform: translateY(0);
+}
+
+.option-icon {
+    font-size: 28px;
+    flex-shrink: 0;
+}
+
+.option-text {
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+    gap: 4px;
+    text-align: left;
+}
+
+.option-title {
+    margin: 0;
+    font-size: 16px;
+    font-weight: 700;
+    color: #f1f5f9;
+}
+
+.option-description {
+    margin: 0;
+    font-size: 13px;
+    color: rgba(226, 232, 240, 0.55);
+    line-height: 1.4;
+}
+
+.option-arrow {
+    font-size: 18px;
+    color: rgba(167, 139, 250, 0.7);
+    flex-shrink: 0;
+}
+
+@media (max-width: 480px) {
+    .home-title {
+        font-size: 36px;
+    }
+
+    .option-card {
+        padding: 16px;
+    }
+
+    .option-icon {
+        font-size: 24px;
+    }
+}
