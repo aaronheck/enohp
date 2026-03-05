@@ -20,15 +20,14 @@ export default class Record extends React.Component {
     // stops recording if recording
     if(this.state.isRecording) {
       (await this.props.audioRecorder).stop(this.props.onStop);
+      this.setState({ isRecording: false });
     } else {
-      // start recording.
+      // start recording — wait for permissions before updating state
       var x = (await this.props.audioRecorder);
-      x.start();
+      await x.start();
       this.props.onStart();
+      this.setState({ isRecording: true });
     }
-    this.setState(prevState => ({
-      isRecording: !prevState.isRecording
-    }));
     this.props.handleRecordClick && this.props.handleRecordClick();
     console.log(this.state);
   };
