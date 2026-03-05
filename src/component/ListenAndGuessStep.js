@@ -55,9 +55,9 @@ export default class ListenAndGuessStep extends React.Component {
             <div className={this.props.className + " step"}>
                 <h3>{this.props.text}</h3>
                 {this.props.subtext && <span className="subtext">{this.props.subtext}</span>}
-                {!this.state.recordingStarted && <span style={{ 'padding-bottom': '15px' }}></span>}
+                {!this.state.recordingStarted && <span style={{ paddingBottom: '15px' }}></span>}
                 {this.state.blob && <Player blob={this.state.blob} playBackwards={true} hideRecordAgain={true} />}
-                <input type="text" style={{ 'margin-top': '25px' }} value={this.state.inputValue} onChange={evt => this.updateInputValue(evt)}/>
+                <input type="text" style={{ marginTop: '25px' }} value={this.state.inputValue} onChange={evt => this.updateInputValue(evt)}/>
                 <input type="submit" value="Guess" onClick={() => { this.guess(); }} />
             </div>
 

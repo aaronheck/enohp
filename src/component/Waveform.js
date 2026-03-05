@@ -20,11 +20,11 @@ const Waveform = props => {
 	      		sectionAmplitude = audioRecorder.getSectionAmplitude();
 	     	}
 	      	ctx.lineWidth = 1;
-	      	ctx.strokeStyle = 'rgb(0, 0, 0)';
+	      	ctx.strokeStyle = 'rgba(167, 139, 250, 0.8)';
 		    ctx.beginPath();
 		    var sliceWidth = 1;
-		    
-		    // shift 
+
+		    // shift
 		    var sizeOfShift = -4
 		    ctx.globalCompositeOperation = "copy";
 			ctx.drawImage(ctx.canvas, sizeOfShift, 0);
@@ -34,7 +34,7 @@ const Waveform = props => {
 		    var y = Math.max(sectionAmplitude * 0.5, 2);
 
 		    ctx.save();
-		    ctx.fillStyle='rgb(0, 0, 0)';
+		    ctx.fillStyle='rgba(167, 139, 250, 0.9)';
 		    ctx.fillRect(canvas.width - 5, // write newest bar near end of canvas (x axis)
 		    	(canvas.height - y) / 2, // start the bar from the center - half amplitude
 		    	sliceWidth, // the bar should be this wide

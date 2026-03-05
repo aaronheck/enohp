@@ -54,7 +54,7 @@ export default class Step extends React.Component {
       	<h3>{this.props.text}</h3>
         {this.props.subtext && <span className="subtext">{this.props.subtext}</span>}
         <Waveform audioRecorder={this.props.audioRecorder} isRecording={this.state.isRecording} />
-        {!this.state.recordingStarted && <span style={{ 'padding-bottom': '15px'}}>Click to start recording...</span>}
+        {!this.state.recordingStarted && <span style={{ paddingBottom: '15px', color: 'rgba(226,232,240,0.5)', fontSize: '14px' }}>Click to start recording...</span>}
         <div  style={{ display: showRecord ? 'block' : 'none' }}>
           <Record 
             onStart={this.onStart} 

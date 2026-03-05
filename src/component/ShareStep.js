@@ -53,8 +53,7 @@ export default class ShareStep extends React.Component {
       <div className={this.props.className + " step"}>
         <h3>{this.props.text}</h3>
         {this.props.subtext && <span className="subtext">{this.props.subtext}</span>}
-        <div onClick={this.saveAndCopyUrl}
-          style={{ color: 'blue', cursor: 'pointer' }}>
+        <div onClick={this.saveAndCopyUrl} className="share-button">
           {this.state.buttonText}
         </div>
       </div>

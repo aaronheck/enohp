@@ -1,0 +1,215 @@
+.create-game-page {
+    min-height: 100vh;
+    width: 100%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    padding: 32px 16px;
+    box-sizing: border-box;
+    overflow-x: hidden;
+}
+
+.create-game-card {
+    background: rgba(255, 255, 255, 0.08);
+    backdrop-filter: blur(24px);
+    -webkit-backdrop-filter: blur(24px);
+    border: 1px solid rgba(255, 255, 255, 0.15);
+    border-radius: 24px;
+    box-shadow: 0 8px 40px rgba(0, 0, 0, 0.35), inset 0 1px 0 rgba(255, 255, 255, 0.12);
+    padding: 36px 28px;
+    width: 100%;
+    max-width: 420px;
+    box-sizing: border-box;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 24px;
+}
+
+.create-game-heading {
+    margin: 0;
+    font-size: 26px;
+    font-weight: 700;
+    color: #f1f5f9;
+    letter-spacing: -0.02em;
+}
+
+.create-game-subtext {
+    margin: 0;
+    font-size: 15px;
+    color: rgba(226, 232, 240, 0.6);
+    text-align: center;
+    line-height: 1.5;
+}
+
+.how-it-works-section {
+    width: 100%;
+    display: flex;
+    flex-direction: column;
+    gap: 12px;
+}
+
+.how-it-works-heading {
+    margin: 0;
+    font-size: 11px;
+    font-weight: 700;
+    color: rgba(167, 139, 250, 0.8);
+    text-transform: uppercase;
+    letter-spacing: 0.12em;
+}
+
+.step-row {
+    display: flex;
+    align-items: flex-start;
+    gap: 12px;
+}
+
+.step-icon {
+    font-size: 18px;
+    line-height: 1.4;
+    flex-shrink: 0;
+}
+
+.step-text {
+    margin: 0;
+    font-size: 14px;
+    color: rgba(226, 232, 240, 0.75);
+    line-height: 1.5;
+}
+
+.divider {
+    width: 100%;
+    height: 1px;
+    background: rgba(255, 255, 255, 0.1);
+}
+
+.field-group {
+    width: 100%;
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+}
+
+.field-label {
+    font-size: 13px;
+    font-weight: 600;
+    color: rgba(226, 232, 240, 0.85);
+    letter-spacing: 0.02em;
+}
+
+.number-input {
+    width: 100%;
+    box-sizing: border-box;
+    padding: 12px 16px;
+    font-size: 16px;
+    background: rgba(255, 255, 255, 0.07);
+    border: 1px solid rgba(255, 255, 255, 0.18);
+    border-radius: 10px;
+    outline: none;
+    color: #e2e8f0;
+    transition: border-color 0.2s, background 0.2s;
+}
+
+.number-input::placeholder {
+    color: rgba(226, 232, 240, 0.35);
+}
+
+.number-input:focus {
+    border-color: rgba(167, 139, 250, 0.6);
+    background: rgba(255, 255, 255, 0.11);
+}
+
+.checkbox-row {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    cursor: pointer;
+    align-self: flex-start;
+}
+
+.checkbox-input {
+    width: 18px;
+    height: 18px;
+    accent-color: #a78bfa;
+    cursor: pointer;
+}
+
+.checkbox-label {
+    font-size: 15px;
+    color: rgba(226, 232, 240, 0.8);
+    cursor: pointer;
+}
+
+.create-button {
+    width: 100%;
+    padding: 14px;
+    background: linear-gradient(135deg, #7c3aed, #a78bfa);
+    color: #ffffff;
+    font-weight: 700;
+    font-size: 16px;
+    border: none;
+    border-radius: 12px;
+    cursor: pointer;
+    margin-top: 4px;
+    transition: opacity 0.2s, transform 0.1s;
+    box-shadow: 0 4px 20px rgba(124, 58, 237, 0.45);
+    letter-spacing: 0.01em;
+}
+
+.create-button:hover {
+    opacity: 0.92;
+    transform: translateY(-1px);
+    box-shadow: 0 6px 24px rgba(124, 58, 237, 0.55);
+}
+
+.create-button:active {
+    transform: translateY(0);
+    opacity: 1;
+}
+
+.create-button:disabled {
+    opacity: 0.5;
+    cursor: not-allowed;
+    transform: none;
+}
+
+/* Mobile Optimizations */
+@media (max-width: 480px) {
+    .create-game-page {
+        padding: 16px 12px;
+        align-items: flex-start;
+    }
+
+    .create-game-card {
+        padding: 28px 18px;
+        gap: 20px;
+        border-radius: 20px;
+    }
+
+    .create-game-heading {
+        font-size: 22px;
+    }
+
+    .create-game-subtext {
+        font-size: 14px;
+    }
+
+    .step-text {
+        font-size: 13px;
+    }
+
+    .checkbox-label {
+        font-size: 14px;
+    }
+
+    .create-button {
+        padding: 16px;
+        font-size: 17px;
+    }
+}
+
+@media (max-width: 340px) {
+    .create-game-card {
+        padding: 20px 12px;
+    }
+}

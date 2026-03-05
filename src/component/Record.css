@@ -2,13 +2,13 @@
     height: 30px;
     width: 30px;
     border-radius: 15px;
-    background: #EB4D3F;
+    background: #f87171;
 }
 .stop {
     height: 24px;
     width: 24px;
     border-radius: 4px;
-    background: #EB4D3F;
+    background: #f87171;
 }
 .transition {
     transition: all 215ms ease;
@@ -17,18 +17,34 @@
     height: 60px;
     width: 60px;
     border-radius: 32px;
-    border: 1px solid #C4C4C4;
+    border: 1px solid rgba(255, 255, 255, 0.25);
+    background: rgba(255, 255, 255, 0.08);
     align-items: center;
     justify-content: center;
     display: flex;
     cursor: pointer;
+    transition: background 0.2s, border-color 0.2s;
+}
+
+.record-button:hover {
+    background: rgba(255, 255, 255, 0.15);
+    border-color: rgba(255, 255, 255, 0.4);
 }
 
 .button {
-    border: 1px solid black;
-    padding: 5px;
+    border: 1px solid rgba(255, 255, 255, 0.3);
+    background: rgba(255, 255, 255, 0.08);
+    color: #e2e8f0;
+    padding: 8px 16px;
     cursor: pointer;
+    border-radius: 8px;
+    transition: background 0.2s;
 }
+
+.button:hover {
+    background: rgba(255, 255, 255, 0.15);
+}
+
 .center {
     align-self: center;
 }
@@ -46,85 +62,145 @@ img {
 }
 
 .play {
-  width: 20px; 
-  height: 20px; 
+    height: 60px;
+    width: 60px;
+    border-radius: 50%;
+    border: 1px solid rgba(255, 255, 255, 0.25);
+    background: rgba(255, 255, 255, 0.08);
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    transition: background 0.2s, border-color 0.2s;
 }
 
+.play:hover {
+    background: rgba(255, 255, 255, 0.18);
+    border-color: rgba(255, 255, 255, 0.4);
+}
+
+/* Glass card for each game step */
 .step {
-    width: 50%;
-    border: 2px solid #C4C4C4;
-    background-color: #ffffff;
-    padding: 25px;
-    border-radius: 10px;
-    color: #414B58;
+    width: 420px;
+    max-width: calc(100vw - 40px);
+    background: rgba(255, 255, 255, 0.08);
+    backdrop-filter: blur(20px);
+    -webkit-backdrop-filter: blur(20px);
+    border: 1px solid rgba(255, 255, 255, 0.15);
+    padding: 32px 28px;
+    border-radius: 20px;
+    color: #e2e8f0;
     min-height: 300px;
-    box-shadow: 1px 3px #E5E5E5;
+    box-shadow: 0 8px 32px rgba(0, 0, 0, 0.3), inset 0 1px 0 rgba(255, 255, 255, 0.1);
     align-items: center;
     display: flex;
     flex-direction: column;
-    margin-bottom: 25px;
+    margin-bottom: 24px;
 }
-/*
-#waveform {
-    width: 500px;
-    height: 50px;
-}*/
+
+.step h3 {
+    color: #f1f5f9;
+    font-size: 18px;
+    font-weight: 600;
+}
+
+.step input[type="text"] {
+    width: 100%;
+    box-sizing: border-box;
+    padding: 12px 16px;
+    font-size: 15px;
+    background: rgba(255, 255, 255, 0.08);
+    border: 1px solid rgba(255, 255, 255, 0.2);
+    border-radius: 10px;
+    color: #e2e8f0;
+    outline: none;
+    transition: border-color 0.2s, background 0.2s;
+}
+
+.step input[type="text"]::placeholder {
+    color: rgba(226, 232, 240, 0.4);
+}
+
+.step input[type="text"]:focus {
+    border-color: rgba(167, 139, 250, 0.6);
+    background: rgba(255, 255, 255, 0.12);
+}
+
+.step input[type="submit"] {
+    margin-top: 16px;
+    padding: 12px 28px;
+    background: linear-gradient(135deg, #7c3aed, #a78bfa);
+    color: #fff;
+    font-weight: 700;
+    font-size: 15px;
+    border: none;
+    border-radius: 10px;
+    cursor: pointer;
+    transition: opacity 0.2s, transform 0.1s;
+    box-shadow: 0 4px 15px rgba(124, 58, 237, 0.4);
+}
+
+.step input[type="submit"]:hover {
+    opacity: 0.9;
+    transform: translateY(-1px);
+}
+
+.step input[type="submit"]:active {
+    transform: translateY(0);
+}
 
 .unplayed {
     width: 100%;
     height: 3px;
-    background-color: #DDE1E6;
+    background-color: rgba(255, 255, 255, 0.15);
     position: absolute;
     margin: auto;
     top: 0; left: 0; bottom: 0; right: 0;
-
+    border-radius: 2px;
 }
 
 .current {
-    height: 8px;
-    width: 8px;
+    height: 10px;
+    width: 10px;
     border-radius: 50%;
     position: absolute;
-    background-color: #8694A5;
+    background-color: #a78bfa;
+    box-shadow: 0 0 8px rgba(167, 139, 250, 0.6);
     left: 200px;
 }
 
 .player {
     width: 350px;
     position: relative;
-    height:8px;
+    height: 10px;
 }
 
 .played {
-    background: #8694A5;
+    background: linear-gradient(90deg, #7c3aed, #a78bfa);
     position: absolute;
-    /*width: 200px;*/
     height: 3px;
     margin-top: auto;
     margin-bottom: auto;
     top: 0; left: 0; bottom: 0; right: 0;
-}
-
-.play {
-    height: 60px;
-    width: 60px;
-    border-radius: 50%;
-    border: 1px solid #C4C4C4;
-    cursor: pointer;
-    display: flex;
-    align-items: center;
-  justify-content: center;
+    border-radius: 2px;
 }
 
 .secondary-player-button {
     height: 54px;
     width: 54px;
     border-radius: 50%;
-    border: 1px solid #C4C4C4;
+    border: 1px solid rgba(255, 255, 255, 0.25);
+    background: rgba(255, 255, 255, 0.08);
     cursor: pointer;
     display: flex;
     align-items: center;
     justify-content: center;
+    transition: background 0.2s, border-color 0.2s;
+}
+
+.secondary-player-button:hover {
+    background: rgba(255, 255, 255, 0.15);
+    border-color: rgba(255, 255, 255, 0.4);
 }
 
 .player-controls {
@@ -137,46 +213,69 @@ img {
 
 .duration {
     padding-bottom: 10px;
+    color: rgba(226, 232, 240, 0.6);
+    font-size: 13px;
 }
 
 .button-label {
-    font-size: 10px;
+    font-size: 11px;
     margin-top: auto;
     display: flex;
+    color: rgba(226, 232, 240, 0.6);
 }
 
 .button-and-label {
-    padding-right: 20px;
-        display: flex;
-    flex-direction: column;
-    align-items: center;
     display: flex;
     flex-direction: column;
     align-items: center;
     height: 80px;
-    flex:1;
+    flex: 1;
 }
 
 .small-record {
     height: 25px;
     width: 25px;
     border-radius: 50%;
-    background: #EB4D3F;
+    background: #f87171;
 }
 
 .subtext {
-    font-size: 15px;
-    margin-bottom: 25px;
+    font-size: 14px;
+    margin-bottom: 20px;
+    color: rgba(226, 232, 240, 0.65);
+    text-align: center;
+    line-height: 1.5;
 }
 
 h3 {
     margin-bottom: 10px;
 }
 
-::-moz-selection { background:transparent; }
-::selection { background:transparent; }
+::-moz-selection { background: transparent; }
+::selection { background: transparent; }
 
 .share {
     size: 50%;
     margin-top: 20px;
+}
+
+/* Share button */
+.share-button {
+    padding: 12px 32px;
+    background: linear-gradient(135deg, #7c3aed, #a78bfa);
+    color: #fff;
+    font-weight: 700;
+    font-size: 15px;
+    border: none;
+    border-radius: 10px;
+    cursor: pointer;
+    transition: opacity 0.2s, transform 0.1s;
+    box-shadow: 0 4px 15px rgba(124, 58, 237, 0.4);
+    margin-top: 12px;
+    display: inline-block;
+}
+
+.share-button:hover {
+    opacity: 0.9;
+    transform: translateY(-1px);
 }
