@@ -12,6 +12,17 @@ export class ApiError extends Error {
   }
 }
 
+// Errors come back as {"error": "..."} (current backend) or plain text (older one).
+function errorText(text) {
+  try {
+    const parsed = JSON.parse(text);
+    if (parsed && typeof parsed.error === 'string') return parsed.error;
+  } catch (e) {
+    // not JSON
+  }
+  return text;
+}
+
 async function request(path, options = {}) {
   let res;
   try {
@@ -21,7 +32,7 @@ async function request(path, options = {}) {
   }
   const text = await res.text();
   if (!res.ok) {
-    throw new ApiError(text || `Request failed (${res.status})`, res.status);
+    throw new ApiError(errorText(text) || `Request failed (${res.status})`, res.status);
   }
   try {
     return JSON.parse(text);

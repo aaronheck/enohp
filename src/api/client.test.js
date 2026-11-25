@@ -47,3 +47,10 @@ test('submitTurn uploads to the presigned URL', async () => {
     expect.objectContaining({ method: 'PUT', body: recording })
   );
 });
+
+test('JSON error bodies from the new backend become readable messages', async () => {
+  global.fetch = jest.fn(() => respond(400, { error: 'Turn key is not right.' }));
+  await expect(
+    submitTurn({ gameId: 'g', consistencyToken: 'x', nickname: 'n', guess: 'g', recording: {} })
+  ).rejects.toMatchObject({ status: 400, message: 'Turn key is not right.' });
+});

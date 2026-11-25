@@ -1,222 +1,66 @@
 'use strict';
+// Lambda entry point: real DynamoDB + S3 behind the handler in app.js.
+const { DynamoDBClient, GetItemCommand, PutItemCommand } = require('@aws-sdk/client-dynamodb');
+const { marshall, unmarshall } = require('@aws-sdk/util-dynamodb');
+const { S3Client, GetObjectCommand, PutObjectCommand, HeadObjectCommand } = require('@aws-sdk/client-s3');
+const { getSignedUrl } = require('@aws-sdk/s3-request-presigner');
+const { createHandler } = require('./app');
 
-var AWS = require('aws-sdk');
-const {
-  v4: uuidv4,
-} = require('uuid');
-AWS.config.update({
-  region: "us-east-1", // replace with your region in AWS account
-});
+const REGION = process.env.DATA_REGION || 'us-east-1';
+const TABLE = process.env.GAMES_TABLE || 'enohp-games';
+const BUCKET = process.env.RECORDING_BUCKET || 'enohp';
 
-const DynamoDB = new AWS.DynamoDB();
-const s3 = new AWS.S3({ apiVersion: '2006-03-01', region: 'us-east-1' });
+const db = new DynamoDBClient({ region: REGION });
+const s3 = new S3Client({ region: REGION });
 
-const headers = {
-  'Content-Type': 'application/json',
-  'Access-Control-Allow-Origin': '*',
-  'Access-Control-Allow-Methods': 'POST, GET, OPTIONS',
-  'Access-Control-Allow-Headers': 'Content-Type'
-};
+async function getGame(id) {
+  const res = await db.send(new GetItemCommand({ TableName: TABLE, Key: { id: { S: id } }, ConsistentRead: true }));
+  return res.Item ? unmarshall(res.Item) : null;
+}
 
-const RECORDING_BUCKET = 'enohp';
-const SIGNED_URL_EXPIRY_SECONDS = 60 * 5
-
-
-async function handleRecording(event, context) {
-  if (event.httpMethod == "GET") {
-    if (!event["queryStringParameters"] || !event["queryStringParameters"]["id"]) {
-      context.succeed({ statusCode: 400, body: "Unsupported type", headers });
-      return true;
-    }
-
-    let id = event["queryStringParameters"]["id"];
-    const url = s3.getSignedUrl('getObject', {
-      Bucket: RECORDING_BUCKET,
-      Key: id,
-      Expires: SIGNED_URL_EXPIRY_SECONDS
-    });
-    context.succeed({ statusCode: 200, body: JSON.stringify({ url: url }), headers });
+// expectedTurns: null = must be a brand-new game; n = only save if the stored game
+// still has exactly n turns (so two simultaneous turns can't overwrite each other).
+async function putGame(game, { expectedTurns }) {
+  const params = { TableName: TABLE, Item: marshall(game, { removeUndefinedValues: true }) };
+  if (expectedTurns == null) {
+    params.ConditionExpression = 'attribute_not_exists(id)';
+  } else if (expectedTurns === 0) {
+    params.ConditionExpression = 'attribute_not_exists(turns) OR size(turns) = :n';
+    params.ExpressionAttributeValues = { ':n': { N: '0' } };
+  } else {
+    params.ConditionExpression = 'size(turns) = :n';
+    params.ExpressionAttributeValues = { ':n': { N: String(expectedTurns) } };
+  }
+  try {
+    await db.send(new PutItemCommand(params));
     return true;
-  }
-
-  // this should use file hash: 
-  // https://insecurity.blog/2021/03/06/securing-amazon-s3-presigned-urls/#:~:text=S3%20has%20a%20cap%20of,bit%20more%20than%20you%20expect.
-  if (event.httpMethod == 'POST') {
-    let body = JSON.parse(event.body);
-    // this is the game id.
-    if (!body.id) {
-      context.succeed({ statusCode: 400, body: "Missing gameid.", headers });
-      return;
-    }
-
-    const gameId = body.id;
-    const consistencyToken = body.consistencyToken;
-
-    let game = await getGame(gameId, false);
-    if (!game) {
-      context.succeed({ statusCode: 404, body: "Game not found", headers });
-      return;
-    }
-
-    if (game.turns && game.turns.length > 0
-      && game.turns[game.turns.length - 1].recording !== consistencyToken + ".wav") {
-      context.succeed({ statusCode: 400, body: "Turn key is not right.", headers });
-      return;
-    }
-
-    const recordingId = uuidv4();
-    const recordingFileName = recordingId + '.wav';
-    const url = s3.getSignedUrl('putObject', {
-      Bucket: RECORDING_BUCKET,
-      Key: recordingFileName,
-      ContentType: "audio/wav",
-      Expires: SIGNED_URL_EXPIRY_SECONDS
-    });
-    console.log("brosenheck: game")
-    console.log(game);
-    game.turns = game.turns || [];
-    // we should have an idea for a turn so that it does not look like a turn can be played twice.
-    game.turns.push(
-      {
-        "guess": body.guess || "Meatball",
-        // s3 key
-        "recording": recordingFileName,
-        // nickname of player from cookies.
-        "nickname": body.nickname || "aaron"
-      }
-    );
-
-    if (!await saveGame(gameId, game)) {
-      context.succeed({ statusCode: 500, body: "Could not save game.", headers });
-      return;
-    }
-
-
-
-    context.succeed({ statusCode: 200, body: JSON.stringify({ url: url, key: recordingId }), headers });
-    return;
-  }
-
-  context.succeed({ statusCode: 400, body: "Unsupported type", headers });
-  return false;
-}
-
-
-async function saveGame(gameId, game) {
-
-  console.log("Game id: " + gameId);
-  const params = {
-    TableName: "enohp-games",
-    Item: AWS.DynamoDB.Converter.marshall(game),
-  };
-  try {
-    await DynamoDB.putItem(params).promise();
   } catch (e) {
-    console.log("cannot save game");
-    console.log(e);
-    return false;
+    if (e.name === 'ConditionalCheckFailedException') return false;
+    throw e;
   }
-  return true;
-}
-async function createGame() {
-  let gameId = uuidv4();
-  let game = {
-    id: gameId
-  };
-  if (await saveGame(gameId, game)) {
-    return gameId;
-  }
-  return null;
 }
 
-async function getGame(id, getSignedUrl = false) {
-  console.log("Getting game");
-  var params = {
-    Key: {
-      "id": {
-        S: id
-      }
-    },
-    TableName: "enohp-games"
-  };
-
-  console.log(params);
-
+async function recordingExists(key) {
+  if (!key) return false;
   try {
-    let item = await DynamoDB.getItem(params).promise();
-    console.log(item);
-    let game = AWS.DynamoDB.Converter.unmarshall(item.Item);
-    console.log(game);
-    if (game.turns && getSignedUrl) {
-      game.turns.forEach(turn => {
-        console.log(turn.recording);
-        // might not want to actually sign all turns if not needed. 
-        const url = s3.getSignedUrl('getObject', {
-          Bucket: RECORDING_BUCKET,
-          Key: turn.recording,
-          Expires: SIGNED_URL_EXPIRY_SECONDS
-        });
-        turn.signedGet = url;
-        turn.consistencyToken = turn.recording.split(".wav")[0]
-      });
-    }
-    return game;
+    await s3.send(new HeadObjectCommand({ Bucket: BUCKET, Key: key }));
+    return true;
   } catch (e) {
-    console.log("cannot get game");
-    console.log(e);
-    return null;
+    const status = e.$metadata && e.$metadata.httpStatusCode;
+    if (status === 404 || e.name === 'NotFound') return false;
+    // 403 can mean "missing" (when the role can't list the bucket) or "no access".
+    // Assume the recording exists rather than risk dropping a real turn.
+    if (status === 403) return true;
+    throw e;
   }
 }
 
-async function handleGame(event, context) {
+const signGet = (key, seconds) =>
+  getSignedUrl(s3, new GetObjectCommand({ Bucket: BUCKET, Key: key }), { expiresIn: seconds });
 
-  // creates game.
-  if (event.httpMethod == 'POST') {
-    let res = {};
-    let id = await createGame();
-    if (id === null) {
-      context.succeed({ statusCode: 500, body: JSON.stringify(res), headers });
-      return;
-    }
-    res.id = id;
-    context.succeed({ statusCode: 200, body: JSON.stringify(res), headers });
-    return;
-  }
+const signPut = (key, contentType, seconds) =>
+  getSignedUrl(s3, new PutObjectCommand({ Bucket: BUCKET, Key: key, ContentType: contentType }), {
+    expiresIn: seconds,
+  });
 
-  // gets game.
-  if (event.httpMethod == 'GET') {
-    console.log("GET!!!");
-    if (!event["queryStringParameters"] || !event["queryStringParameters"]["id"]) {
-      context.succeed({ statusCode: 404, body: "Game not found", headers });
-      return;
-    }
-
-    let res = {};
-    let game = await getGame(event["queryStringParameters"]["id"], true);
-    if (!game) {
-      context.succeed({ statusCode: 404, body: "Game not found", headers });
-      return;
-    }
-    res.game = game;
-    context.succeed({ statusCode: 200, body: JSON.stringify(res), headers });
-    return;
-  }
-
-  context.succeed({ statusCode: 400, body: "Unsupported type", headers });
-  return false;
-}
-
-exports.handler = async function handler(event, context) {
-  console.log(event);
-  if (event.path === "/recording") {
-    await handleRecording(event, context);
-    return;
-  }
-
-  if (event.path === "/game") {
-    await handleGame(event, context);
-    return;
-  }
-
-  context.succeed({ statusCode: 404, body: "Unsupported path!", headers });
-};
+exports.handler = createHandler({ getGame, putGame, recordingExists, signGet, signPut });

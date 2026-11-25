@@ -1,0 +1,184 @@
+'use strict';
+// Yelnats backend: request handling, independent of AWS clients so it can be tested
+// with fakes (see app.test.js). index.js wires in the real DynamoDB/S3 clients.
+//
+// API (unchanged from the original Lambda, so old and new frontends both work):
+//   POST /game                      -> { id }
+//   GET  /game?id=                  -> { game: { id, turns: [{ guess, nickname, recording,
+//                                        signedGet, consistencyToken }] } }
+//   POST /recording { id, consistencyToken, guess, nickname }
+//                                   -> { url (presigned PUT for audio/wav), key }
+//   GET  /recording?id=<key>.wav    -> { url }
+
+const crypto = require('crypto');
+
+const HEADERS = {
+  'Content-Type': 'application/json',
+  'Access-Control-Allow-Origin': '*',
+  'Access-Control-Allow-Methods': 'POST, GET, OPTIONS',
+  'Access-Control-Allow-Headers': 'Content-Type',
+};
+
+const SIGNED_URL_SECONDS = 5 * 60;
+// A turn whose recording never arrived is treated as abandoned after this long,
+// so the chain can continue from the turn before it.
+const ABANDONED_AFTER_MS = 10 * 60 * 1000;
+const MAX_GUESS = 60;
+const MAX_NICKNAME = 24;
+const MAX_TURNS = 50;
+const MAX_BODY = 8 * 1024;
+
+const ID_RE = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
+const KEY_RE = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}\.wav$/i;
+
+const respond = (statusCode, body) => ({ statusCode, headers: HEADERS, body: JSON.stringify(body) });
+const fail = (statusCode, error) => respond(statusCode, { error });
+
+class HttpError extends Error {
+  constructor(status, message) {
+    super(message);
+    this.status = status;
+  }
+}
+
+function parseBody(event) {
+  const raw = event.body == null ? '' : String(event.body);
+  if (raw.length > MAX_BODY) throw new HttpError(413, 'Request too large');
+  if (!raw.trim()) return {};
+  const text = event.isBase64Encoded ? Buffer.from(raw, 'base64').toString('utf8') : raw;
+  let body;
+  try {
+    body = JSON.parse(text);
+  } catch (e) {
+    throw new HttpError(400, 'Invalid JSON');
+  }
+  if (!body || typeof body !== 'object' || Array.isArray(body)) throw new HttpError(400, 'Invalid JSON');
+  return body;
+}
+
+function cleanText(value, max) {
+  if (typeof value !== 'string') return '';
+  // Collapse whitespace and strip control characters.
+  return value.replace(/[\u0000-\u001f\u007f]/g, ' ').replace(/\s+/g, ' ').trim().slice(0, max);
+}
+
+/**
+ * deps: {
+ *   getGame(id) -> game | null
+ *   putGame(game, { expectedTurns }) -> true, or false if the turn count changed (lost a race)
+ *   recordingExists(key) -> boolean
+ *   signGet(key, seconds) -> url
+ *   signPut(key, contentType, seconds) -> url
+ *   now() -> ms, newId() -> uuid
+ * }
+ */
+function createHandler(deps) {
+  const now = deps.now || (() => Date.now());
+  const newId = deps.newId || (() => crypto.randomUUID());
+
+  // The turns that count. The last turn is dropped if its recording never arrived
+  // and it's been long enough that the upload clearly failed.
+  async function liveTurns(game) {
+    const turns = Array.isArray(game.turns) ? game.turns : [];
+    if (!turns.length) return turns;
+    const last = turns[turns.length - 1];
+    if (last.uploaded) return turns;
+    const recent = typeof last.createdAt === 'number' && now() - last.createdAt < ABANDONED_AFTER_MS;
+    if (recent) return turns;
+    if (await deps.recordingExists(last.recording)) return turns;
+    return turns.slice(0, -1);
+  }
+
+  async function createGame(event) {
+    const body = parseBody(event);
+    const game = { id: newId(), createdAt: now(), turns: [] };
+    // The old create screen sent a turn count; keep it for when games can end.
+    const requested = Number(body.turns);
+    if (Number.isInteger(requested) && requested >= 2 && requested <= MAX_TURNS) {
+      game.settings = { turns: requested };
+    }
+    const ok = await deps.putGame(game, { expectedTurns: null });
+    if (!ok) throw new HttpError(500, 'Could not create game');
+    return respond(200, { id: game.id });
+  }
+
+  async function readGame(event) {
+    const id = (event.queryStringParameters || {}).id;
+    if (!id || !ID_RE.test(id)) return fail(404, 'Game not found');
+    const game = await deps.getGame(id);
+    if (!game) return fail(404, 'Game not found');
+    const turns = await liveTurns(game);
+    const out = await Promise.all(
+      turns.map(async (t) => ({
+        guess: t.guess,
+        nickname: t.nickname,
+        recording: t.recording,
+        signedGet: await deps.signGet(t.recording, SIGNED_URL_SECONDS),
+        consistencyToken: String(t.recording || '').replace(/\.wav$/, ''),
+      }))
+    );
+    const result = { id: game.id, turns: out };
+    if (game.settings) result.settings = game.settings;
+    return respond(200, { game: result });
+  }
+
+  async function startTurn(event) {
+    const body = parseBody(event);
+    if (typeof body.id !== 'string' || !ID_RE.test(body.id)) return fail(404, 'Game not found');
+    const guess = cleanText(body.guess, MAX_GUESS);
+    if (!guess) return fail(400, 'Missing guess.');
+    const nickname = cleanText(body.nickname, MAX_NICKNAME) || 'Someone';
+
+    const game = await deps.getGame(body.id);
+    if (!game) return fail(404, 'Game not found');
+    const storedCount = Array.isArray(game.turns) ? game.turns.length : 0;
+    const turns = await liveTurns(game);
+    if (turns.length >= MAX_TURNS) return fail(400, 'Game is full.');
+
+    const last = turns[turns.length - 1];
+    if (last && last.recording !== `${body.consistencyToken}.wav`) {
+      // Someone already played after the turn this player heard.
+      return fail(400, 'Turn key is not right.');
+    }
+
+    // Mark the turn we're building on as delivered (its recording was heard).
+    const kept = turns.map((t, i) => (i === turns.length - 1 && !t.uploaded ? { ...t, uploaded: true } : t));
+    const key = `${newId()}.wav`;
+    const updated = {
+      ...game,
+      turns: [...kept, { guess, nickname, recording: key, createdAt: now(), uploaded: false }],
+    };
+    // Only save if nobody else changed the game since we read it.
+    const saved = await deps.putGame(updated, { expectedTurns: storedCount });
+    if (!saved) return fail(400, 'Turn key is not right.');
+
+    const url = await deps.signPut(key, 'audio/wav', SIGNED_URL_SECONDS);
+    return respond(200, { url, key: key.replace(/\.wav$/, '') });
+  }
+
+  async function readRecording(event) {
+    const key = (event.queryStringParameters || {}).id;
+    if (!key || !KEY_RE.test(key)) return fail(404, 'Recording not found');
+    return respond(200, { url: await deps.signGet(key, SIGNED_URL_SECONDS) });
+  }
+
+  return async function handler(event) {
+    const method = event.httpMethod;
+    const path = event.path;
+    try {
+      if (method === 'OPTIONS') return { statusCode: 204, headers: HEADERS, body: '' };
+      if (path === '/game' && method === 'POST') return await createGame(event);
+      if (path === '/game' && method === 'GET') return await readGame(event);
+      if (path === '/recording' && method === 'POST') return await startTurn(event);
+      if (path === '/recording' && method === 'GET') return await readRecording(event);
+      if (path === '/game' || path === '/recording') return fail(405, 'Unsupported method');
+      return fail(404, 'Unsupported path!');
+    } catch (e) {
+      if (e instanceof HttpError) return fail(e.status, e.message);
+      console.error('Unhandled error', { method, path, error: e && e.message });
+      return fail(500, 'Something went wrong');
+    }
+  };
+}
+
+module.exports = { createHandler, ABANDONED_AFTER_MS, MAX_TURNS };
