@@ -1,0 +1,118 @@
+<!doctype html>
+<html><head><meta charset="utf-8">
+<link href="https://fonts.googleapis.com/css2?family=Archivo+Black&family=IBM+Plex+Mono:wght@400;500;700&display=swap" rel="stylesheet">
+<style>
+:root{--paper:#efe6d2;--paper2:#e4d8bd;--ink:#1d1a16;--signal:#ff5a1f;--tape:#5a3b28;--mute:#7a6f5e}
+*{box-sizing:border-box;margin:0;padding:0}
+body{background:#2a2622;font-family:'IBM Plex Mono',monospace;color:var(--ink);padding:40px}
+.label{color:#efe6d2;font:700 13px 'IBM Plex Mono';letter-spacing:.2em;text-transform:uppercase;margin-bottom:24px}
+.label b{color:var(--signal)}
+.grid{display:grid;grid-template-columns:repeat(4,390px);gap:28px}
+.phone{width:390px;height:844px;background:var(--paper);border-radius:44px;overflow:hidden;position:relative;padding:58px 24px 28px;
+ background-image:radial-gradient(rgba(0,0,0,.05) 1px,transparent 1px);background-size:4px 4px}
+.top{display:flex;justify-content:space-between;font-size:12px;font-weight:500;letter-spacing:.12em;text-transform:uppercase;color:var(--mute)}
+h1{font-family:'Archivo Black';font-size:76px;line-height:.85;letter-spacing:-.03em}
+.mirror{display:inline-block;transform:scaleX(-1);color:var(--signal)}
+.deck{background:var(--ink);border-radius:18px;padding:18px;margin:22px 0;position:relative}
+.deck .win{background:var(--paper2);border-radius:10px;height:118px;display:flex;align-items:center;justify-content:space-around;position:relative;overflow:hidden}
+.deck .win:before{content:"";position:absolute;left:70px;right:70px;top:50%;height:22px;margin-top:-11px;background:var(--tape)}
+.reel{width:92px;height:92px;position:relative;z-index:1}
+.deck .meta{display:flex;justify-content:space-between;color:#efe6d2;font-size:11px;letter-spacing:.14em;margin-top:12px;text-transform:uppercase}
+.deck .meta b{color:var(--signal)}
+.btn{display:flex;justify-content:space-between;align-items:center;width:100%;border:2.5px solid var(--ink);border-radius:14px;padding:18px 20px;font:700 17px 'IBM Plex Mono';background:var(--paper);margin-top:12px;box-shadow:4px 4px 0 var(--ink)}
+.btn.hot{background:var(--signal);color:var(--ink)}
+.small{font-size:13px;color:var(--mute);line-height:1.5}
+.keys{display:grid;grid-template-columns:repeat(4,1fr);gap:8px;margin-top:6px}
+.key{background:#d8ccb0;border:2.5px solid var(--ink);border-radius:10px;height:62px;display:flex;align-items:center;justify-content:center;box-shadow:0 5px 0 var(--ink);font-size:20px}
+.key.down{transform:translateY(4px);box-shadow:0 1px 0 var(--ink);background:var(--signal)}
+.key small{font-size:9px;letter-spacing:.1em;display:block;text-align:center}
+.field{border-bottom:3px solid var(--ink);font:700 30px 'Archivo Black';padding:10px 0;margin-top:8px;color:var(--ink)}
+.field .caret{display:inline-block;width:3px;height:30px;background:var(--signal);vertical-align:middle;margin-left:3px}
+.tag{display:inline-block;background:var(--ink);color:var(--paper);font-size:11px;letter-spacing:.14em;padding:5px 9px;border-radius:6px;text-transform:uppercase}
+.steps{display:flex;gap:6px;margin:16px 0 4px}
+.steps div{flex:1;border:2px solid var(--ink);border-radius:8px;padding:8px 6px;font-size:10.5px;letter-spacing:.06em;text-transform:uppercase;text-align:center}
+.steps .on{background:var(--ink);color:var(--paper)}
+.steps .done{background:var(--paper2);text-decoration:line-through;color:var(--mute)}
+.vu{background:var(--ink);border-radius:14px;padding:16px;margin:18px 0;display:flex;align-items:flex-end;gap:3px;height:110px}
+.vu i{flex:1;background:var(--signal);border-radius:2px}
+.rec{width:128px;height:128px;border-radius:50%;background:var(--signal);border:4px solid var(--ink);margin:14px auto 0;box-shadow:0 7px 0 var(--ink);display:flex;align-items:center;justify-content:center}
+.rec span{width:40px;height:40px;background:var(--ink);border-radius:8px}
+.big{font-family:'Archivo Black';font-size:44px;line-height:1;margin-top:10px}
+.hint{font-size:14px;margin-top:6px}
+.hint b{color:var(--signal)}
+.track{display:flex;align-items:center;gap:12px;border-top:2px dashed #b9ab8d;padding:14px 0}
+.track .n{font-size:11px;color:var(--mute);width:22px}
+.track .w{font-family:'Archivo Black';font-size:26px;flex:1;line-height:1}
+.track .who{font-size:11px;color:var(--mute);letter-spacing:.08em;text-transform:uppercase;display:block;font-family:'IBM Plex Mono';margin-top:4px}
+.track .p{width:38px;height:38px;border-radius:50%;border:2.5px solid var(--ink);display:flex;align-items:center;justify-content:center;font-size:12px}
+.track.first .w{color:var(--signal)}
+.strike{background:linear-gradient(transparent 55%,rgba(255,90,31,.35) 55%)}
+</style></head><body>
+<div class="label">Direction A — <b>Tape Deck</b> · warm paper, chunky hardware buttons, reels that spin in reverse</div>
+<div class="grid">
+
+<!-- HOME -->
+<div class="phone">
+  <div class="top"><span>side B</span><span>◀◀ rewind</span></div>
+  <h1 style="margin-top:34px">YEL<br>NATS<span class="mirror">.</span></h1>
+  <p class="small" style="margin-top:14px">Telephone, but every message is said <b style="color:var(--ink)">backwards</b> — and played back <span class="mirror" style="font-weight:700">sdrawrof</span> for the next person.</p>
+  <div class="deck">
+    <div class="win"><svg class="reel" viewBox="0 0 100 100"><circle cx="50" cy="50" r="46" fill="#5a3b28"/><circle cx="50" cy="50" r="30" fill="#efe6d2"/><g fill="#1d1a16"><circle cx="50" cy="50" r="7"/><rect x="47" y="22" width="6" height="18" rx="2"/><rect x="47" y="22" width="6" height="18" rx="2" transform="rotate(120 50 50)"/><rect x="47" y="22" width="6" height="18" rx="2" transform="rotate(240 50 50)"/></g></svg>
+    <svg class="reel" viewBox="0 0 100 100"><circle cx="50" cy="50" r="34" fill="#5a3b28"/><circle cx="50" cy="50" r="30" fill="#efe6d2"/><g fill="#1d1a16"><circle cx="50" cy="50" r="7"/><rect x="47" y="22" width="6" height="18" rx="2" transform="rotate(40 50 50)"/><rect x="47" y="22" width="6" height="18" rx="2" transform="rotate(160 50 50)"/><rect x="47" y="22" width="6" height="18" rx="2" transform="rotate(280 50 50)"/></g></svg></div>
+    <div class="meta"><span>C-60 · chain tape</span><b>● ready</b></div>
+  </div>
+  <div class="btn hot">Start a chain <span>●</span></div>
+  <div class="btn">Try a practice tape <span>▶</span></div>
+  <div class="btn">My tapes <span>3</span></div>
+</div>
+
+<!-- LISTEN + GUESS -->
+<div class="phone">
+  <div class="top"><span>tape 3 / 6</span><span>from maya</span></div>
+  <div style="margin-top:22px"><span class="tag">Your turn</span></div>
+  <div class="big" style="font-size:38px">What did<br>Maya say?</div>
+  <div class="deck" style="margin-top:18px">
+    <div class="win"><svg class="reel" viewBox="0 0 100 100"><circle cx="50" cy="50" r="40" fill="#5a3b28"/><circle cx="50" cy="50" r="30" fill="#efe6d2"/><g fill="#1d1a16"><circle cx="50" cy="50" r="7"/><rect x="47" y="22" width="6" height="18" rx="2" transform="rotate(20 50 50)"/><rect x="47" y="22" width="6" height="18" rx="2" transform="rotate(140 50 50)"/><rect x="47" y="22" width="6" height="18" rx="2" transform="rotate(260 50 50)"/></g></svg>
+    <svg class="reel" viewBox="0 0 100 100"><circle cx="50" cy="50" r="40" fill="#5a3b28"/><circle cx="50" cy="50" r="30" fill="#efe6d2"/><g fill="#1d1a16"><circle cx="50" cy="50" r="7"/><rect x="47" y="22" width="6" height="18" rx="2" transform="rotate(70 50 50)"/><rect x="47" y="22" width="6" height="18" rx="2" transform="rotate(190 50 50)"/><rect x="47" y="22" width="6" height="18" rx="2" transform="rotate(310 50 50)"/></g></svg></div>
+    <div class="meta"><span>00:02.4 / 00:03.1</span><b>◀ rewound</b></div>
+  </div>
+  <div class="keys">
+    <div class="key">◀◀</div><div class="key down">▶</div><div class="key"><div><small>slow</small>½×</div></div><div class="key">■</div>
+  </div>
+  <div class="small" style="margin-top:22px;text-transform:uppercase;letter-spacing:.12em;font-size:11px">Your guess</div>
+  <div class="field">pickle jar<span class="caret"></span></div>
+  <div class="btn hot" style="margin-top:20px">Lock it in <span>→</span></div>
+</div>
+
+<!-- RECORD -->
+<div class="phone">
+  <div class="top"><span>tape 3 / 6</span><span>recording</span></div>
+  <div class="steps"><div class="done">1 say it</div><div class="done">2 hear it flipped</div><div class="on">3 copy that</div></div>
+  <div class="big">pickle jar</div>
+  <div class="hint">Now say what you heard in step 2 — <b>raj elkcip</b>-ish.</div>
+  <div class="vu" id="vu"></div>
+  <div class="keys">
+    <div class="key"><div><small>flipped</small>▶</div></div><div class="key"><div><small>mine</small>▶</div></div><div class="key"><div><small>redo</small>↺</div></div><div class="key"><div><small>hear as</small>next</div></div>
+  </div>
+  <div class="rec"><span></span></div>
+  <p class="small" style="text-align:center;margin-top:16px">Recording · 00:01.8 · tap to stop</p>
+</div>
+
+<!-- RECAP -->
+<div class="phone">
+  <div class="top"><span>tape complete</span><span>6 players</span></div>
+  <div class="big" style="font-size:40px;margin-top:20px">How it<br>drifted</div>
+  <p class="small" style="margin:8px 0 12px">Side A → Side B. Tap any track to hear it.</p>
+  <div class="track first"><span class="n">01</span><span class="w">pickle jar<span class="who">aaron · the original</span></span><span class="p">▶</span></div>
+  <div class="track"><span class="n">02</span><span class="w">pickle jar<span class="who">maya · nailed it</span></span><span class="p">▶</span></div>
+  <div class="track"><span class="n">03</span><span class="w">tickle car<span class="who">jo</span></span><span class="p">▶</span></div>
+  <div class="track"><span class="n">04</span><span class="w">nickel bar<span class="who">dev</span></span><span class="p">▶</span></div>
+  <div class="track"><span class="n">05</span><span class="w">nicholas cage<span class="who">sam</span></span><span class="p">▶</span></div>
+  <div class="track"><span class="n">06</span><span class="w"><span class="strike">nick's cage</span><span class="who">allison · final answer</span></span><span class="p">▶</span></div>
+  <div class="btn hot" style="margin-top:8px">Play the whole tape <span>▶</span></div>
+</div>
+</div>
+<script>
+const v=document.getElementById('vu');for(let i=0;i<42;i++){const h=12+Math.abs(Math.sin(i*.55)*60+Math.sin(i*1.7)*22)+(i>30?-30:0);const e=document.createElement('i');e.style.height=Math.max(6,h)+'%';if(i>32)e.style.opacity=.25;v.appendChild(e)}
+</script>
+</body></html>

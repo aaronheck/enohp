@@ -1,0 +1,10 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 320 200" font-family="'Bricolage Grotesque', system-ui, sans-serif" aria-hidden="true">
+<g transform="translate(-20 0)"><g transform="translate(92 186) scale(0.78 0.78)"><ellipse cx="0.0" cy="1" rx="45.88" ry="7" fill="#0a2a20"/>
+<g transform="rotate(0 0 0)">
+<rect x="-37.0" y="-110" width="74" height="110" rx="37.0" fill="#8fd3ff"/>
+<circle cx="25" cy="-63" r="6" fill="#ffb3c7" opacity=".55"/>
+<circle cx="-3" cy="-76" r="4.5" fill="#14241d"/><circle cx="15" cy="-76" r="4.5" fill="#14241d"/>
+<ellipse cx="8" cy="-57" rx="7" ry="8" fill="#14241d"/>
+<ellipse cx="8" cy="-53" rx="4.5" ry="3" fill="#ffb3c7"/>
+</g></g><path d="M154,54.1 L130,92 L154,79.4 Z" fill="#fff4dc"/><rect x="146.0" y="42.0" width="150.0" height="46" rx="23.0" fill="#cdbf9f"/><rect x="146.0" y="38.0" width="150.0" height="46" rx="23.0" fill="#fff4dc"/><text x="221.0" y="68.5" text-anchor="middle" font-size="22" font-weight="800" fill="#14241d" letter-spacing="-0.3" >tickle car</text><circle cx="200" cy="150" r="27" fill="#0a2a20"/><circle cx="200" cy="147" r="27" fill="#fff4dc"/><circle cx="200" cy="147" r="20" fill="#ff5b3a"/><circle cx="200" cy="147" r="35" fill="none" stroke="#ff5b3a" stroke-width="3" opacity=".45"/></g>
+</svg>

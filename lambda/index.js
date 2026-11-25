@@ -59,7 +59,7 @@ async function handleRecording(event, context) {
     }
 
     if (game.turns && game.turns.length > 0
-      && game.turns[game.turns.length - 1].recordingKey !== consistencyToken + ".wav") {
+      && game.turns[game.turns.length - 1].recording !== consistencyToken + ".wav") {
       context.succeed({ statusCode: 400, body: "Turn key is not right.", headers });
       return;
     }

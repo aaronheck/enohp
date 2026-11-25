@@ -1,0 +1,106 @@
+<!doctype html>
+<html><head><meta charset="utf-8">
+<link href="https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:opsz,wght@12..96,500;12..96,700;12..96,800&display=swap" rel="stylesheet">
+<style>
+:root{--bg:#0f3a2d;--bg2:#15493a;--butter:#ffd84d;--tomato:#ff5b3a;--cream:#fff4dc;--sky:#8fd3ff;--lilac:#c9a7ff}
+*{box-sizing:border-box;margin:0;padding:0}
+body{background:#0a2219;font-family:'Bricolage Grotesque',sans-serif;color:var(--cream);padding:40px}
+.label{font:700 13px 'Bricolage Grotesque';letter-spacing:.2em;text-transform:uppercase;margin-bottom:24px}
+.label b{color:var(--butter)}
+.grid{display:grid;grid-template-columns:repeat(4,390px);gap:28px}
+.phone{width:390px;height:844px;background:var(--bg);border-radius:44px;overflow:hidden;position:relative;padding:58px 24px 28px}
+.top{display:flex;justify-content:space-between;font-size:13px;font-weight:700;opacity:.7}
+h1{font-weight:800;font-size:64px;line-height:.9;letter-spacing:-.035em}
+.av{width:54px;height:54px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-weight:800;font-size:20px;color:#14241d;flex:none;border:3px solid var(--bg)}
+.btn{display:flex;align-items:center;justify-content:center;gap:10px;border-radius:20px;padding:20px;font-weight:800;font-size:19px;margin-top:12px}
+.btn.y{background:var(--butter);color:#14241d}
+.btn.ghost{background:var(--bg2);color:var(--cream)}
+.card{background:var(--cream);color:#14241d;border-radius:26px;padding:20px;position:relative}
+.wire{position:absolute;pointer-events:none}
+.can{width:100px;height:74px;background:var(--tomato);border-radius:14px 14px 30px 30px;position:relative;box-shadow:inset 0 -10px 0 rgba(0,0,0,.15)}
+.can:before{content:"";position:absolute;left:8px;right:8px;top:-7px;height:14px;border-radius:50%;background:#ff8a70}
+.wave{display:flex;align-items:center;gap:4px;height:70px}
+.wave i{flex:1;border-radius:4px;background:#14241d}
+.chip{display:inline-flex;gap:6px;align-items:center;background:var(--bg2);border-radius:999px;padding:8px 14px;font-weight:700;font-size:14px}
+.input{background:var(--bg2);border-radius:20px;padding:18px 20px;font-size:28px;font-weight:700;border:2px solid var(--butter)}
+.node{display:flex;gap:14px;align-items:center;position:relative;z-index:1;margin-bottom:16px}
+.node .bubble{background:var(--cream);color:#14241d;border-radius:18px;padding:10px 14px;font-weight:800;font-size:20px;line-height:1.1}
+.node .bubble small{display:block;font-weight:500;font-size:12px;opacity:.6}
+</style></head><body>
+<div class="label">Direction C — <b>Party Line</b> · tin-can telephone, the chain is a real string connecting everyone</div>
+<div class="grid">
+
+<!-- HOME -->
+<div class="phone">
+  <svg class="wire" width="390" height="844" style="left:0;top:0"><path d="M290 395 C 380 470, 60 440, 120 540 S 330 600, 270 670" stroke="#fff4dc" stroke-width="3" fill="none" stroke-dasharray="1 0" opacity=".85"/></svg>
+  <div class="top"><span>yelnats</span><span>☾</span></div>
+  <div style="display:flex;justify-content:space-between;align-items:flex-end;margin-top:30px">
+    <h1 style="font-size:60px">Say it<br><span style="color:var(--butter)">backwards.</span></h1>
+  </div>
+  <div class="can" style="position:absolute;right:50px;top:350px;transform:rotate(18deg)"></div>
+  <div class="can" style="position:absolute;left:66px;top:510px;transform:rotate(-14deg);background:var(--sky)"></div>
+  <div class="can" style="position:absolute;right:80px;top:630px;transform:rotate(8deg);background:var(--butter)"></div>
+  <p style="font-size:17px;line-height:1.4;max-width:300px;margin-top:18px;font-weight:500;opacity:.9;position:relative">We rewind it. They guess. Then they say <b style="color:var(--butter)">their</b> guess backwards.</p>
+  <div style="position:absolute;left:24px;right:24px;bottom:30px">
+    <div class="btn y">Start a chain</div>
+    <div style="display:flex;gap:10px"><div class="btn ghost" style="flex:1">How to play</div><div class="btn ghost" style="flex:1">My chains · 3</div></div>
+  </div>
+</div>
+
+<!-- LISTEN -->
+<div class="phone">
+  <div class="top"><span>3 of 6</span><span>3 left after you</span></div>
+  <div style="display:flex;align-items:center;margin-top:24px">
+    <div class="av" style="background:var(--sky)">A</div><div class="av" style="background:var(--lilac);margin-left:-12px">M</div><div class="av" style="background:var(--butter);margin-left:-12px;border-color:var(--butter);box-shadow:0 0 0 3px var(--bg)">You</div>
+    <div class="av" style="background:var(--bg2);color:var(--cream);margin-left:-12px;opacity:.5">?</div><div class="av" style="background:var(--bg2);color:var(--cream);margin-left:-12px;opacity:.4">?</div><div class="av" style="background:var(--bg2);color:var(--cream);margin-left:-12px;opacity:.3">?</div>
+  </div>
+  <h1 style="font-size:46px;margin-top:22px">Maya's on<br>the line.</h1>
+  <div class="card" style="margin-top:22px;transform:rotate(-1.5deg)">
+    <div style="display:flex;align-items:center;gap:14px">
+      <div style="width:64px;height:64px;border-radius:50%;background:var(--tomato);display:flex;align-items:center;justify-content:center;font-size:24px;color:var(--cream);flex:none">▶</div>
+      <div class="wave" id="w1" style="flex:1"></div>
+    </div>
+    <div style="display:flex;justify-content:space-between;font-weight:700;font-size:13px;margin-top:10px;opacity:.6"><span>0:03 · rewound for you</span><span>½× slow</span></div>
+  </div>
+  <div style="font-weight:700;margin:28px 0 10px">What did she say?</div>
+  <div class="input">pickle jar<span style="color:var(--butter)">|</span></div>
+  <div class="btn y" style="margin-top:16px">Lock in guess</div>
+</div>
+
+<!-- RECORD -->
+<div class="phone">
+  <div class="top"><span>3 of 6</span><span>your turn</span></div>
+  <div style="display:flex;gap:8px;margin-top:24px">
+    <span class="chip" style="opacity:.5">✓ say it</span><span class="chip" style="opacity:.5">✓ hear it flipped</span><span class="chip" style="background:var(--butter);color:#14241d">copy it</span>
+  </div>
+  <div style="font-weight:700;margin-top:28px;opacity:.7">Now say it backwards</div>
+  <h1 style="font-size:58px;margin-top:4px">pickle jar</h1>
+  <div style="font-size:22px;font-weight:700;color:var(--butter);margin-top:8px">“rahj · el · kip”</div>
+  <div class="card" style="margin-top:28px;background:var(--bg2);color:var(--cream)">
+    <div class="wave" id="w2"></div>
+  </div>
+  <div style="display:flex;justify-content:center;margin-top:40px;position:relative">
+    <div style="position:absolute;width:190px;height:190px;border-radius:50%;border:2px solid var(--tomato);opacity:.35;top:-28px"></div>
+    <div style="width:134px;height:134px;border-radius:50%;background:var(--tomato);display:flex;align-items:center;justify-content:center"><div style="width:42px;height:42px;background:var(--cream);border-radius:10px"></div></div>
+  </div>
+  <div style="display:flex;justify-content:space-between;margin-top:50px;font-weight:700"><span>↺ Redo</span><span>Hear it like the next person ▶</span></div>
+</div>
+
+<!-- RECAP -->
+<div class="phone">
+  <svg class="wire" width="390" height="844" style="left:0;top:0"><path d="M51 220 C 20 245, 82 265, 51 291 S 20 337, 51 362 S 82 408, 51 433 S 20 479, 51 504 S 82 550, 51 575" stroke="#fff4dc" stroke-width="3" fill="none"/></svg>
+  <div class="top"><span>chain complete</span><span>6 on the line</span></div>
+  <h1 style="font-size:40px;margin:22px 0 24px">From <span style="color:var(--butter)">pickle jar</span><br>to <span style="color:var(--tomato)">nick's cage.</span></h1>
+  <div class="node"><div class="av" style="background:var(--sky)">A</div><div class="bubble">pickle jar<small>Aaron started it</small></div></div>
+  <div class="node"><div class="av" style="background:var(--lilac)">M</div><div class="bubble">pickle jar ✓<small>Maya · ▶ 0:03</small></div></div>
+  <div class="node"><div class="av" style="background:var(--butter)">J</div><div class="bubble">tickle car<small>Jo · ▶ 0:02</small></div></div>
+  <div class="node"><div class="av" style="background:#9be7b4">D</div><div class="bubble">nickel bar<small>Dev · ▶ 0:03</small></div></div>
+  <div class="node"><div class="av" style="background:#ffb3c7">S</div><div class="bubble">nicholas cage<small>Sam · ▶ 0:04</small></div></div>
+  <div class="node"><div class="av" style="background:var(--tomato)">Al</div><div class="bubble" style="background:var(--tomato);color:var(--cream)">nick's cage<small style="opacity:.8">Allison · last on the line</small></div></div>
+  <div class="btn y" style="position:absolute;left:24px;right:24px;bottom:28px">Play it all back ▶</div>
+</div>
+</div>
+<script>
+for(const [id,n,c] of [['w1',30,'#14241d'],['w2',40,'#ffd84d']]){const w=document.getElementById(id);for(let i=0;i<n;i++){const e=document.createElement('i');e.style.height=(12+Math.abs(Math.sin(i*.5)*65+Math.cos(i*1.4)*20))+'%';e.style.background=c;if(id==='w2'&&i>28)e.style.opacity=.2;w.appendChild(e)}}
+</script>
+</body></html>

@@ -14,11 +14,14 @@
   },
   "scripts": {
     "start": "HTTPS=true react-scripts start",
+    "start:mock": "REACT_APP_API_BASE=/mock-api HTTPS=true react-scripts start",
+    "mock-api": "node scripts/mock-api.js",
     "build": "react-scripts build",
     "test": "react-scripts test",
     "eject": "react-scripts eject",
     "predeploy": "npm run build",
-    "deploy": "gh-pages -d build"
+    "deploy": "gh-pages -d build",
+    "preview": "REACT_APP_API_BASE=/mock-api react-scripts build && node scripts/preview-server.js"
   },
   "eslintConfig": {
     "extends": "react-app"
@@ -36,6 +39,7 @@
     ]
   },
   "devDependencies": {
-    "gh-pages": "^6.1.1"
+    "gh-pages": "^6.1.1",
+    "http-proxy-middleware": "^2.0.12"
   }
 }

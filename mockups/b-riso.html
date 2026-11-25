@@ -1,0 +1,123 @@
+<!doctype html>
+<html><head><meta charset="utf-8">
+<link href="https://fonts.googleapis.com/css2?family=Anton&family=Instrument+Serif:ital@0;1&family=Inter+Tight:wght@500;700&display=swap" rel="stylesheet">
+<style>
+:root{--paper:#f3ede2;--pink:#ff48b0;--blue:#1f5fd1;--ink:#1a2344}
+*{box-sizing:border-box;margin:0;padding:0}
+body{background:#d9d1c3;font-family:'Inter Tight',sans-serif;color:var(--ink);padding:40px}
+.label{font:700 13px 'Inter Tight';letter-spacing:.2em;text-transform:uppercase;margin-bottom:24px;color:var(--ink)}
+.label b{color:var(--pink)}
+.grid{display:grid;grid-template-columns:repeat(4,390px);gap:28px}
+.phone{width:390px;height:844px;background:var(--paper);border-radius:44px;overflow:hidden;position:relative;padding:58px 24px 28px;isolation:isolate}
+.phone:after{content:"";position:absolute;inset:0;pointer-events:none;opacity:.35;mix-blend-mode:multiply;
+ background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='200' height='200'%3E%3Cfilter id='n'%3E%3CfeTurbulence baseFrequency='.9' numOctaves='2'/%3E%3CfeColorMatrix values='0 0 0 0 .5 0 0 0 0 .45 0 0 0 0 .4 0 0 0 .5 0'/%3E%3C/filter%3E%3Crect width='200' height='200' filter='url(%23n)'/%3E%3C/svg%3E")}
+.riso{position:relative;display:inline-block;white-space:nowrap}
+.riso .a{color:var(--pink);mix-blend-mode:multiply}
+.riso .b{color:var(--blue);mix-blend-mode:multiply;position:absolute;left:3px;top:2px}
+.disp{font-family:'Anton';text-transform:uppercase;line-height:.86;letter-spacing:-.01em}
+.flip{display:inline-block;transform:scaleX(-1)}
+.serif{font-family:'Instrument Serif';font-style:italic}
+.top{display:flex;justify-content:space-between;font-size:12px;font-weight:700;letter-spacing:.1em;text-transform:uppercase}
+.blob{position:absolute;border-radius:50%;mix-blend-mode:multiply;z-index:-1}
+.pill{display:flex;align-items:center;justify-content:space-between;border-radius:999px;padding:18px 24px;font:700 18px 'Inter Tight';margin-top:12px}
+.pill.pink{background:var(--pink);color:var(--paper)}
+.pill.blue{background:var(--blue);color:var(--paper)}
+.pill.line{border:2px solid var(--ink)}
+.sticker{position:absolute;background:var(--blue);color:var(--paper);font:700 12px 'Inter Tight';text-transform:uppercase;letter-spacing:.08em;padding:9px 12px;border-radius:999px;transform:rotate(-8deg)}
+.wave{display:flex;align-items:center;gap:3px;height:120px}
+.wave i{flex:1;border-radius:3px;mix-blend-mode:multiply}
+.play{width:96px;height:96px;border-radius:50%;background:var(--pink);display:flex;align-items:center;justify-content:center;color:var(--paper);font-size:34px;mix-blend-mode:multiply}
+.input{border:2px solid var(--ink);border-radius:20px;padding:16px 18px;font:400 32px 'Instrument Serif';font-style:italic}
+.k{font-size:11px;font-weight:700;letter-spacing:.14em;text-transform:uppercase;margin-bottom:8px}
+.chain{position:relative;margin-top:14px}
+.row{display:flex;align-items:baseline;gap:12px;padding:9px 0}
+.row .num{font:400 22px 'Instrument Serif';font-style:italic;width:24px;color:var(--pink)}
+.row .w{font-family:'Anton';font-size:36px;text-transform:uppercase;line-height:1}
+.row .who{font-size:12px;font-weight:700;letter-spacing:.06em;margin-left:auto;text-transform:uppercase;opacity:.6}
+</style></head><body>
+<div class="label">Direction B — <b>Riso Zine</b> · two-ink print, misregistered type, words literally mirrored</div>
+<div class="grid">
+
+<!-- HOME -->
+<div class="phone">
+  <div class="blob" style="width:300px;height:300px;background:var(--pink);opacity:.9;right:-150px;top:150px"></div>
+  <div class="blob" style="width:220px;height:220px;background:var(--blue);opacity:.85;right:-90px;top:330px"></div>
+  <div class="top"><span>yelnatsgame.com</span><span>no. 01</span></div>
+  <div class="disp" style="font-size:118px;margin-top:40px">
+    <div class="riso"><span class="a">YEL</span><span class="b">YEL</span></div><br>
+    <div class="riso"><span class="a">NATS</span><span class="b">NATS</span></div>
+  </div>
+  <div class="serif" style="font-size:30px;margin-top:14px;line-height:1.1">is “Stanley”<br>said backwards.</div>
+  <p style="font-size:15px;line-height:1.45;margin-top:16px;max-width:225px">Say a word backwards. We rewind it. Your friend hears something almost English and has to guess.</p>
+  <div style="position:absolute;left:24px;right:24px;bottom:34px">
+    <div class="pill pink">Start a chain <span>→</span></div>
+    <div class="pill line">Practice round <span>↺</span></div>
+    <div style="text-align:center;margin-top:16px;font-weight:700;font-size:14px;text-decoration:underline">My chains (3)</div>
+  </div>
+</div>
+
+<!-- LISTEN -->
+<div class="phone">
+  <div class="top"><span>Link 3 of 6</span><span>from Maya</span></div>
+  <div class="disp" style="font-size:74px;margin-top:30px">
+    <div class="riso"><span class="a">WHAT'D</span><span class="b">WHAT'D</span></div><br>
+    <div class="riso"><span class="a">SHE SAY?</span><span class="b">SHE SAY?</span></div>
+  </div>
+  <div style="display:flex;align-items:center;gap:16px;margin-top:30px">
+    <div class="play">▶</div>
+    <div class="wave" id="w1" style="flex:1"></div>
+  </div>
+  <div style="display:flex;gap:8px;margin-top:10px;font-size:13px;font-weight:700">
+    <span style="border:2px solid var(--ink);border-radius:999px;padding:7px 12px">½ speed</span>
+    <span style="border:2px solid var(--ink);border-radius:999px;padding:7px 12px">loop</span>
+    <span style="margin-left:auto;padding:7px 0;opacity:.6">played 2×</span>
+  </div>
+  <div class="k" style="margin-top:36px">I think it's…</div>
+  <div class="input">pickle jar</div>
+  <div class="pill blue" style="margin-top:18px">That's my guess <span>→</span></div>
+  <div class="sticker" style="right:22px;top:250px">already rewound!</div>
+</div>
+
+<!-- RECORD -->
+<div class="phone">
+  <div class="top"><span>Link 3 of 6</span><span>step 3/3</span></div>
+  <div class="k" style="margin-top:28px">Say it backwards</div>
+  <div class="disp" style="font-size:70px;line-height:.9">
+    <div class="riso"><span class="a">PICKLE JAR</span><span class="b">PICKLE JAR</span></div>
+  </div>
+  <div class="disp flip" style="font-size:70px;line-height:.9;color:var(--blue);opacity:.35;margin-top:2px">PICKLE JAR</div>
+  <div class="serif" style="font-size:22px;margin-top:16px">sounds like: “rahj-el-kip”</div>
+  <div class="wave" id="w2" style="margin-top:22px;height:100px"></div>
+  <div style="display:flex;justify-content:center;margin-top:28px">
+    <div style="width:136px;height:136px;border-radius:50%;background:var(--pink);display:flex;align-items:center;justify-content:center;box-shadow:6px 5px 0 var(--blue)">
+      <div style="width:44px;height:44px;border-radius:10px;background:var(--paper)"></div></div>
+  </div>
+  <div style="display:flex;justify-content:space-between;margin-top:26px;font-weight:700;font-size:14px">
+    <span>↺ redo</span><span>▶ hear yours flipped</span>
+  </div>
+</div>
+
+<!-- RECAP -->
+<div class="phone">
+  <div class="top"><span>Chain complete</span><span>6 links</span></div>
+  <div class="disp" style="font-size:64px;margin-top:26px">
+    <div class="riso"><span class="a">PICKLE JAR</span><span class="b">PICKLE JAR</span></div>
+  </div>
+  <div class="serif" style="font-size:26px;margin:6px 0 4px">became…</div>
+  <div class="disp" style="font-size:64px;color:var(--blue)">NICK'S CAGE</div>
+  <div style="border-top:2px solid var(--ink);margin-top:18px"></div>
+  <div class="chain">
+    <div class="row"><span class="num">1</span><span class="w" style="color:var(--pink)">pickle jar</span><span class="who">Aaron ▶</span></div>
+    <div class="row"><span class="num">2</span><span class="w">pickle jar</span><span class="who">Maya ▶</span></div>
+    <div class="row"><span class="num">3</span><span class="w">tickle car</span><span class="who">Jo ▶</span></div>
+    <div class="row"><span class="num">4</span><span class="w">nickel bar</span><span class="who">Dev ▶</span></div>
+    <div class="row"><span class="num">5</span><span class="w">nicholas cage</span><span class="who">Sam ▶</span></div>
+    <div class="row"><span class="num">6</span><span class="w" style="color:var(--blue)">nick's cage</span><span class="who">Allison ▶</span></div>
+  </div>
+  <div class="pill pink" style="position:absolute;left:24px;right:24px;bottom:30px">Share the wreckage <span>↗</span></div>
+</div>
+</div>
+<script>
+for(const [id,n,c1,c2] of [['w1',36,'#ff48b0','#1f5fd1'],['w2',46,'#1f5fd1','#ff48b0']]){const w=document.getElementById(id);for(let i=0;i<n;i++){const e=document.createElement('i');const h=10+Math.abs(Math.sin(i*.6)*70+Math.cos(i*1.3)*20);e.style.height=h+'%';e.style.background=i%7<4?c1:c2;if(id==='w2'&&i>34)e.style.opacity=.2;w.appendChild(e)}}
+</script>
+</body></html>
