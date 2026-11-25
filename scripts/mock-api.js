@@ -76,7 +76,13 @@ async function handle(req, res) {
         return send(res, 400, 'Turn key is not right.', 'text/plain');
       }
       const key = crypto.randomUUID();
-      game.turns.push({ guess: str(body.guess, 60), nickname: str(body.nickname, 24), recording: key + '.wav' });
+      const scored = Number.isFinite(body.score) && body.score >= 0 && body.score <= 100;
+      game.turns.push({
+        guess: str(body.guess, 60),
+        nickname: str(body.nickname, 24),
+        ...(scored ? { score: Math.round(body.score), scoreVersion: str(body.scoreVersion, 24) || 'unknown' } : {}),
+        recording: key + '.wav',
+      });
       pendingUploads.add(key + '.wav');
       return send(res, 200, { url: `${PREFIX}/files/${key}.wav`, key });
     }

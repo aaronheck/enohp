@@ -5,8 +5,8 @@
 // API (unchanged from the original Lambda, so old and new frontends both work):
 //   POST /game                      -> { id }
 //   GET  /game?id=                  -> { game: { id, turns: [{ guess, nickname, recording,
-//                                        signedGet, consistencyToken }] } }
-//   POST /recording { id, consistencyToken, guess, nickname }
+//                                        signedGet, consistencyToken, score?, scoreVersion? }] } }
+//   POST /recording { id, consistencyToken, guess, nickname, score?, scoreVersion? }
 //                                   -> { url (presigned PUT for audio/wav), key }
 //   GET  /recording?id=<key>.wav    -> { url }
 
@@ -112,6 +112,7 @@ function createHandler(deps) {
       turns.map(async (t) => ({
         guess: t.guess,
         nickname: t.nickname,
+        ...(typeof t.score === 'number' ? { score: t.score, scoreVersion: t.scoreVersion } : {}),
         recording: t.recording,
         signedGet: await deps.signGet(t.recording, SIGNED_URL_SECONDS),
         consistencyToken: String(t.recording || '').replace(/\.wav$/, ''),
@@ -128,6 +129,12 @@ function createHandler(deps) {
     const guess = cleanText(body.guess, MAX_GUESS);
     if (!guess) return fail(400, 'Missing guess.');
     const nickname = cleanText(body.nickname, MAX_NICKNAME) || 'Someone';
+    // Optional sound-match score from the player's browser (0-100). Bad values are
+    // ignored rather than rejected so a scoring glitch never blocks a turn.
+    const scored = Number.isFinite(body.score) && body.score >= 0 && body.score <= 100;
+    const scoreFields = scored
+      ? { score: Math.round(body.score), scoreVersion: cleanText(body.scoreVersion, 24) || 'unknown' }
+      : {};
 
     const game = await deps.getGame(body.id);
     if (!game) return fail(404, 'Game not found');
@@ -146,7 +153,7 @@ function createHandler(deps) {
     const key = `${newId()}.wav`;
     const updated = {
       ...game,
-      turns: [...kept, { guess, nickname, recording: key, createdAt: now(), uploaded: false }],
+      turns: [...kept, { guess, nickname, ...scoreFields, recording: key, createdAt: now(), uploaded: false }],
     };
     // Only save if nobody else changed the game since we read it.
     const saved = await deps.putGame(updated, { expectedTurns: storedCount });

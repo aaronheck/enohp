@@ -186,3 +186,31 @@ test('unknown paths and methods', async () => {
   assert.equal((await call(w, 'DELETE', '/game')).status, 405);
   assert.equal((await call(w, 'OPTIONS', '/game')).status, 204);
 });
+
+test('an optional 0-100 score is stored with the turn and returned', async () => {
+  const w = fakeWorld();
+  const id = await newGame(w);
+  const r = await call(w, 'POST', '/recording', {
+    body: { id, consistencyToken: '', guess: 'pickle jar', nickname: 'Aaron', score: 81.6, scoreVersion: 'soundmatch-v1' },
+  });
+  assert.equal(r.status, 200);
+  w.files.add(`${r.body.key}.wav`);
+  const g = await call(w, 'GET', '/game', { query: { id } });
+  assert.equal(g.body.game.turns[0].score, 82);
+  assert.equal(g.body.game.turns[0].scoreVersion, 'soundmatch-v1');
+});
+
+test('missing or invalid scores are ignored, never blocking the turn', async () => {
+  const w = fakeWorld();
+  const id = await newGame(w);
+  let token = '';
+  for (const score of [undefined, 'high', 150, -3, NaN, null]) {
+    const r = await call(w, 'POST', '/recording', { body: { id, consistencyToken: token, guess: 'x', score } });
+    assert.equal(r.status, 200);
+    w.files.add(`${r.body.key}.wav`);
+    token = r.body.key;
+  }
+  const g = await call(w, 'GET', '/game', { query: { id } });
+  assert.equal(g.body.game.turns.length, 6);
+  assert.ok(g.body.game.turns.every((t) => !('score' in t)));
+});
