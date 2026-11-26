@@ -19,7 +19,6 @@ const C = {
 };
 const FONT = "'Bricolage Grotesque', system-ui, sans-serif";
 const INTRO = 0.9; // seconds before the first listen
-const GAP = 0.7; // between the two listens
 const OUTRO = 1.8;
 const TAIL = 1.0; // extra recorded after the outro, as a safety margin
 
@@ -238,7 +237,8 @@ function tidy(ctx, buffer, maxSeconds = 6) {
 
 /**
  * blob: the puzzle's (backwards) audio. mimic: the player's own attempt, as they
- * recorded it (still backwards, so no spoiler). Without a mimic the puzzle plays twice.
+ * recorded it (still backwards, so no spoiler). The video plays only the attempt;
+ * without one, the puzzle audio plays instead.
  * result: { tries, used, failed, mindReader, actions, streak } for the brag.
  * Resolves to a File (MP4 or WebM).
  */
@@ -259,18 +259,11 @@ export async function makePuzzleVideo({ blob, mimic, n, date, result, onProgress
 
   const p = { buffer: puzzleBuf, gain: 1 };
   const m = mimicBuf ? tidy(ctx, mimicBuf) : null;
-  const second = m || p;
-  const clips = [
-    { ...p, at: INTRO, d: p.buffer.duration, peaks: peaksOf(p.buffer, 44), color: C.butter },
-  ];
-  clips.push({
-    ...second,
-    at: INTRO + p.buffer.duration + GAP,
-    d: second.buffer.duration,
-    peaks: peaksOf(second.buffer, 44),
-    color: m ? C.sky : C.butter,
-  });
-  const end = clips[1].at + clips[1].d;
+  // Just the player's own attempt (as recorded, still backwards: no spoiler). If they
+  // never mimicked, the puzzle audio stands in so the video isn't silent.
+  const only = m || p;
+  const clips = [{ ...only, at: INTRO, d: only.buffer.duration, peaks: peaksOf(only.buffer, 44), color: C.butter }];
+  const end = clips[0].at + clips[0].d;
   const total = end + OUTRO;
   const dateLabel = date
     ? new Intl.DateTimeFormat('en-US', { timeZone: 'UTC', weekday: 'short', month: 'short', day: 'numeric' }).format(new Date(`${date}T12:00:00Z`))
