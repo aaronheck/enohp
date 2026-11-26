@@ -48,3 +48,23 @@
 .guesses-left { margin-top: 8px; color: var(--muted); font-weight: 700; font-size: 14px; }
 .guesses-out { color: var(--butter); }
 .guess-row .input:disabled { opacity: 0.5; }
+
+/* ---- steady layout: puzzle, mimic, your mimics, guess ---- */
+.mimic-area { margin-top: 16px; }
+.mimic-area canvas { margin-bottom: 8px; }
+.mimic-cta { min-height: 62px; font-size: 20px; }
+.cta-note { color: var(--muted); font-weight: 600; font-size: 14px; text-align: center; margin-top: 8px; line-height: 1.35; }
+.guess-area { margin-top: 18px; }
+.guess-area .label { font-size: 18px; font-weight: 800; }
+.guess-area .misses { margin: 0 0 10px; }
+.guess-area .guess-row { margin-top: 0; }
+.tries-line { display: flex; align-items: center; gap: 10px; margin-top: 18px; color: var(--muted); font-size: 13px; font-weight: 600; }
+.tries-line .try-string { width: 160px; flex: none; margin: 0; }
+.tries-line b { color: var(--cream); }
+.mimic-list { margin-top: 12px; }
+
+/* TEMPORARY dev reset button */
+.dev-reset {
+  margin: 18px auto 0; display: block; border: 2px dashed var(--tomato); background: none; color: var(--tomato);
+  border-radius: 999px; padding: 8px 16px; font: 700 14px var(--font); cursor: pointer;
+}

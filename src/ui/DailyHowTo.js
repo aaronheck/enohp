@@ -27,7 +27,7 @@ const SLIDES = [
   },
   {
     title: 'Stuck? Mimic it',
-    body: 'Record yourself copying the backwards sound. We flip your recording so it plays forwards, and the phrase might just pop out. Your first mimic is free; after that each one uses a try.',
+    body: 'Record yourself copying the backwards sound. We flip your recording so it plays forwards, and the phrase might just pop out. Your first mimic doesn’t use a try; after that, each one does.',
     art: <Mimic />,
   },
   {

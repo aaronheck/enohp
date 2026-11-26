@@ -7,7 +7,6 @@ import {
   canMimic,
   getPuzzleState,
   isMindReader,
-  mimicCost,
   score,
   triesUsed,
   plural,
@@ -18,8 +17,10 @@ import {
 } from '../lib/daily';
 import { shareLink } from '../lib/share';
 import { listMimics, saveMimic } from '../lib/mimicStore';
+import { stopShared, unlockAudio } from '../audio/context';
+import { isDev, resetDaily } from '../lib/devReset';
 import { Button, Notice, Screen } from '../ui/components';
-import { RecordButton, ReversedPlayer } from '../ui/audio';
+import { ReversedPlayer } from '../ui/audio';
 import { VibratingString } from '../ui/waves';
 import TryString from '../ui/TryString';
 import DailyHowTo from '../ui/DailyHowTo';
@@ -169,6 +170,19 @@ function Puzzle({ puzzle }) {
     return <Solved n={n} state={state} answers={answers} voice={voice} days={days} top={top} mimics={mimics} />;
   }
 
+  // Until the first mimic, the Mimic button leads; after it, the Guess button does.
+  const firstMimic = state.mimics === 0;
+  const starting = recorder.status === 'starting';
+  const startMimic = () => {
+    unlockAudio(); // during the tap, so the flipped take can autoplay
+    stopShared(); // don't record the puzzle playing
+    recorder.start();
+  };
+  const finishMimic = () => {
+    unlockAudio();
+    stopMimic();
+  };
+
   return (
     <Screen {...top}>
       <div className="daily-head">
@@ -191,72 +205,96 @@ function Puzzle({ puzzle }) {
         <PuzzleClip url={puzzle.audio[voice]} />
       </div>
 
-      {state.guesses.length > 0 && (
-        <div className="misses" aria-label="Wrong guesses">
-          {state.guesses.map((g, i) => (
-            <span key={i}>{g}</span>
-          ))}
-        </div>
-      )}
-      <form className="guess-row" onSubmit={submit}>
-        <input
-          className="input"
-          value={guess}
-          onChange={(e) => setGuess(e.target.value)}
-          placeholder="Your guess"
-          aria-label="Your guess"
-          autoComplete="off"
-          autoCapitalize="off"
-          maxLength={60}
-        />
-        <Button type="submit" disabled={!guess.trim() || checking} className="guess-btn">
-          {checking ? '…' : 'Guess'}
+      {/* Same layout throughout; only the emphasis moves from Mimic (before the
+          first mimic) to Guess (after). */}
+      <div className="mimic-area">
+        {recording && <VibratingString active getLevel={recorder.getLevel} height={56} />}
+        <Button
+          variant={recording || firstMimic ? 'primary' : 'ghost'}
+          onClick={recording ? finishMimic : startMimic}
+          disabled={starting || (!recording && !mimicOk)}
+          className="mimic-cta"
+        >
+          {recording ? '■ Stop recording' : state.mimics ? '🎙 Mimic again' : '🎙 Mimic it'}
         </Button>
-      </form>
-      <p className={'guesses-left' + (left === 1 ? ' guesses-out' : '')}>
-        {left === 1 ? 'Last try! Make this guess count.' : 'Every guess uses a try, right or wrong.'}
-      </p>
-      <Notice>{error}</Notice>
-
-      <div className="tries-box">
-        <b>
-          Tries: {used} <span>/ {MAX_TRIES}</span>
-        </b>
-        <small className="tries-note">(guesses and mimics cost tries)</small>
-        <TryString used={used} max={MAX_TRIES} />
-      </div>
-
-      <div className="mimic-box">
-        <div className="mimic-head">
-          <RecordButton
-            recording={recording}
-            starting={recorder.status === 'starting'}
-            onStart={recorder.start}
-            onStop={stopMimic}
-            disabled={!mimicOk && !recording}
-            idleHint=""
-          />
-          <div>
-            <b>{recording ? 'Recording… tap to stop' : state.mimics ? 'Mimic again' : 'Stuck? Mimic it'}</b>
-            <small>
-              {!mimicOk
-                ? 'Your last try has to be a guess.'
-                : `Copy the backwards sound and we'll flip it so it plays forwards. ${
-                    mimicCost(state) ? 'Uses a try.' : 'Your first mimic is free.'
-                  }`}
-            </small>
-          </div>
-        </div>
-        {recording && <VibratingString active={recording} getLevel={recorder.getLevel} height={56} />}
+        <p className="cta-note">
+          {recording
+            ? 'Copy the sound you just heard, as best you can.'
+            : !mimicOk
+            ? 'Your last try has to be a guess.'
+            : state.mimics
+            ? 'Uses a try.'
+            : "Copy the sound and we'll flip it so it plays forwards. Your first mimic doesn't use a try."}
+        </p>
         <Notice>{recorder.error}</Notice>
-        {!recording && <MimicList mimics={mimics} autoPlayIndex={justRecorded} />}
       </div>
 
+      {!recording && <MimicList mimics={mimics} autoPlayIndex={justRecorded} />}
+
+      <div className="guess-area">
+        <label className="label" htmlFor="daily-guess">
+          What does it say?
+        </label>
+        {state.guesses.length > 0 && (
+          <div className="misses" aria-label="Wrong guesses">
+            {state.guesses.map((g, i) => (
+              <span key={i}>{g}</span>
+            ))}
+          </div>
+        )}
+        <form className="guess-row" onSubmit={submit}>
+          <input
+            id="daily-guess"
+            className="input"
+            value={guess}
+            onChange={(e) => setGuess(e.target.value)}
+            placeholder="Your guess"
+            aria-label="Your guess"
+            autoComplete="off"
+            autoCapitalize="off"
+            maxLength={60}
+          />
+          <Button
+            type="submit"
+            variant={firstMimic ? 'ghost' : 'primary'}
+            disabled={!guess.trim() || checking}
+            className="guess-btn"
+          >
+            {checking ? '…' : 'Guess'}
+          </Button>
+        </form>
+        <p className={'guesses-left' + (left === 1 ? ' guesses-out' : '')}>
+          {left === 1 ? 'Last try! Make this guess count.' : 'Every guess uses a try, right or wrong.'}
+        </p>
+        <Notice>{error}</Notice>
+      </div>
+
+      <div className="spacer" />
+      <div className="tries-line">
+        <TryString used={used} max={MAX_TRIES} />
+        <span>
+          <b>
+            Tries {used}/{MAX_TRIES}
+          </b>{' '}
+          · guesses and mimics cost tries
+        </span>
+      </div>
       <div className="daily-foot">
         <Link to="/friends">Play with friends</Link>
         <Link to="/previous">My chains</Link>
       </div>
+      <DevReset />
     </Screen>
+  );
+}
+
+// TEMPORARY: only shown with ?dev=1 (see lib/devReset.js).
+function DevReset() {
+  if (!isDev()) return null;
+  return (
+    <button className="dev-reset" onClick={resetDaily}>
+      ⟲ Reset puzzle (dev only)
+    </button>
   );
 }
 
@@ -331,6 +369,7 @@ function Solved({ n, state, answers, voice, days, top, mimics }) {
           Play with friends
         </Button>
       </div>
+      <DevReset />
     </Screen>
   );
 }
