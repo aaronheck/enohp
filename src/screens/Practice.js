@@ -2,9 +2,7 @@ import React, { useEffect, useState } from 'react';
 import { Link, useParams } from 'react-router-dom';
 import { fetchRecording } from '../api/client';
 import useRecorder from '../audio/useRecorder';
-import useCountIn from '../audio/useCountIn';
 import { ding, nope } from '../audio/sfx';
-import { CountIn } from './Daily';
 import { reportError } from '../lib/errors';
 import { stopShared, unlockAudio } from '../audio/context';
 import { PRACTICE, coachStep, isCorrect, markPracticeDone, practiceAudio } from '../lib/practice';
@@ -62,10 +60,8 @@ function PracticeGame({ game }) {
   const [solved, setSolved] = useState(false);
   const recorder = useRecorder({ warm: heard && !solved }); // pre-open the mic if it's already allowed
   const recording = recorder.status === 'recording';
-  const countIn = useCountIn(recorder);
-  const counting = countIn.count != null;
   const [shake, setShake] = useState(0);
-  const starting = recorder.status === 'starting' && !counting;
+  const starting = recorder.status === 'starting';
   const { release } = recorder;
 
   useEffect(() => {
@@ -79,7 +75,7 @@ function PracticeGame({ game }) {
     if (mimics.length) setCoached(true);
     unlockAudio();
     stopShared();
-    countIn.run();
+    recorder.start();
   };
   const stopMimic = async () => {
     unlockAudio();
@@ -105,7 +101,7 @@ function PracticeGame({ game }) {
   };
 
   const step = coachStep({ heard, recording, mimics: mimics.length, coached });
-  const coach = step && !starting && !counting && SHOWN[game.coach].includes(step) ? STEPS[step] : null; // no tip while the mic warms up
+  const coach = step && !starting && SHOWN[game.coach].includes(step) ? STEPS[step] : null; // no tip while the mic warms up
   const next = PRACTICE.find((p) => p.n === game.n + 1);
   const top = { left: <Link to="/">← Daily puzzle</Link>, right: `Practice ${game.n} of ${PRACTICE.length}` };
 
@@ -174,18 +170,15 @@ function PracticeGame({ game }) {
       </div>
 
       <div className="mimic-area">
-        {counting && <CountIn n={countIn.count} />}
         {starting && <MicWarmup height={56} />}
         {recording && <VibratingString active getLevel={recorder.getLevel} height={56} />}
         <Button
-          variant={recording || starting || counting || !mimics.length ? 'primary' : 'ghost'}
+          variant={recording || starting || !mimics.length ? 'primary' : 'ghost'}
           onClick={recording ? stopMimic : startMimic}
-          disabled={!heard || starting || counting}
-          className={'mimic-cta' + (starting || counting ? ' mimic-starting' : recording ? ' mimic-recording' : '')}
+          disabled={!heard || starting}
+          className={'mimic-cta' + (starting ? ' mimic-starting' : recording ? ' mimic-recording' : '')}
         >
-          {counting ? (
-            'Get ready…'
-          ) : starting ? (
+          {starting ? (
             'Getting the mic ready…'
           ) : recording ? (
             <>
@@ -199,9 +192,7 @@ function PracticeGame({ game }) {
           )}
         </Button>
         <p className={'cta-note' + (recording ? ' go' : '')}>
-          {counting
-            ? 'Start copying the sound when it turns red.'
-            : starting
+          {starting
             ? 'Don’t start yet. It turns red when it’s listening.'
             : recording
             ? 'Go! Copy the sound you just heard.'

@@ -42,12 +42,6 @@ export function vibrate(pattern) {
   }
 }
 
-/** Countdown blip: 3, 2, 1 (higher on 1). */
-export function tick(n) {
-  play((ctx, t) => tone(ctx, { freq: n === 1 ? 880 : 660, start: t, dur: 0.09, type: 'triangle', gain: 0.12 }));
-  vibrate(15);
-}
-
 /** Right answer: a bright little arpeggio. */
 export function ding() {
   play((ctx, t) => {

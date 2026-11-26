@@ -2,7 +2,6 @@ import React, { useEffect, useState } from 'react';
 import { Link, useNavigate, useParams } from 'react-router-dom';
 import { fetchRecording, getDaily, guessDaily, revealDaily } from '../api/client';
 import useRecorder from '../audio/useRecorder';
-import useCountIn from '../audio/useCountIn';
 import { ding, nope, sadTrombone } from '../audio/sfx';
 import {
   ACTION_LABEL,
@@ -188,7 +187,6 @@ function Puzzle({ puzzle, forced }) {
     warm: (state.heard || state.mimics > 0 || state.guesses.length > 0) && !state.solved && !state.failed && canMimic(state),
   });
   const recording = recorder.status === 'recording';
-  const countIn = useCountIn(recorder);
   const [shake, setShake] = useState(0);
   const update = (patch) => setState(updatePuzzleState(n, patch));
 
@@ -302,12 +300,11 @@ function Puzzle({ puzzle, forced }) {
   const firstMimic = state.mimics === 0;
   // You have to hear the puzzle all the way through once before mimicking or guessing.
   const heard = state.heard || state.mimics > 0 || state.guesses.length > 0;
-  const counting = countIn.count != null;
-  const starting = recorder.status === 'starting' && !counting;
+  const starting = recorder.status === 'starting';
   const beginRecording = () => {
     unlockAudio(); // during the tap, so the flipped take can autoplay
     stopShared(); // don't record the puzzle playing
-    countIn.run(); // 3, 2, 1 (the mic warms up meanwhile), then record
+    recorder.start();
   };
   const startMimic = () => {
     // 3rd day on iPhone Safari: first show how to stop Safari asking for the mic every time.
@@ -377,16 +374,15 @@ function Puzzle({ puzzle, forced }) {
       {/* Same layout throughout; only the emphasis moves from Mimic (before the
           first mimic) to Guess (after). */}
       <div className="mimic-area">
-        {counting && <CountIn n={countIn.count} />}
         {starting && <MicWarmup height={56} />}
         {recording && <VibratingString active getLevel={recorder.getLevel} height={56} />}
         <Button
-          variant={recording || starting || counting || firstMimic ? 'primary' : 'ghost'}
+          variant={recording || starting || firstMimic ? 'primary' : 'ghost'}
           onClick={recording ? finishMimic : startMimic}
-          disabled={counting || starting || (!recording && (!mimicOk || !heard))}
+          disabled={starting || (!recording && (!mimicOk || !heard))}
           className={
             'mimic-cta' +
-            (counting || starting
+            (starting
               ? ' mimic-starting'
               : recording
               ? ' mimic-recording'
@@ -395,9 +391,7 @@ function Puzzle({ puzzle, forced }) {
               : '')
           }
         >
-          {counting ? (
-            'Get ready…'
-          ) : starting ? (
+          {starting ? (
             'Getting the mic ready…'
           ) : recording ? (
             <>
@@ -416,9 +410,7 @@ function Puzzle({ puzzle, forced }) {
           )}
         </Button>
         <p className={'cta-note' + (recording ? ' go' : '')}>
-          {counting
-            ? 'Start copying the sound when it turns red.'
-            : starting
+          {starting
             ? 'Don’t start yet. It turns red when it’s listening.'
             : recording
             ? 'Go! Copy the sound you just heard.'
@@ -711,11 +703,3 @@ export function PastScreen() {
   );
 }
 
-/** The big 3 / 2 / 1 shown above the mimic button before recording. */
-export function CountIn({ n }) {
-  return (
-    <div className="countin" aria-live="assertive">
-      <span key={n}>{n}</span>
-    </div>
-  );
-}
