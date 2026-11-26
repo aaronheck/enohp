@@ -3,6 +3,7 @@
 // Spoiler-free: only the puzzle audio is in it, never the answer. Built in the browser
 // by recording a canvas plus the audio in real time (about 7 seconds).
 import { getAudioContext } from '../audio/context';
+import { SLOGAN } from './brand';
 
 const W = 720;
 const H = 1280;
@@ -71,7 +72,7 @@ const ACTION_EMOJI = { mimic: '🎙', miss: '❌', hit: '✅' };
 
 /** The brag: headline + dare, from how they did. */
 export function bragFor(r) {
-  if (!r) return { headline: 'Can you decode this?', dare: 'A phrase, played backwards. 🔊' };
+  if (!r) return { headline: 'Can you decode this?', dare: `${SLOGAN} 🔊` };
   if (r.failed) return { headline: 'This one beat me 😵', dare: 'Think you can crack it? 🔊' };
   if (r.mindReader) return { headline: 'First try. No mimic. 🤯', dare: 'Mind reader. Beat that. 🔊' };
   const line = {
@@ -178,7 +179,7 @@ function drawFrame(g, t, { n, clips, end, result, dateLabel }) {
   g.globalAlpha = 1 - outA * 0.0;
   g.fillStyle = C.muted;
   g.font = `600 34px ${FONT}`;
-  g.fillText('Mimic it. Flip it. Guess it.', W / 2, 1050);
+  g.fillText(SLOGAN, W / 2, 1050);
   g.globalAlpha = 0.55 + 0.45 * outA;
   g.fillStyle = C.butter;
   roundRect(g, 96, 1100, W - 192, 104, 52);

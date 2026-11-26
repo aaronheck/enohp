@@ -31,6 +31,7 @@ import { stopShared, unlockAudio } from '../audio/context';
 import { isDev, resetDaily } from '../lib/devReset';
 import { deviceContext, track } from '../lib/analytics';
 import { reportError } from '../lib/errors';
+import { SLOGAN } from '../lib/brand';
 import { practiceDone } from '../lib/practice';
 import { Button, Notice, Screen } from '../ui/components';
 import { ReversedPlayer } from '../ui/audio';
@@ -482,6 +483,7 @@ function Puzzle({ puzzle, forced }) {
         <TryDots used={used} max={MAX_TRIES} note="Guesses and mimics cost tries." />
       </div>
       <div className="spacer" />
+      <p className="slogan">{SLOGAN}</p>
       <div className="daily-foot">
         <Link to="/friends" onClick={() => track('play_with_friends', { from: 'puzzle' })}>
           Play with friends
@@ -661,6 +663,7 @@ function Solved({ n, state, answers, voice, days, top, mimics, puzzle, onStats }
         </div>
       )}
       <div className="spacer" />
+      <p className="slogan">{SLOGAN}</p>
       <p className="solved-foot">
         <Link to="/friends" onClick={() => track('play_with_friends', { from: 'solved' })}>
           Play with friends

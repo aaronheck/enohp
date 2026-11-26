@@ -1,3 +1,5 @@
+import { SLOGAN } from './brand';
+
 // Draws the daily result as a 1080x1350 PNG for sharing (iMessage/WhatsApp show
 // images far better than text). Mirrors the on-screen result card.
 const C = {
@@ -124,6 +126,9 @@ export async function drawShareImage(result) {
     g.fillStyle = C.butter;
     g.font = `800 46px ${FONT}`;
     g.fillText('yelnatsgame.com', W / 2, 1250);
+    g.fillStyle = 'rgba(255,244,220,0.6)';
+    g.font = `700 32px ${FONT}`;
+    g.fillText(SLOGAN, W / 2, 1306);
 
     return await new Promise((resolve) => canvas.toBlob((b) => resolve(b), 'image/png'));
   } catch (e) {

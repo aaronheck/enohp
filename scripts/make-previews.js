@@ -27,11 +27,11 @@ const page = (n) => `<!doctype html>
 <meta charset="utf-8" />
 <title>Yelnats Daily #${n} · ${shortDate(n)}: can you decode it?</title>
 <meta name="viewport" content="width=device-width, initial-scale=1" />
-<meta name="description" content="Today's phrase, played backwards. Can you decode it? Mimic it, flip it, guess it." />
+<meta name="description" content="Say it backwards. Hear it forwards. A new backwards puzzle every day." />
 <meta property="og:type" content="website" />
 <meta property="og:site_name" content="Yelnats" />
 <meta property="og:title" content="Yelnats Daily #${n} · ${longDate(n)} 🔊" />
-<meta property="og:description" content="Can you decode it? A new phrase, played backwards, every day." />
+<meta property="og:description" content="Say it backwards. Hear it forwards. A new backwards puzzle every day." />
 <meta property="og:url" content="${SITE}/p/${n}" />
 <meta property="og:image" content="${SITE}/og/${n}.png" />
 <meta property="og:image:width" content="1200" />
@@ -74,7 +74,7 @@ window.draw = async (n, b64, date) => {
   g.fillStyle = '#ffd84d'; g.font = '800 34px ' + F; g.fillText(date.toUpperCase(), 72, 112);
   g.fillStyle = '#fff4dc'; g.font = '800 150px ' + F; g.fillText('#' + n, 64, 262); const w = g.measureText('#' + n).width; g.fillStyle = 'rgba(255,244,220,0.62)'; g.font = '800 40px ' + F; g.fillText('YELNATS DAILY', 64 + w + 28, 250);
   g.fillStyle = '#fff4dc'; g.font = '800 64px ' + F; g.fillText('Can you decode it?', 72, 352);
-  g.fillStyle = 'rgba(255,244,220,0.62)'; g.font = '600 34px ' + F; g.fillText('A phrase, played backwards. 🔊', 72, 410);
+  g.fillStyle = 'rgba(255,244,220,0.62)'; g.font = '600 34px ' + F; g.fillText('Say it backwards. Hear it forwards. 🔊', 72, 410);
   // waveform card
   const rr = (x, y, w, h, r) => { g.beginPath(); g.moveTo(x + r, y); g.arcTo(x + w, y, x + w, y + h, r); g.arcTo(x + w, y + h, x, y + h, r); g.arcTo(x, y + h, x, y, r); g.arcTo(x, y, x + w, y, r); g.closePath(); };
   g.fillStyle = '#15493a'; rr(64, 450, 1072, 130, 32); g.fill();

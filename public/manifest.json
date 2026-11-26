@@ -2,12 +2,27 @@
   "short_name": "Yelnats",
   "name": "Yelnats: the reverse reverse game",
   "icons": [
-    { "src": "favicon.svg", "type": "image/svg+xml", "sizes": "any" },
-    { "src": "logo192.png", "type": "image/png", "sizes": "192x192", "purpose": "any maskable" },
-    { "src": "logo512.png", "type": "image/png", "sizes": "512x512", "purpose": "any maskable" }
+    {
+      "src": "favicon.svg",
+      "type": "image/svg+xml",
+      "sizes": "any"
+    },
+    {
+      "src": "logo192.png",
+      "type": "image/png",
+      "sizes": "192x192",
+      "purpose": "any maskable"
+    },
+    {
+      "src": "logo512.png",
+      "type": "image/png",
+      "sizes": "512x512",
+      "purpose": "any maskable"
+    }
   ],
   "start_url": "/",
   "display": "standalone",
   "theme_color": "#0f3a2d",
-  "background_color": "#0f3a2d"
+  "background_color": "#0f3a2d",
+  "description": "Say it backwards. Hear it forwards. A new backwards puzzle every day."
 }
