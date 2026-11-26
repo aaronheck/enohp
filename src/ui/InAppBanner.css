@@ -1,0 +1,21 @@
+.inapp {
+  position: relative;
+  margin: 12px auto 0;
+  width: calc(100% - 32px);
+  max-width: 448px;
+  background: var(--butter);
+  color: var(--ink);
+  border-radius: 20px;
+  padding: 14px 16px 12px;
+  box-shadow: 0 5px 0 #c9a52a;
+}
+.inapp-title { font-weight: 800; font-size: 18px; padding-right: 30px; }
+.inapp-body { font-size: 15px; margin-top: 2px; opacity: 0.8; }
+.inapp-steps { margin: 8px 0 0; padding-left: 22px; font-weight: 700; font-size: 15px; line-height: 1.5; }
+.inapp-actions { display: flex; align-items: center; gap: 14px; margin-top: 10px; }
+.inapp-go { width: auto; min-height: 42px; padding: 0 16px; font-size: 15px; background: var(--ink); color: var(--butter); box-shadow: none; }
+.inapp-copy { color: var(--ink); text-decoration: underline; text-underline-offset: 3px; font-weight: 700; }
+.inapp-close {
+  position: absolute; top: 8px; right: 8px; width: 32px; height: 32px; border-radius: 50%;
+  border: 0; background: rgba(20, 36, 29, 0.12); color: var(--ink); font-weight: 800; cursor: pointer;
+}

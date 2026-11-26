@@ -39,7 +39,7 @@ const KEY_RE = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}\.w
 // Analytics: which events we accept, and limits so junk can't flood the logs.
 const EVENT_NAMES = new Set([
   'page_view', 'daily_view', 'daily_listened', 'howto_open', 'howto_close', 'mimic', 'guess',
-  'daily_solved', 'daily_failed', 'share', 'play_with_friends', 'chain_started', 'turn_opened', 'turn_sent', 'client_error',
+  'daily_solved', 'daily_failed', 'share', 'play_with_friends', 'chain_started', 'turn_opened', 'turn_sent', 'client_error', 'inapp_banner',
 ]);
 const MAX_EVENTS = 50;
 const MAX_PROPS = 15;

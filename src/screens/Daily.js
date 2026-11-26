@@ -25,7 +25,7 @@ import { drawShareImage } from '../lib/shareImage';
 import { listMimics, saveMimic } from '../lib/mimicStore';
 import { stopShared, unlockAudio } from '../audio/context';
 import { isDev, resetDaily } from '../lib/devReset';
-import { track } from '../lib/analytics';
+import { deviceContext, track } from '../lib/analytics';
 import { reportError } from '../lib/errors';
 import { practiceDone } from '../lib/practice';
 import { Button, Notice, Screen } from '../ui/components';
@@ -144,8 +144,10 @@ function Puzzle({ puzzle, forced }) {
   const [mimics, setMimics] = useState([]); // [{ index, blob }], oldest first
   const [justRecorded, setJustRecorded] = useState(null);
   // Open the how-to automatically the first time someone plays any daily puzzle.
-  const [howOpen, setHowOpen] = useState(() => !hasPlayedDaily() && !howtoSeen());
-  const [howSource, setHowSource] = useState(() => (hasPlayedDaily() || howtoSeen() ? 'button' : 'auto'));
+  // Inside Instagram/TikTok etc. the "open in your browser" banner comes first.
+  const autoHow = () => !hasPlayedDaily() && !howtoSeen() && !deviceContext().in_app;
+  const [howOpen, setHowOpen] = useState(autoHow);
+  const [howSource, setHowSource] = useState(() => (autoHow() ? 'auto' : 'button'));
   const navigate = useNavigate();
 
   // Analytics: one view per puzzle load (and whether the how-to opened by itself).
