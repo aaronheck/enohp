@@ -27,15 +27,16 @@ function getAudio() {
   if (!audio) {
     audio = new Audio();
     audio.preload = 'auto';
-    audio.addEventListener('ended', () => release());
+    audio.addEventListener('ended', () => release(true));
   }
   return audio;
 }
 
-function release() {
+// ended = true when the clip played to the end (not stopped or replaced).
+function release(ended = false) {
   const prev = owner;
   owner = null;
-  if (prev) prev.onStop();
+  if (prev) prev.onStop(ended);
 }
 
 /** Call synchronously from a tap handler so later playback is allowed. */

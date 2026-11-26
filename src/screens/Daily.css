@@ -85,3 +85,6 @@
   78% { transform: rotate(-8deg); }
   84% { transform: rotate(0); }
 }
+
+.guess-row .input:disabled { opacity: 0.45; }
+.mimic-cta:disabled { opacity: 0.45; }

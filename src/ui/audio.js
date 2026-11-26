@@ -10,9 +10,9 @@ function fmt(seconds) {
   return `${Math.floor(s / 60)}:${String(s % 60).padStart(2, '0')}`;
 }
 
-/** Card that plays a recording rewound, with a ½× toggle. */
-export function ReversedPlayer({ blob, caption, dark, tilt, compact, hideDuration, error: loadError, autoPlay, reverse = true }) {
-  const p = useReversedPlayer(blob, { reverse });
+/** Card that plays a recording (rewound by default), with a 0.5x toggle. */
+export function ReversedPlayer({ blob, caption, dark, tilt, compact, hideDuration, highlight, onEnded, error: loadError, autoPlay, reverse = true }) {
+  const p = useReversedPlayer(blob, { reverse, onEnded });
   const error = loadError || p.error;
   const slow = p.rate !== 1;
 
@@ -38,7 +38,7 @@ export function ReversedPlayer({ blob, caption, dark, tilt, compact, hideDuratio
     <div className={'player' + (dark ? ' player-dark' : '') + (tilt ? ' player-tilt' : '') + (compact ? ' player-compact' : '')}>
       <div className="player-main">
         <button
-          className="player-play"
+          className={'player-play' + (highlight && !p.playing ? ' play-shimmer' : '')}
           onClick={toggle}
           disabled={!p.ready}
           aria-label={p.playing ? 'Stop' : 'Play'}

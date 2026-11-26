@@ -172,6 +172,8 @@ function Puzzle({ puzzle }) {
 
   // Until the first mimic, the Mimic button leads; after it, the Guess button does.
   const firstMimic = state.mimics === 0;
+  // You have to hear the puzzle all the way through once before mimicking or guessing.
+  const heard = state.heard || state.mimics > 0 || state.guesses.length > 0;
   const starting = recorder.status === 'starting';
   const startMimic = () => {
     unlockAudio(); // during the tap, so the flipped take can autoplay
@@ -201,7 +203,11 @@ function Puzzle({ puzzle }) {
       </p>
 
       <div className="section">
-        <PuzzleClip url={puzzle.audio[voice]} />
+        <PuzzleClip
+          url={puzzle.audio[voice]}
+          highlight={!heard}
+          onEnded={() => !heard && update({ heard: true })}
+        />
       </div>
 
       {/* Same layout throughout; only the emphasis moves from Mimic (before the
@@ -211,8 +217,8 @@ function Puzzle({ puzzle }) {
         <Button
           variant={recording || firstMimic ? 'primary' : 'ghost'}
           onClick={recording ? finishMimic : startMimic}
-          disabled={starting || (!recording && !mimicOk)}
-          className={'mimic-cta' + (firstMimic && !recording && mimicOk ? ' mimic-shimmer' : '')}
+          disabled={starting || (!recording && (!mimicOk || !heard))}
+          className={'mimic-cta' + (heard && firstMimic && !recording && mimicOk ? ' mimic-shimmer' : '')}
         >
           {recording ? (
             '■ Stop recording'
@@ -230,6 +236,8 @@ function Puzzle({ puzzle }) {
         <p className="cta-note">
           {recording
             ? 'Copy the sound you just heard, as best you can.'
+            : !heard
+            ? 'Listen to the puzzle first.'
             : !mimicOk
             ? 'Your last try has to be a guess.'
             : state.mimics
@@ -263,11 +271,12 @@ function Puzzle({ puzzle }) {
             autoComplete="off"
             autoCapitalize="off"
             maxLength={60}
+            disabled={!heard}
           />
           <Button
             type="submit"
             variant={firstMimic ? 'ghost' : 'primary'}
-            disabled={!guess.trim() || checking}
+            disabled={!heard || !guess.trim() || checking}
             className="guess-btn"
           >
             {checking ? '…' : 'Guess'}
@@ -302,9 +311,21 @@ function DevReset() {
   );
 }
 
-function PuzzleClip({ url }) {
+function PuzzleClip({ url, highlight, onEnded }) {
   const { blob, error } = useClip(url);
-  return <ReversedPlayer key={url} blob={blob} error={error} caption="the puzzle" tilt hideDuration reverse={false} />;
+  return (
+    <ReversedPlayer
+      key={url}
+      blob={blob}
+      error={error}
+      caption={highlight ? 'tap to hear the puzzle' : 'the puzzle'}
+      tilt
+      hideDuration
+      highlight={highlight}
+      onEnded={onEnded}
+      reverse={false}
+    />
+  );
 }
 
 function Solved({ n, state, answers, voice, days, top, mimics }) {

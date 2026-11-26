@@ -19,7 +19,7 @@ function save(d) {
 }
 
 // guesses = wrong guesses; actions = what happened in order ('mimic' | 'miss' | 'hit').
-const blank = () => ({ mimics: 0, guesses: [], actions: [], solved: false, failed: false, phrase: null, voice: null });
+const blank = () => ({ heard: false, mimics: 0, guesses: [], actions: [], solved: false, failed: false, phrase: null, voice: null });
 
 export function getPuzzleState(n) {
   return { ...blank(), ...(load().puzzles[n] || {}) };

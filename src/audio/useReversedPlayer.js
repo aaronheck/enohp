@@ -4,9 +4,12 @@ import { playShared, sharedProgress, stopShared } from './context';
 
 /**
  * Plays a recording in reverse through the app's shared audio element.
+ * onEnded fires when a clip plays all the way through.
  * Returns { ready, error, playing, progress (0..1), duration, peaks, rate, setRate, toggle, play, stop }.
  */
-export default function useReversedPlayer(blob, { reverse = true } = {}) {
+export default function useReversedPlayer(blob, { reverse = true, onEnded } = {}) {
+  const onEndedRef = useRef(onEnded);
+  onEndedRef.current = onEnded;
   const [reversed, setReversed] = useState(null);
   const [url, setUrl] = useState(null);
   const [error, setError] = useState(null);
@@ -18,10 +21,11 @@ export default function useReversedPlayer(blob, { reverse = true } = {}) {
   // Stable identity for this player in the shared element.
   const handlers = useMemo(
     () => ({
-      onStop: () => {
+      onStop: (ended) => {
         cancelAnimationFrame(frameRef.current);
         setPlaying(false);
         setProgress(0);
+        if (ended && onEndedRef.current) onEndedRef.current();
       },
     }),
     []
