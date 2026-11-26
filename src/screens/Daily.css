@@ -24,7 +24,7 @@
 .guess-row .input { flex: 1; min-width: 0; font-size: 22px; }
 .guess-row .guess-btn { width: 96px; flex: none; }
 
-.daily-foot { display: flex; justify-content: space-between; margin-top: 22px; font-weight: 700; font-size: 15px; color: var(--muted); }
+.daily-foot { display: flex; flex-wrap: wrap; justify-content: center; gap: 8px 18px; margin-top: 22px; font-weight: 700; font-size: 14px; color: var(--muted); }
 
 .mind-reader { background: var(--butter); color: var(--ink); font-weight: 800; font-size: 18px; border-radius: 999px; padding: 8px 14px; }
 
@@ -164,3 +164,5 @@
 .brag-btn { min-height: 58px; font-size: 16px; line-height: 1.2; padding: 8px 10px; }
 .solved-foot { text-align: center; margin-top: 22px; font-size: 14px; color: var(--muted); }
 .solved-foot a { color: var(--muted); text-decoration: underline; text-underline-offset: 3px; }
+.streak-btn { color: inherit; font: inherit; padding: 4px 0; }
+.stats-link { color: var(--butter); font: inherit; font-weight: 700; padding: 0; }

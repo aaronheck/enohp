@@ -38,3 +38,9 @@
   background: var(--bg); padding: 12px 0 max(4px, env(safe-area-inset-bottom));
   box-shadow: 0 -14px 14px -6px var(--bg);
 }
+
+/* ---- /privacy ---- */
+.privacy h2 { font-size: 20px; font-weight: 800; margin: 26px 0 8px; }
+.privacy ul { margin: 0; padding-left: 20px; display: flex; flex-direction: column; gap: 8px; }
+.privacy li { color: var(--cream); line-height: 1.45; font-size: 16px; }
+.privacy li b { color: var(--butter); }

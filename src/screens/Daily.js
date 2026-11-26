@@ -40,6 +40,7 @@ import { shouldPopMicTip, shouldShowMicCard } from '../lib/micTip';
 import DailyHowTo from '../ui/DailyHowTo';
 import PastPuzzles from '../ui/PastPuzzles';
 import PuzzleVideo, { canMakeVideo } from '../ui/PuzzleVideo';
+import StatsSheet from '../ui/StatsSheet';
 import './screens.css';
 import './Daily.css';
 
@@ -155,6 +156,7 @@ function Puzzle({ puzzle, forced }) {
   const [guess, setGuess] = useState('');
   const [checking, setChecking] = useState(false);
   const [micPop, setMicPop] = useState(false);
+  const [statsOpen, setStatsOpen] = useState(false);
   const [justSolved, setJustSolved] = useState(false); // confetti only for a solve this visit, not on reload
   const [error, setError] = useState(null);
   const [mimics, setMimics] = useState([]); // [{ index, blob }], oldest first
@@ -271,10 +273,10 @@ function Puzzle({ puzzle, forced }) {
       <span className="forced-tag">forced #{n}</span>
     ) : archive ? (
       <Link to="/">Today’s puzzle →</Link>
-    ) : days > 0 ? (
-      `🔥 ${plural(days, 'day')}`
     ) : (
-      `Daily #${n}`
+      <button className="btn-text streak-btn" onClick={() => setStatsOpen(true)} aria-label="Your stats">
+        {days > 0 ? `🔥 ${plural(days, 'day')}` : `📊 Daily #${n}`}
+      </button>
     ),
   };
 
@@ -282,7 +284,8 @@ function Puzzle({ puzzle, forced }) {
     return (
       <>
         {justSolved && <Confetti />}
-        <Solved n={n} state={state} answers={answers} voice={voice} days={days} top={top} mimics={mimics} puzzle={puzzle} />
+        <Solved n={n} state={state} answers={answers} voice={voice} days={days} top={top} mimics={mimics} puzzle={puzzle} onStats={() => setStatsOpen(true)} />
+        <StatsSheet open={statsOpen} onClose={() => setStatsOpen(false)} today={puzzle.today || n} todayState={archive ? null : state} />
       </>
     );
   }
@@ -468,8 +471,10 @@ function Puzzle({ puzzle, forced }) {
         <Link to="/practice/1">Practice</Link>
         <Link to="/past">Past puzzles</Link>
         <Link to="/previous">My chains</Link>
+        <Link to="/privacy">Privacy</Link>
       </div>
       <DevReset />
+      <StatsSheet open={statsOpen} onClose={() => setStatsOpen(false)} today={puzzle.today || n} todayState={null} />
     </Screen>
   );
 }
@@ -512,7 +517,7 @@ function useCountdown() {
   return mins >= 60 ? `${Math.floor(mins / 60)}h ${mins % 60}m` : `${mins}m`;
 }
 
-function Solved({ n, state, answers, voice, days, top, mimics, puzzle }) {
+function Solved({ n, state, answers, voice, days, top, mimics, puzzle, onStats }) {
   const archive = !!puzzle.archive;
   const [status, setStatus] = useState(null);
   const [showMimics, setShowMimics] = useState(false);
@@ -611,6 +616,10 @@ function Solved({ n, state, answers, voice, days, top, mimics, puzzle }) {
       ) : (
         <p className="next-puzzle">
           {state.failed ? 'Out of tries. ' : ''}Next puzzle in <b>{next}</b>
+          <span aria-hidden="true"> · </span>
+          <button className="btn-text stats-link" onClick={onStats}>
+            📊 Your stats
+          </button>
         </p>
       )}
       {micTip && <MicTipCard puzzle={n} onGone={() => setMicTip(false)} />}
@@ -631,6 +640,8 @@ function Solved({ n, state, answers, voice, days, top, mimics, puzzle }) {
         </Link>
         <span aria-hidden="true"> · </span>
         <Link to="/practice/1">Practice</Link>
+        <span aria-hidden="true"> · </span>
+        <Link to="/privacy">Privacy</Link>
       </p>
       <DevReset />
     </Screen>

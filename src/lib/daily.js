@@ -150,3 +150,37 @@ export function pastPuzzles(today, todayDate) {
   }
   return out;
 }
+
+/** Everything for the stats sheet, from this device's history. */
+export function playerStats(today) {
+  const { puzzles } = load();
+  const get = (n) => ({ ...blank(), ...(puzzles[n] || {}) });
+  const nums = Object.keys(puzzles).map(Number).filter((n) => n >= 1 && n <= today);
+  const finished = nums.map(get).filter((p) => p.solved || p.failed);
+  const solved = finished.filter((p) => p.solved);
+  const dist = [1, 2, 3, 4, 5].map((t) => ({ label: String(t), count: solved.filter((p) => triesUsed(p) === t).length }));
+  dist.push({ label: 'X', count: finished.filter((p) => p.failed).length });
+  // Best run of days solved on the day.
+  let best = 0;
+  let run = 0;
+  for (let n = 1; n <= today; n++) {
+    const p = puzzles[n];
+    run = p && p.solved && !p.late ? run + 1 : 0;
+    best = Math.max(best, run);
+  }
+  const days = [];
+  for (let n = Math.max(1, today - 27); n <= today; n++) {
+    const p = get(n);
+    days.push({ n, status: p.solved ? (p.late ? 'late' : 'solved') : p.failed ? 'failed' : n === today ? 'today' : 'none' });
+  }
+  return {
+    played: finished.length,
+    solved: solved.length,
+    winRate: finished.length ? solved.length / finished.length : null,
+    streak: streak(today),
+    best,
+    mindReaders: solved.filter((p) => isMindReader(p)).length,
+    dist,
+    days,
+  };
+}

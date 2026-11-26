@@ -9,6 +9,7 @@ import MyChains from './screens/MyChains';
 import HowToPlay from './screens/HowToPlay';
 import Practice from './screens/Practice';
 import InAppBanner from './ui/InAppBanner';
+import Privacy from './screens/Privacy';
 
 export default function App() {
   const { pathname } = useLocation();
@@ -23,6 +24,7 @@ export default function App() {
         <Route path="/" element={<Daily />} />
         <Route path="puzzle/:n" element={<Daily />} />
         <Route path="past" element={<PastScreen />} />
+        <Route path="privacy" element={<Privacy />} />
         <Route path="friends" element={<Home />} />
         <Route path="game" element={<Turn />} />
         <Route path="recap" element={<Recap />} />

@@ -1,0 +1,31 @@
+.stats-sheet { position: relative; padding-top: 20px; }
+.stats-title { font-size: 26px; font-weight: 800; letter-spacing: -0.02em; }
+.stats-close {
+  position: absolute; top: 14px; right: 16px; width: 36px; height: 36px; border-radius: 50%;
+  border: 0; background: rgba(255, 244, 220, 0.12); color: var(--cream); font-weight: 800; cursor: pointer;
+}
+.stats-tiles { display: grid; grid-template-columns: repeat(4, 1fr); gap: 8px; margin-top: 14px; }
+.stats-tiles div { background: var(--bg-raised); border-radius: 16px; padding: 10px 4px; text-align: center; }
+.stats-tiles b { display: block; font-size: 24px; font-weight: 800; }
+.stats-tiles span { display: block; font-size: 12px; font-weight: 700; color: var(--muted); }
+.stats-h { font-size: 13px; font-weight: 800; text-transform: uppercase; letter-spacing: 0.05em; color: var(--muted); margin: 20px 0 8px; }
+.stats-dist { display: flex; flex-direction: column; gap: 6px; }
+.stats-row { display: flex; align-items: center; gap: 10px; }
+.stats-lbl { width: 16px; font-weight: 800; text-align: center; }
+.stats-track { flex: 1; display: flex; align-items: center; gap: 8px; }
+.stats-track i { display: block; height: 22px; border-radius: 0 6px 6px 0; background: rgba(255, 244, 220, 0.28); }
+.stats-track i.on { background: var(--butter); }
+.stats-track i.x { background: rgba(255, 91, 58, 0.55); }
+.stats-track i.x.on { background: var(--tomato); }
+.stats-track em { font-style: normal; font-weight: 800; font-size: 14px; }
+.stats-mind { margin-top: 10px; font-weight: 700; }
+.stats-cal { display: grid; grid-template-columns: repeat(7, 1fr); gap: 8px; justify-items: center; }
+.cal { display: inline-block; width: 22px; height: 22px; border-radius: 7px; vertical-align: middle; }
+.stats-cal .cal { width: 100%; max-width: 34px; aspect-ratio: 1; height: auto; }
+.cal-solved { background: var(--butter); }
+.cal-late { background: transparent; box-shadow: inset 0 0 0 3px var(--butter); }
+.cal-failed { background: var(--tomato); }
+.cal-none { background: rgba(255, 244, 220, 0.12); }
+.cal-today { background: rgba(255, 244, 220, 0.12); box-shadow: inset 0 0 0 2px var(--cream); }
+.stats-legend { font-size: 12px; color: var(--muted); margin-top: 12px; display: flex; flex-wrap: wrap; align-items: center; gap: 4px 6px; }
+.stats-legend .cal { width: 14px; height: 14px; border-radius: 4px; }
