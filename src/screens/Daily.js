@@ -30,6 +30,8 @@ import { ReversedPlayer } from '../ui/audio';
 import { VibratingString } from '../ui/waves';
 import TryDots from '../ui/TryDots';
 import Confetti from '../ui/Confetti';
+import MicTip from '../ui/MicTip';
+import { shouldOfferMicTip } from '../lib/micTip';
 import DailyHowTo from '../ui/DailyHowTo';
 import './screens.css';
 import './Daily.css';
@@ -415,6 +417,7 @@ function Solved({ n, state, answers, voice, days, top, mimics }) {
   const [status, setStatus] = useState(null);
   const [showMimics, setShowMimics] = useState(false);
   const [image, setImage] = useState(null);
+  const [micTip, setMicTip] = useState(() => shouldOfferMicTip());
   const total = triesUsed(state);
   const answerVoice = state.voice || voice;
   const answer = useClip(answers ? answers[answerVoice] : null);
@@ -490,6 +493,7 @@ function Solved({ n, state, answers, voice, days, top, mimics }) {
       <p className="next-puzzle">
         {state.failed ? 'Out of tries. ' : ''}Next puzzle in <b>{next}</b>
       </p>
+      {micTip && <MicTip onGone={() => setMicTip(false)} />}
 
       {mimics.length > 0 && (
         <div className="section">
