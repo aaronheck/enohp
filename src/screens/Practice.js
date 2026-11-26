@@ -16,11 +16,10 @@ const STEPS = {
   mimic: { target: '.mimic-cta', text: 'Now tap Mimic it and copy that sound out loud. Weird is good!' },
   stop: { target: '.mimic-cta', text: 'Copy the sound you heard, then tap Stop.' },
   hear: { target: '.mimic-list .player', text: 'This is you, flipped forwards. Listen: does it sound like a word?' },
-  guess: { target: '.guess-row', text: 'Type what you think it says, then tap Guess.' },
 };
-const ORDER = ['listen', 'mimic', 'stop', 'hear', 'guess'];
+const ORDER = ['listen', 'mimic', 'stop', 'hear'];
 // Practice 2 only coaches the two key moves; practice 3 none.
-const SHOWN = { full: ORDER, some: ['mimic', 'guess'], none: [] };
+const SHOWN = { full: ORDER, some: ['mimic', 'hear'], none: [] };
 
 function useClip(url) {
   const [blob, setBlob] = useState(null);
@@ -49,7 +48,8 @@ function PracticeGame({ game }) {
   const recording = recorder.status === 'recording';
   const [heard, setHeard] = useState(false);
   const [mimics, setMimics] = useState([]); // [{ index, blob }]
-  const [heardMimic, setHeardMimic] = useState(false);
+  // Tips run once: they end when the player acts after hearing their first mimic.
+  const [coached, setCoached] = useState(false);
   const [guess, setGuess] = useState('');
   const [misses, setMisses] = useState([]);
   const [solved, setSolved] = useState(false);
@@ -63,6 +63,7 @@ function PracticeGame({ game }) {
   }, [solved, release, game.n]);
 
   const startMimic = () => {
+    if (mimics.length) setCoached(true);
     unlockAudio();
     stopShared();
     recorder.start();
@@ -71,12 +72,12 @@ function PracticeGame({ game }) {
     unlockAudio();
     const blob = await recorder.stop();
     if (blob && blob.size) {
-      setHeardMimic(false);
       setMimics((prev) => [...prev, { index: prev.length + 1, blob }]);
     }
   };
   const submit = (e) => {
     e.preventDefault();
+    setCoached(true);
     const g = guess.trim();
     if (!g) return;
     if (isCorrect(g, game.phrase)) setSolved(true);
@@ -86,15 +87,8 @@ function PracticeGame({ game }) {
     }
   };
 
-  const step = coachStep({ heard, recording, mimics: mimics.length, heardMimic });
-  const shown = SHOWN[game.coach];
-  // After a miss, nudge towards mimicking again instead of the guess box.
-  const coach =
-    misses.length && step === 'guess' && game.coach !== 'none'
-      ? { target: '.mimic-cta', text: 'Not quite! Mimic it again, or try another guess.', nudge: true }
-      : shown.includes(step)
-      ? STEPS[step]
-      : null;
+  const step = coachStep({ heard, recording, mimics: mimics.length, coached });
+  const coach = step && SHOWN[game.coach].includes(step) ? STEPS[step] : null;
   const next = PRACTICE.find((p) => p.n === game.n + 1);
   const top = { left: <Link to="/">← Daily puzzle</Link>, right: `Practice ${game.n} of ${PRACTICE.length}` };
 
@@ -136,7 +130,7 @@ function PracticeGame({ game }) {
 
   return (
     <Screen {...top} className="practice">
-      {coach && <CoachMark target={coach.target} text={coach.text} step={game.coach === 'full' && !coach.nudge ? ORDER.indexOf(step) + 1 : null} total={game.coach === 'full' && !coach.nudge ? ORDER.length : null} />}
+      {coach && <CoachMark target={coach.target} text={coach.text} step={game.coach === 'full' ? ORDER.indexOf(step) + 1 : null} total={game.coach === 'full' ? ORDER.length : null} onClose={() => setCoached(true)} />}
       <h1 className="title title-sm turn-title">
         Practice {game.n}
         <br />
@@ -188,7 +182,6 @@ function PracticeGame({ game }) {
                 dark
                 compact
                 autoPlay={i === 0}
-                onEnded={i === 0 ? () => setHeardMimic(true) : undefined}
               />
             ))}
         </div>
@@ -210,7 +203,11 @@ function PracticeGame({ game }) {
             id="practice-guess"
             className="input"
             value={guess}
-            onChange={(e) => setGuess(e.target.value)}
+            onChange={(e) => {
+              setGuess(e.target.value);
+              if (mimics.length) setCoached(true);
+            }}
+            onFocus={() => mimics.length && setCoached(true)}
             placeholder="Your guess"
             aria-label="Your guess"
             autoComplete="off"

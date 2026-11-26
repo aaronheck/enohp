@@ -5,9 +5,9 @@ import './CoachMark.css';
 /**
  * A tooltip that points at an element (found by CSS selector) and rings it, telling
  * the player exactly what to do next. Follows the element on scroll/resize, and
- * scrolls it into view when the step starts.
+ * scrolls it into view when the step starts. onClose adds an ✕ button.
  */
-export default function CoachMark({ target, text, step, total }) {
+export default function CoachMark({ target, text, step, total, onClose }) {
   const [rect, setRect] = useState(null);
 
   useEffect(() => {
@@ -60,6 +60,11 @@ export default function CoachMark({ target, text, step, total }) {
         }}
       >
         <span className="coach-arrow" style={{ left: arrowLeft }} />
+        {onClose && (
+          <button className="coach-close" onClick={onClose} aria-label="Hide tips">
+            ✕
+          </button>
+        )}
         {step && (
           <span className="coach-step">
             Step {step}

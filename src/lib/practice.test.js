@@ -1,11 +1,11 @@
 import { coachStep, isCorrect, markPracticeDone, practiceDone } from './practice';
 
-test('coach steps follow listen -> mimic -> stop -> hear -> guess', () => {
-  expect(coachStep({ heard: false, recording: false, mimics: 0, heardMimic: false })).toBe('listen');
-  expect(coachStep({ heard: true, recording: false, mimics: 0, heardMimic: false })).toBe('mimic');
-  expect(coachStep({ heard: true, recording: true, mimics: 0, heardMimic: false })).toBe('stop');
-  expect(coachStep({ heard: true, recording: false, mimics: 1, heardMimic: false })).toBe('hear');
-  expect(coachStep({ heard: true, recording: false, mimics: 1, heardMimic: true })).toBe('guess');
+test('coach steps: listen -> mimic -> stop -> hear, once', () => {
+  expect(coachStep({ heard: false, recording: false, mimics: 0, coached: false })).toBe('listen');
+  expect(coachStep({ heard: true, recording: false, mimics: 0, coached: false })).toBe('mimic');
+  expect(coachStep({ heard: true, recording: true, mimics: 0, coached: false })).toBe('stop');
+  expect(coachStep({ heard: true, recording: false, mimics: 1, coached: false })).toBe('hear');
+  expect(coachStep({ heard: true, recording: true, mimics: 1, coached: true })).toBe(null); // mimic again: no tips
 });
 
 test('practice answers are forgiving', () => {

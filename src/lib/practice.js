@@ -41,15 +41,17 @@ export function isCorrect(guess, phrase) {
 }
 
 /**
- * Which coaching step the player is on:
- * listen -> mimic -> stop (while recording) -> hear (their flipped mimic) -> guess.
+ * Which coaching step the player is on (one pass only):
+ * listen -> mimic -> stop (while recording) -> hear (their flipped mimic) -> done.
+ * "hear" stays up until the player does something next (types a guess or mimics
+ * again), which sets `coached`.
  */
-export function coachStep({ heard, recording, mimics, heardMimic }) {
+export function coachStep({ heard, recording, mimics, coached }) {
+  if (coached) return null;
   if (!heard) return 'listen';
   if (recording) return 'stop';
   if (mimics === 0) return 'mimic';
-  if (!heardMimic) return 'hear';
-  return 'guess';
+  return 'hear';
 }
 
 const KEY = 'yelnats.practice';

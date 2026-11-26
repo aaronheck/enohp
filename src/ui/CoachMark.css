@@ -26,7 +26,13 @@
   from { opacity: 0; transform: translateY(6px); }
 }
 .coach-step { display: block; font-weight: 800; font-size: 12px; text-transform: uppercase; letter-spacing: 0.06em; opacity: 0.65; }
-.coach-text { display: block; font-weight: 800; font-size: 17px; line-height: 1.3; margin-top: 2px; }
+.coach-text { display: block; font-weight: 800; font-size: 17px; line-height: 1.3; margin-top: 2px; padding-right: 22px; }
+.coach-close {
+  position: absolute; top: 6px; right: 6px; width: 30px; height: 30px; border-radius: 50%;
+  border: 0; background: rgba(20, 36, 29, 0.12); color: var(--ink); font-weight: 800; font-size: 14px;
+  display: flex; align-items: center; justify-content: center; cursor: pointer;
+  pointer-events: auto; /* the bubble itself lets taps through */
+}
 .coach-arrow {
   position: absolute;
   width: 16px;
