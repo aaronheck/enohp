@@ -86,8 +86,7 @@
   box-shadow: 0 8px 0 var(--bg-deep);
 }
 .result-kicker { font-weight: 800; font-size: 15px; color: rgba(20, 36, 29, 0.55); letter-spacing: 0.01em; }
-.result-score { font-weight: 800; font-size: clamp(54px, 17vw, 76px); letter-spacing: -0.04em; line-height: 1; margin-top: 8px; }
-.result-score.hot { font-size: clamp(40px, 12vw, 54px); }
+.result-score { font-weight: 800; font-size: clamp(84px, 26vw, 112px); letter-spacing: -0.05em; line-height: 0.95; margin-top: 6px; }
 .result-score.hot { color: var(--tomato); }
 .result-dots { display: flex; justify-content: center; gap: 10px; margin-top: 12px; }
 .result-dots i { width: 22px; height: 22px; border-radius: 50%; border: 3px solid rgba(20, 36, 29, 0.2); }

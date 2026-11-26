@@ -14,11 +14,10 @@ test('tries: every guess (incl. the right one) and every mimic after the first',
   expect(triesUsed(live({ guesses: ['a', 'b'] }))).toBe(2);
 });
 
-test('score is a count of tries (fewer is better), or "Out of tries"', () => {
-  expect(score(st({}))).toBe('1 try');
-  expect(score(st({ mimics: 2, guesses: ['a'] }))).toBe('3 tries');
-  expect(score(st({ guesses: ['a', 'b', 'c', 'd'] }))).toBe('5 tries');
-  expect(score(st({ solved: false, failed: true, guesses: ['a', 'b', 'c', 'd', 'e'] }))).toBe('Out of tries');
+test('score is N/5, or X/5 when out of tries', () => {
+  expect(score(st({}))).toBe('1/5');
+  expect(score(st({ mimics: 2, guesses: ['a'] }))).toBe('3/5');
+  expect(score(st({ solved: false, failed: true, guesses: ['a', 'b', 'c', 'd', 'e'] }))).toBe('X/5');
 });
 
 test('a mimic can never be the 5th try; the first mimic is always allowed', () => {
@@ -45,8 +44,8 @@ test('streak counts consecutive solved days and survives an unsolved today', () 
 
 test('share text has the score and the trail, never the answer', () => {
   const text = shareText(12, st({ mimics: 2, guesses: ['x'], actions: ['mimic', 'miss', 'mimic', 'hit'], phrase: 'peanut butter' }), 'https://yelnatsgame.com');
-  expect(text).toBe('Yelnats Daily #12 · 3 tries\n🎙❌🎙✅\nhttps://yelnatsgame.com');
-  expect(shareText(12, st({ actions: ['hit'] }), null, 4)).toBe('Yelnats Daily #12 · 1 try 🤯 Mind reader\n✅\n🔥 4-day streak');
+  expect(text).toBe('Yelnats Daily #12 · 3/5\n🎙❌🎙✅\nhttps://yelnatsgame.com');
+  expect(shareText(12, st({ actions: ['hit'] }), null, 4)).toBe('Yelnats Daily #12 · 1/5 🤯 Mind reader\n✅\n🔥 4-day streak');
   expect(text).not.toMatch(/peanut/);
 });
 
@@ -61,7 +60,7 @@ test('mind reader: first guess right, no mimic', () => {
   expect(isMindReader(st({}))).toBe(true);
   expect(isMindReader(st({ mimics: 1 }))).toBe(false); // even the free mimic counts
   expect(isMindReader(st({ guesses: ['a'] }))).toBe(false);
-  expect(shareText(3, st({ actions: ['hit'] }), 'u')).toBe('Yelnats Daily #3 · 1 try 🤯 Mind reader\n✅\nu');
+  expect(shareText(3, st({ actions: ['hit'] }), 'u')).toBe('Yelnats Daily #3 · 1/5 🤯 Mind reader\n✅\nu');
 });
 
 test('countdown to the next puzzle at Pacific midnight', () => {
