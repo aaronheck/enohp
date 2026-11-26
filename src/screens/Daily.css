@@ -86,8 +86,11 @@
   box-shadow: 0 8px 0 var(--bg-deep);
 }
 .result-kicker { font-weight: 800; font-size: 15px; color: rgba(20, 36, 29, 0.55); letter-spacing: 0.01em; }
-.result-score { font-weight: 800; font-size: clamp(84px, 26vw, 112px); letter-spacing: -0.05em; line-height: 0.95; margin-top: 6px; }
-.result-score.hot { color: var(--tomato); }
+.result-rating { display: flex; flex-direction: column; align-items: center; margin-top: 10px; }
+.result-emoji { font-size: 56px; line-height: 1; }
+.result-word { font-weight: 800; font-size: clamp(48px, 15vw, 64px); letter-spacing: -0.04em; line-height: 1; margin-top: 6px; }
+.result-rating.hot .result-word { color: var(--tomato); }
+.result-line { font-weight: 700; font-size: 16px; color: rgba(20, 36, 29, 0.6); margin-top: 6px; }
 .result-dots { display: flex; justify-content: center; gap: 10px; margin-top: 12px; }
 .result-dots i { width: 22px; height: 22px; border-radius: 50%; border: 3px solid rgba(20, 36, 29, 0.2); }
 .result-dots i.on { background: var(--butter); border-color: #c9a52a; }
@@ -178,3 +181,8 @@
 .daily-head.daily-head-dated { margin-top: 2px; }
 .result-date { font-weight: 800; font-size: 20px; color: var(--ink); letter-spacing: -0.01em; }
 .result-date + .result-kicker { margin-top: 2px; }
+
+/* Tries dots: green = 3 or fewer, yellow = 4-5, red = out of tries. */
+.result-dots i.on.good { background: #43c46e; border-color: #2c9152; }
+.result-dots i.on.ok { background: var(--butter); border-color: #c9a52a; }
+.result-dots i.on.bad { background: var(--tomato); border-color: #c4432a; }

@@ -44,8 +44,8 @@ test('streak counts consecutive solved days and survives an unsolved today', () 
 
 test('share text has the score and the trail, never the answer', () => {
   const text = shareText(12, st({ mimics: 2, guesses: ['x'], actions: ['mimic', 'miss', 'mimic', 'hit'], phrase: 'peanut butter' }), 'https://yelnatsgame.com');
-  expect(text).toBe('Yelnats Daily #12 · 3/5\n🎙❌🎙✅\nhttps://yelnatsgame.com');
-  expect(shareText(12, st({ actions: ['hit'] }), null, 4)).toBe('Yelnats Daily #12 · 1/5 🤯 Mind reader\n✅\n🔥 4-day streak');
+  expect(text).toBe('Yelnats Daily #12\n💪 Great · solved in 3 tries\n🎙❌🎙✅\nhttps://yelnatsgame.com');
+  expect(shareText(12, st({ actions: ['hit'] }), null, 4)).toBe('Yelnats Daily #12\n🤯 Mind reader · first guess, no mimic\n✅\n🔥 4-day streak');
   expect(text).not.toMatch(/peanut/);
 });
 
@@ -60,7 +60,7 @@ test('mind reader: first guess right, no mimic', () => {
   expect(isMindReader(st({}))).toBe(true);
   expect(isMindReader(st({ mimics: 1 }))).toBe(false); // even the free mimic counts
   expect(isMindReader(st({ guesses: ['a'] }))).toBe(false);
-  expect(shareText(3, st({ actions: ['hit'] }), 'u')).toBe('Yelnats Daily #3 · 1/5 🤯 Mind reader\n✅\nu');
+  expect(shareText(3, st({ actions: ['hit'] }), 'u')).toBe('Yelnats Daily #3\n🤯 Mind reader · first guess, no mimic\nu'.replace('\nu', '\n✅\nu'));
 });
 
 test('countdown to the next puzzle at Pacific midnight', () => {
@@ -88,5 +88,5 @@ test('past puzzles: the 5 before today, newest first, never below #1', () => {
 
 test('share text names the day when it has one', () => {
   const st2 = { ...getPuzzleState(5), solved: true, mimics: 1, actions: ['mimic', 'hit'] };
-  expect(shareText(2, st2, 'u', 0, '2026-11-26')).toBe('Yelnats Daily #2 · Thu, Nov 26\n1/5\n🎙✅\nu');
+  expect(shareText(2, st2, 'u', 0, '2026-11-26')).toBe('Yelnats Daily #2 · Thu, Nov 26\n🤯 Genius · solved in 1 try\n🎙✅\nu');
 });

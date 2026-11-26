@@ -1,6 +1,6 @@
 import React from 'react';
 import { Link } from 'react-router-dom';
-import { pastPuzzles, score } from '../lib/daily';
+import { pastPuzzles, rating } from '../lib/daily';
 import './PastPuzzles.css';
 
 /** The last few puzzles: play any you missed (free), or see how you did. */
@@ -17,7 +17,7 @@ export default function PastPuzzles({ today, todayDate, title = 'Missed one? Pla
               <span className="past-n">#{n}</span>
               <span className="past-date">{date}</span>
               <span className="past-status">
-                {state.solved ? `✅ ${score(state)}` : state.failed ? '❌ X/5' : state.heard || state.mimics ? 'Keep going →' : 'Play →'}
+                {state.solved || state.failed ? `${rating(state).emoji} ${rating(state).word}` : state.heard || state.mimics ? 'Keep going →' : 'Play →'}
               </span>
             </Link>
           </li>

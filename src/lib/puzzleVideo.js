@@ -88,29 +88,25 @@ function drawScorecard(g, x, y, w, h, r) {
   g.fillStyle = C.cream;
   roundRect(g, x, y, w, h, 32);
   g.fill();
-  g.fillStyle = r.failed ? C.tomato : C.deep;
+  // The rating in words ("🔥 Brilliant"): fewer tries reads as better, unlike "1/5".
+  const rated = r.rating || { emoji: '', word: `${r.failed ? 'X' : r.tries}/5` };
   g.textAlign = 'left';
-  g.font = `800 72px ${FONT}`;
-  const score = `${r.failed ? 'X' : r.tries}/5`;
-  g.fillText(score, x + 32, y + h / 2 + 26);
-  const sw = g.measureText(score).width;
-  // Tries as dots, then the moves.
-  let cx = x + 32 + sw + 34;
-  for (let i = 0; i < 5; i++) {
-    g.beginPath();
-    g.arc(cx + i * 30, y + h / 2 - 16, 11, 0, Math.PI * 2);
-    const on = i < Math.min(r.used, 5);
-    g.fillStyle = on ? (r.failed ? C.tomato : C.butter) : 'rgba(20,36,29,0.12)';
-    g.fill();
-  }
-  g.font = `400 34px ${FONT}`;
+  g.font = `56px ${FONT}`;
   g.fillStyle = C.deep;
-  g.fillText((r.actions || []).map((a) => ACTION_EMOJI[a] || '').join(''), cx - 11, y + h / 2 + 38);
+  g.fillText(rated.emoji, x + 28, y + h / 2 + 20);
+  const ew = g.measureText(rated.emoji).width;
+  g.fillStyle = r.failed ? C.tomato : C.deep;
+  g.font = `800 54px ${FONT}`;
+  g.fillText(rated.word, x + 28 + ew + 14, y + h / 2 + 4);
+  g.font = `700 26px ${FONT}`;
+  g.fillStyle = 'rgba(20,36,29,0.6)';
+  const moves = (r.actions || []).map((a) => ACTION_EMOJI[a] || '').join('');
+  g.fillText(`${rated.line || ''}  ${moves}`, x + 28 + ew + 14, y + h / 2 + 40);
   if (r.streak >= 2) {
     g.textAlign = 'right';
     g.font = `800 30px ${FONT}`;
     g.fillStyle = C.deep;
-    g.fillText(`🔥 ${r.streak}`, x + w - 32, y + h / 2 + 12);
+    g.fillText(`🔥 ${r.streak}`, x + w - 28, y + 46);
   }
   g.textAlign = 'left';
 }
@@ -160,12 +156,11 @@ function drawFrame(g, t, { n, clips, end, result, dateLabel }) {
   const clip = clips[k];
   const progress = Math.min(1, Math.max(0, (t - clip.at) / clip.d));
   const playing = t >= clip.at && t < clip.at + clip.d;
-  const label = t < clips[0].at ? 'listen…' : t >= end ? 'what did it say?' : clip.label;
   const peaks = clip.peaks;
   const bars = peaks.length;
   const left = 96;
   const span = W - 192;
-  const mid = cardY + cardH / 2 - 10;
+  const mid = cardY + cardH / 2;
   const bw = span / bars;
   for (let i = 0; i < bars; i++) {
     const h = Math.max(8, peaks[i] * 220);
@@ -176,10 +171,6 @@ function drawFrame(g, t, { n, clips, end, result, dateLabel }) {
     roundRect(g, left + i * bw + bw * 0.18, mid - (h * live) / 2, bw * 0.64, h * live, Math.min(6, bw * 0.3));
     g.fill();
   }
-  g.fillStyle = C.cream;
-  g.font = `700 32px ${FONT}`;
-  g.textAlign = 'center';
-  g.fillText(label, W / 2, cardY + cardH - 40);
 
   // Footer / outro
   const outA = ease((t - end) / 0.5);
@@ -269,14 +260,13 @@ export async function makePuzzleVideo({ blob, mimic, n, date, result, onProgress
   const m = mimicBuf ? tidy(ctx, mimicBuf) : null;
   const second = m || p;
   const clips = [
-    { ...p, at: INTRO, d: p.buffer.duration, peaks: peaksOf(p.buffer, 44), label: m ? '🔊 the puzzle' : '1st listen', color: C.butter },
+    { ...p, at: INTRO, d: p.buffer.duration, peaks: peaksOf(p.buffer, 44), color: C.butter },
   ];
   clips.push({
     ...second,
     at: INTRO + p.buffer.duration + GAP,
     d: second.buffer.duration,
     peaks: peaksOf(second.buffer, 44),
-    label: m ? '🎙 my attempt' : '2nd listen',
     color: m ? C.sky : C.butter,
   });
   const end = clips[1].at + clips[1].d;

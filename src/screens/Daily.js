@@ -12,6 +12,8 @@ import {
   getPuzzleState,
   isMindReader,
   score,
+  rating,
+  triesTone,
   triesUsed,
   plural,
   shareText,
@@ -542,6 +544,7 @@ function Solved({ n, state, answers, voice, days, top, mimics, puzzle, onStats }
   const [videoOk] = useState(() => canMakeVideo());
   const [videoError, setVideoError] = useState(null);
   const total = triesUsed(state);
+  const rated = rating(state);
   const answerVoice = state.voice || voice;
   // Older saves may name a voice we no longer serve: fall back to the one we do.
   const answer = useClip(answers ? answers[answerVoice] || Object.values(answers)[0] : null);
@@ -557,6 +560,8 @@ function Solved({ n, state, answers, voice, days, top, mimics, puzzle, onStats }
       number: n,
       date: longDate(puzzle.date),
       score: score(state),
+      rating: rated,
+      tone: triesTone(state),
       failed: state.failed,
       mindReader: isMindReader(state),
       used: total,
@@ -582,10 +587,16 @@ function Solved({ n, state, answers, voice, days, top, mimics, puzzle, onStats }
       <div className="result-card">
         <p className="result-date">{longDate(puzzle.date)}</p>
         <p className="result-kicker">Yelnats Daily · Puzzle #{n}</p>
-        <div className={'result-score' + (state.failed ? ' hot' : '')}>{score(state)}</div>
+        <div className={'result-rating' + (state.failed ? ' hot' : '')}>
+          <span className="result-emoji" aria-hidden="true">
+            {rated.emoji}
+          </span>
+          <span className="result-word">{rated.word}</span>
+        </div>
+        <p className="result-line">{rated.line}</p>
         <div className="result-dots" aria-hidden="true">
           {Array.from({ length: MAX_TRIES }, (_, i) => (
-            <i key={i} className={i < Math.min(total, MAX_TRIES) ? (state.failed ? 'on failed' : 'on') : ''} />
+            <i key={i} className={i < Math.min(total, MAX_TRIES) ? `on ${triesTone(state)}` : ''} />
           ))}
         </div>
         <div className="result-moves" aria-label="Your moves">
@@ -595,11 +606,7 @@ function Solved({ n, state, answers, voice, days, top, mimics, puzzle, onStats }
             </span>
           ))}
         </div>
-        {isMindReader(state) ? (
-          <span className="mind-reader">🤯 Mind reader</span>
-        ) : days >= 2 ? (
-          <span className="result-streak">🔥 {days}-day streak</span>
-        ) : null}
+        {days >= 2 && <span className="result-streak">🔥 {days}-day streak</span>}
       </div>
 
       <div className="answer-row">
@@ -621,7 +628,7 @@ function Solved({ n, state, answers, voice, days, top, mimics, puzzle, onStats }
             n={n}
             date={puzzle.date}
             mimic={mimics.length ? mimics[mimics.length - 1].blob : null}
-            result={{ tries: total, used: total, failed: !!state.failed, mindReader: isMindReader(state), actions, streak: days }}
+            result={{ tries: total, used: total, failed: !!state.failed, mindReader: isMindReader(state), actions, streak: days, rating: rated }}
             onError={setVideoError}
           />
         )}

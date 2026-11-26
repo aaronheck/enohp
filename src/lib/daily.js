@@ -73,6 +73,26 @@ export function isMindReader(state) {
   return state.solved && state.mimics === 0 && state.guesses.length === 0;
 }
 
+const RATINGS = { 1: ['🤯', 'Genius'], 2: ['🔥', 'Brilliant'], 3: ['💪', 'Great'], 4: ['😎', 'Nice'], 5: ['😮‍💨', 'Phew!'] };
+
+/**
+ * How you did, as words (so fewer tries reads as better, unlike "1/5" vs "5/5"):
+ * { emoji, word, line } e.g. 🔥 Brilliant / "Solved in 2 tries".
+ */
+export function rating(state) {
+  if (state.failed) return { emoji: '😵', word: 'Stumped', line: 'Out of tries' };
+  if (isMindReader(state)) return { emoji: '🤯', word: 'Mind reader', line: 'First guess, no mimic' };
+  const t = triesUsed(state);
+  const [emoji, word] = RATINGS[t] || ['✅', 'Solved'];
+  return { emoji, word, line: `Solved in ${plural(t, 'try')}` };
+}
+
+/** Colour for the tries dots: 'good' (green, 3 or fewer), 'ok' (yellow, 4-5), 'bad' (red, out of tries). */
+export function triesTone(state) {
+  if (state.failed) return 'bad';
+  return triesUsed(state) <= 3 ? 'good' : 'ok';
+}
+
 /** "2/5", or "X/5" when out of tries. */
 export function score(state) {
   return `${state.failed ? 'X' : triesUsed(state)}/${MAX_TRIES}`;
@@ -91,17 +111,15 @@ export const actionEmoji = (a) => ACTION_EMOJI[a] || '';
 
 /**
  * Spoiler-free share text, e.g.
- *   Yelnats Daily #12 · 2/5
+ *   Yelnats Daily #12 · Thu, Nov 26
+ *   🔥 Brilliant · solved in 2 tries
  *   🎙❌✅
  *   🔥 3-day streak
  */
 export function shareText(number, state, url, days = 0, date = null) {
   const trail = (state.actions || []).map(actionEmoji).join('') || (state.failed ? '❌' : '✅');
-  const badge = isMindReader(state) ? ' 🤯 Mind reader' : '';
-  // With the date: it's a daily game, so say which day.
-  const lines = date
-    ? [`Yelnats Daily #${number} · ${shortDate(date)}`, `${score(state)}${badge}`, trail]
-    : [`Yelnats Daily #${number} · ${score(state)}${badge}`, trail];
+  const r = rating(state);
+  const lines = [`Yelnats Daily #${number}${date ? ` · ${shortDate(date)}` : ''}`, `${r.emoji} ${r.word} · ${r.line.toLowerCase()}`, trail];
   if (days >= 2) lines.push(`🔥 ${days}-day streak`);
   if (url) lines.push(url);
   return lines.join('\n');

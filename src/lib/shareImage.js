@@ -69,20 +69,30 @@ export async function drawShareImage(result) {
     g.textAlign = 'center';
     g.fillText(`Puzzle #${result.number}`, 0, -270);
 
+    // How you did, in words: fewer tries reads as better ("Brilliant"), unlike "1/5".
+    const rated = result.rating || { emoji: '', word: result.score, line: '' };
+    g.font = `110px ${FONT}`;
+    g.fillText(rated.emoji, 0, -150);
     g.fillStyle = result.failed ? C.tomato : C.ink;
-    g.font = `800 260px ${FONT}`;
-    g.fillText(result.score, 0, -40);
+    let size = 150;
+    g.font = `800 ${size}px ${FONT}`;
+    while (g.measureText(rated.word).width > 780 && size > 80) g.font = `800 ${(size -= 8)}px ${FONT}`;
+    g.fillText(rated.word, 0, -10);
+    g.fillStyle = C.muted;
+    g.font = `700 46px ${FONT}`;
+    g.fillText(rated.line, 0, 52);
 
     // Tries dots
-    const r = 30;
-    const gap = 26;
+    const r = 22;
+    const gap = 22;
     const total = result.max * (2 * r) + (result.max - 1) * gap;
     for (let i = 0; i < result.max; i++) {
       const x = -total / 2 + r + i * (2 * r + gap);
       g.beginPath();
-      g.arc(x, 60, r, 0, Math.PI * 2);
+      g.arc(x, 118, r, 0, Math.PI * 2);
       if (i < Math.min(result.used, result.max)) {
-        g.fillStyle = result.failed ? C.tomato : C.butter;
+        // green = 3 or fewer, yellow = 4-5, red = out of tries
+        g.fillStyle = { good: '#43c46e', ok: C.butter, bad: C.tomato }[result.tone || (result.failed ? 'bad' : 'ok')];
         g.fill();
       } else {
         g.lineWidth = 7;
@@ -98,16 +108,8 @@ export async function drawShareImage(result) {
     const trail = result.actions.map((a) => icons[a] || '').join('  ') || (result.failed ? '❌' : '✅');
     g.fillText(trail, 0, 205);
 
-    if (result.mindReader) {
-      g.font = `800 50px ${FONT}`;
-      const label = '🤯 Mind reader';
-      const w = g.measureText(label).width + 70;
-      g.fillStyle = C.butter;
-      roundRect(g, -w / 2, 248, w, 84, 42);
-      g.fill();
-      g.fillStyle = C.ink;
-      g.fillText(label, 0, 307);
-    } else if (result.streak >= 2) {
+    // (Mind reader is now the rating word itself.)
+    if (result.streak >= 2) {
       g.font = `800 50px ${FONT}`;
       g.fillStyle = C.ink;
       g.fillText(`🔥 ${result.streak}-day streak`, 0, 305);
