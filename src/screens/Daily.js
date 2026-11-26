@@ -321,6 +321,7 @@ function PuzzleClip({ url, highlight, onEnded }) {
       hideDuration
       highlight={highlight}
       onEnded={onEnded}
+      tapAnywhere
       reverse={false}
     />
   );

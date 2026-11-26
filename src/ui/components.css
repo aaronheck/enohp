@@ -18,6 +18,8 @@
   border-radius: 26px; padding: 18px;
 }
 .player-tilt { transform: rotate(-1.2deg); }
+.player-tappable { cursor: pointer; -webkit-user-select: none; user-select: none; }
+.player-tappable:active { filter: brightness(0.97); }
 .player-main { display: flex; align-items: center; gap: 14px; }
 .player-play {
   width: 64px; height: 64px; border-radius: 50%; flex: none;

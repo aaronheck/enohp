@@ -11,7 +11,7 @@ function fmt(seconds) {
 }
 
 /** Card that plays a recording (rewound by default), with a 0.5x toggle. */
-export function ReversedPlayer({ blob, caption, dark, tilt, compact, hideDuration, highlight, onEnded, error: loadError, autoPlay, reverse = true }) {
+export function ReversedPlayer({ blob, caption, dark, tilt, compact, hideDuration, highlight, onEnded, tapAnywhere, error: loadError, autoPlay, reverse = true }) {
   const p = useReversedPlayer(blob, { reverse, onEnded });
   const error = loadError || p.error;
   const slow = p.rate !== 1;
@@ -35,7 +35,17 @@ export function ReversedPlayer({ blob, caption, dark, tilt, compact, hideDuratio
   };
 
   return (
-    <div className={'player' + (dark ? ' player-dark' : '') + (tilt ? ' player-tilt' : '') + (compact ? ' player-compact' : '')}>
+    <div
+      className={
+        'player' +
+        (dark ? ' player-dark' : '') +
+        (tilt ? ' player-tilt' : '') +
+        (compact ? ' player-compact' : '') +
+        (tapAnywhere && p.ready ? ' player-tappable' : '')
+      }
+      // Tapping anywhere on the card plays/stops (the buttons inside handle their own taps).
+      onClick={tapAnywhere && p.ready ? (e) => !e.target.closest('button') && toggle() : undefined}
+    >
       <div className="player-main">
         <button
           className={'player-play' + (highlight && !p.playing ? ' play-shimmer' : '')}
