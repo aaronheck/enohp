@@ -85,3 +85,4 @@
 .ios-alert-btns span { flex: 1; padding: 10px 0; color: #007aff; font-size: 15px; }
 .ios-alert-btns span + span { border-left: 1px solid #d1d1d6; }
 .ios-alert-allow { font-weight: 700; }
+.mic-privacy { display: block; margin-top: 10px; color: var(--cream); font-weight: 700; font-size: 15px; }

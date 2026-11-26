@@ -101,7 +101,7 @@ const SLIDES = [
     title: 'Microphone: Allow',
     body: (
       <>
-        Tap <b>Microphone</b> and pick <b>Allow</b>. Only Yelnats gets it, and no more popups.
+        Tap <b>Microphone</b> and pick <b>Allow</b>. No more popups, and we still only record when you tap Mimic it.
       </>
     ),
     art: <AllowArt />,
@@ -129,7 +129,12 @@ const INTRO = {
   kicker: 'Quick tip before you record',
   next: 'Show me how',
   title: 'Tired of tapping Allow?',
-  body: 'Safari asks for the mic every time. Three taps and it never asks on Yelnats again.',
+  body: (
+    <>
+      Safari asks for the mic every time. Three taps and it never asks on Yelnats again.
+      <span className="mic-privacy">🔒 We still only record when you tap Mimic it.</span>
+    </>
+  ),
   art: <PromptArt />,
 };
 
@@ -170,7 +175,7 @@ export function MicTipCard({ puzzle, onGone }) {
         ✕
       </button>
       <p className="mic-tip-title">🎙 Tired of tapping “Allow” for the mic?</p>
-      <p className="mic-tip-body">Set Safari to always allow it on Yelnats. Takes 10 seconds.</p>
+      <p className="mic-tip-body">Set Safari to always allow it on Yelnats. Takes 10 seconds. We still only record when you tap Mimic it.</p>
       <div className="mic-tip-actions">
         <button
           className="btn btn-primary mic-tip-go"
