@@ -16,7 +16,7 @@ export function isDev() {
 /** Forget all daily progress and saved mimics on this device, then reload. */
 export function resetDaily() {
   try {
-    localStorage.removeItem('yelnats.daily');
+    ['yelnats.daily', 'yelnats.howtoSeen', 'yelnats.micTip', 'yelnats.practice'].forEach((k) => localStorage.removeItem(k));
   } catch (e) {
     // ignore
   }

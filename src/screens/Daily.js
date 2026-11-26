@@ -15,6 +15,8 @@ import {
   plural,
   shareText,
   hasPlayedDaily,
+  howtoSeen,
+  markHowtoSeen,
   streak,
   updatePuzzleState,
 } from '../lib/daily';
@@ -137,8 +139,8 @@ function Puzzle({ puzzle, forced }) {
   const [mimics, setMimics] = useState([]); // [{ index, blob }], oldest first
   const [justRecorded, setJustRecorded] = useState(null);
   // Open the how-to automatically the first time someone plays any daily puzzle.
-  const [howOpen, setHowOpen] = useState(() => !hasPlayedDaily());
-  const [howSource, setHowSource] = useState(() => (hasPlayedDaily() ? 'button' : 'auto'));
+  const [howOpen, setHowOpen] = useState(() => !hasPlayedDaily() && !howtoSeen());
+  const [howSource, setHowSource] = useState(() => (hasPlayedDaily() || howtoSeen() ? 'button' : 'auto'));
   const navigate = useNavigate();
 
   // Analytics: one view per puzzle load (and whether the how-to opened by itself).
@@ -301,6 +303,7 @@ function Puzzle({ puzzle, forced }) {
         source={howSource}
         onClose={(how, slide) => {
           setHowOpen(false);
+          markHowtoSeen();
           track('howto_close', { game: 'daily', how, slide: (slide || 0) + 1, source: howSource });
           if (how === 'practice') navigate('/practice/1');
         }}

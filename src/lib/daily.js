@@ -113,3 +113,21 @@ export function msUntilNextPuzzle(now = Date.now()) {
   const elapsed = ((parts.hour % 24) * 3600 + parts.minute * 60 + parts.second) * 1000 + (now % 1000);
   return 86400000 - elapsed;
 }
+
+// The how-to opens by itself only until it's been seen once (finished, skipped or closed),
+// or the player has done a practice game.
+const HOWTO_KEY = 'yelnats.howtoSeen';
+export function howtoSeen() {
+  try {
+    return !!localStorage.getItem(HOWTO_KEY) || !!localStorage.getItem('yelnats.practice');
+  } catch (e) {
+    return false;
+  }
+}
+export function markHowtoSeen() {
+  try {
+    localStorage.setItem(HOWTO_KEY, '1');
+  } catch (e) {
+    // private mode
+  }
+}
