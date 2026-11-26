@@ -4,6 +4,7 @@
 .tries-box { margin-top: 16px; background: var(--bg-raised); border-radius: 18px; padding: 12px 14px 8px; }
 .tries-box b { display: block; font-size: 17px; }
 .tries-box b span { color: var(--muted); font-weight: 700; }
+.tries-note { display: block; color: var(--muted); font-weight: 600; font-size: 13px; margin-top: 1px; }
 .try-string { display: block; width: 100%; height: auto; margin-top: 4px; }
 
 .mimic-box { margin-top: 12px; background: var(--bg-raised); border-radius: 20px; padding: 14px; }

@@ -222,6 +222,7 @@ function Puzzle({ puzzle }) {
         <b>
           Tries: {used} <span>/ {MAX_TRIES}</span>
         </b>
+        <small className="tries-note">(guesses and mimics cost tries)</small>
         <TryString used={used} max={MAX_TRIES} />
       </div>
 
