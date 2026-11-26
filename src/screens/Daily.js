@@ -3,13 +3,13 @@ import { Link } from 'react-router-dom';
 import { fetchRecording, getDaily, guessDaily, revealDaily } from '../api/client';
 import useRecorder from '../audio/useRecorder';
 import {
-  MAX_STROKES,
-  PAR,
+  MAX_TRIES,
   canMimic,
   getPuzzleState,
+  isMindReader,
   mimicCost,
-  result,
-  strokes,
+  score,
+  triesUsed,
   plural,
   shareText,
   hasPlayedDaily,
@@ -21,7 +21,7 @@ import { listMimics, saveMimic } from '../lib/mimicStore';
 import { Button, Notice, Screen } from '../ui/components';
 import { RecordButton, ReversedPlayer } from '../ui/audio';
 import { VibratingString } from '../ui/waves';
-import StrokeString from '../ui/StrokeString';
+import TryString from '../ui/TryString';
 import DailyHowTo from '../ui/DailyHowTo';
 import './screens.css';
 import './Daily.css';
@@ -125,8 +125,8 @@ function Puzzle({ puzzle }) {
     }
   }
 
-  const used = strokes(state);
-  const left = MAX_STROKES - used;
+  const used = triesUsed(state);
+  const left = MAX_TRIES - used;
   const mimicOk = canMimic(state);
 
   async function submit(e) {
@@ -143,8 +143,8 @@ function Puzzle({ puzzle }) {
       } else {
         const next = { guesses: [...state.guesses, g], actions: [...state.actions, 'miss'] };
         setGuess('');
-        if (strokes({ ...state, ...next }) >= MAX_STROKES) {
-          // Out of strokes: end of the line, show the answer.
+        if (triesUsed({ ...state, ...next }) >= MAX_TRIES) {
+          // Out of tries: show the answer.
           const rev = await revealDaily(n);
           setAnswers(rev.answers);
           update({ ...next, failed: true, phrase: rev.phrase, voice });
@@ -214,18 +214,15 @@ function Puzzle({ puzzle }) {
         </Button>
       </form>
       <p className={'guesses-left' + (left === 1 ? ' guesses-out' : '')}>
-        {left === 1 ? 'Last stroke! Make this guess count.' : 'Every guess is a stroke, right or wrong.'}
+        {left === 1 ? 'Last try! Make this guess count.' : 'Every guess uses a try, right or wrong.'}
       </p>
       <Notice>{error}</Notice>
 
-      <div className="par-box">
-        <div className="par-text">
-          <b>
-            Strokes: {used} <span>/ {MAX_STROKES}</span>
-          </b>
-          <small>Par {PAR}</small>
-        </div>
-        <StrokeString used={used} par={PAR} max={MAX_STROKES} />
+      <div className="tries-box">
+        <b>
+          Tries: {used} <span>/ {MAX_TRIES}</span>
+        </b>
+        <TryString used={used} max={MAX_TRIES} />
       </div>
 
       <div className="mimic-box">
@@ -242,9 +239,9 @@ function Puzzle({ puzzle }) {
             <b>{recording ? 'Recording… tap to stop' : state.mimics ? 'Mimic again' : 'Stuck? Mimic it'}</b>
             <small>
               {!mimicOk
-                ? 'Your last stroke has to be a guess.'
+                ? 'Your last try has to be a guess.'
                 : `Copy the backwards sound and we'll flip it so it plays forwards. ${
-                    mimicCost(state) ? 'Costs a stroke.' : 'Your first mimic is free.'
+                    mimicCost(state) ? 'Uses a try.' : 'Your first mimic is free.'
                   }`}
             </small>
           </div>
@@ -269,8 +266,7 @@ function PuzzleClip({ url }) {
 
 function Solved({ n, state, answers, voice, days, top, mimics }) {
   const [status, setStatus] = useState(null);
-  const g = result(state);
-  const total = strokes(state);
+  const total = triesUsed(state);
   const answerVoice = state.voice || voice;
   const answer = useClip(answers ? answers[answerVoice] : null);
   const text = shareText(n, state, SITE);
@@ -286,22 +282,20 @@ function Solved({ n, state, answers, voice, days, top, mimics }) {
         Daily #{n} · {state.failed ? 'the answer was…' : 'it was…'}
       </p>
       <div className="word-big">{state.phrase}</div>
-      <div className={'golf' + (g.name.length > 12 ? ' golf-long' : '')}>
-        <b className="accent">{g.name}</b>
-        <span aria-hidden="true">{g.emoji}</span>
+      <div className="score">
+        <b className={state.failed ? 'hot' : 'accent'}>{score(state)}</b>
+        {isMindReader(state) && <span className="mind-reader">🤯 Mind reader</span>}
       </div>
       <p className="lede">
-        {state.failed
-          ? 'Out of strokes. A new puzzle comes out tomorrow.'
-          : `Solved in ${plural(total, 'stroke')}. Par is ${PAR}.`}
+        {state.failed ? 'Out of tries. A new puzzle comes out tomorrow.' : `Solved in ${plural(total, 'try')}.`}
       </p>
       <div className="solved-string">
-        <StrokeString used={Math.min(total, MAX_STROKES)} par={PAR} max={MAX_STROKES} failed={state.failed} />
+        <TryString used={Math.min(total, MAX_TRIES)} max={MAX_TRIES} failed={state.failed} />
       </div>
       <div className="stats">
         <div>
-          <b>{total}</b>
-          <small>{total === 1 ? 'stroke' : 'strokes'}</small>
+          <b>{Math.min(total, MAX_TRIES)}</b>
+          <small>{total === 1 ? 'try' : 'tries'}</small>
         </div>
         <div>
           <b>{state.mimics}</b>

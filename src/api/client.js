@@ -125,7 +125,7 @@ export async function guessDaily(number, guess) {
   });
 }
 
-/** Gives up on a puzzle (out of strokes): { phrase, answers: { <voice>: url } }. */
+/** Gives up on a puzzle (out of tries): { phrase, answers: { <voice>: url } }. */
 export async function revealDaily(number) {
   return request('/daily/reveal', {
     method: 'POST',

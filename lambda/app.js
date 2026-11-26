@@ -11,7 +11,7 @@
 //   GET  /recording?id=<key>.wav    -> { url }
 //   GET  /daily                     -> { number, date, voices, audio: { <voice>: url } }  (puzzle audio)
 //   POST /daily/guess { number, guess } -> { correct } (+ phrase, answers: { <voice>: url } when right)
-//   POST /daily/reveal { number }   -> { phrase, answers }  (after running out of strokes)
+//   POST /daily/reveal { number }   -> { phrase, answers }  (after running out of tries)
 
 const crypto = require('crypto');
 const daily = require('./daily');

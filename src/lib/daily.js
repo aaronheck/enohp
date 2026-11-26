@@ -1,4 +1,4 @@
-// Daily puzzle: per-device progress, golf scoring and the share card.
+// Daily puzzle: per-device progress, tries and the share card.
 const KEY = 'yelnats.daily';
 
 function load() {
@@ -49,11 +49,10 @@ export function streak(today) {
   return count;
 }
 
-export const PAR = 2;
-export const MAX_STROKES = 5;
+export const MAX_TRIES = 5;
 
-/** Strokes so far: every guess (right or wrong), and every mimic after the first (which is free). */
-export function strokes(state) {
+/** Tries used: every guess (right or wrong), and every mimic after the first (which is free). */
+export function triesUsed(state) {
   return state.guesses.length + (state.solved ? 1 : 0) + Math.max(0, state.mimics - 1);
 }
 
@@ -61,32 +60,34 @@ export function strokes(state) {
 export const mimicCost = (state) => (state.mimics >= 1 ? 1 : 0);
 
 /**
- * A mimic is allowed unless it would use up the last stroke: the 5th stroke must be
- * a guess, otherwise you'd spend it on a mimic you can't use.
- * (state.guesses holds wrong guesses only, so strokes() here = strokes used so far.)
+ * A mimic is allowed unless it would use up the last try: the 5th try must be a
+ * guess, otherwise you'd spend it on a mimic you can't use.
  */
 export function canMimic(state) {
-  return !state.solved && !state.failed && strokes(state) + mimicCost(state) < MAX_STROKES;
+  return !state.solved && !state.failed && triesUsed(state) + mimicCost(state) < MAX_TRIES;
 }
 
-/** Golf-style result for a finished puzzle (par 2; 1 is the best possible). */
-export function result(state) {
-  if (state.failed) return { name: 'End of the line', emoji: '🧵' };
-  const n = strokes(state);
-  if (n <= 1) return state.mimics === 0 ? { name: 'Mind reader', emoji: '🤯' } : { name: 'Hole in one', emoji: '⛳' };
-  if (n === 2) return { name: 'Par', emoji: '🏌️' };
-  if (n === 3) return { name: 'Bogey', emoji: '🌧️' };
-  if (n === 4) return { name: 'Double bogey', emoji: '🌧️' };
-  return { name: 'Triple bogey', emoji: '🌧️' };
+/** Solved on the very first guess without mimicking. */
+export function isMindReader(state) {
+  return state.solved && state.mimics === 0 && state.guesses.length === 0;
 }
 
-export const plural = (n, word) => `${n} ${word}${n === 1 ? '' : /(s|sh|ch|x)$/.test(word) ? 'es' : 's'}`;
+/** "2/5", or "X/5" when out of tries. */
+export function score(state) {
+  return `${state.failed ? 'X' : triesUsed(state)}/${MAX_TRIES}`;
+}
+
+export function plural(n, word) {
+  if (n === 1) return `${n} ${word}`;
+  if (/[^aeiou]y$/.test(word)) return `${n} ${word.slice(0, -1)}ies`;
+  return `${n} ${word}${/(s|sh|ch|x)$/.test(word) ? 'es' : 's'}`;
+}
 
 const ACTION_EMOJI = { mimic: '🎙', miss: '❌', hit: '✅' };
 
-/** Spoiler-free share text, e.g. "Yelnats Daily #12 / 🐦 Birdie · 1 stroke / 🎙❌🎙✅". */
+/** Spoiler-free share text, e.g. "Yelnats Daily #12 2/5 / 🎙❌✅" (or "1/5 🤯 Mind reader"). */
 export function shareText(number, state, url) {
-  const r = result(state);
   const trail = (state.actions || []).map((a) => ACTION_EMOJI[a] || '').join('') || (state.failed ? '❌' : '✅');
-  return [`Yelnats Daily #${number}`, `${r.emoji} ${r.name} · ${plural(strokes(state), 'stroke')}`, trail, url].join('\n');
+  const badge = isMindReader(state) ? ' 🤯 Mind reader' : '';
+  return [`Yelnats Daily #${number} ${score(state)}${badge}`, trail, url].join('\n');
 }

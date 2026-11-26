@@ -1,4 +1,4 @@
-import { canMimic, getPuzzleState, hasPlayedDaily, plural, result, shareText, streak, strokes, updatePuzzleState } from './daily';
+import { canMimic, getPuzzleState, hasPlayedDaily, isMindReader, plural, score, shareText, streak, triesUsed, updatePuzzleState } from './daily';
 
 beforeEach(() => localStorage.clear());
 
@@ -6,30 +6,25 @@ beforeEach(() => localStorage.clear());
 const st = (over) => ({ mimics: 0, guesses: [], actions: [], solved: true, failed: false, ...over });
 const live = (over) => st({ solved: false, ...over });
 
-test('strokes: every guess (incl. the right one) and every mimic after the first', () => {
-  expect(strokes(st({}))).toBe(1);
-  expect(strokes(st({ mimics: 1 }))).toBe(1);
-  expect(strokes(st({ mimics: 3 }))).toBe(3);
-  expect(strokes(st({ mimics: 2, guesses: ['a'] }))).toBe(3);
-  expect(strokes(live({ guesses: ['a', 'b'] }))).toBe(2);
+test('tries: every guess (incl. the right one) and every mimic after the first', () => {
+  expect(triesUsed(st({}))).toBe(1);
+  expect(triesUsed(st({ mimics: 1 }))).toBe(1);
+  expect(triesUsed(st({ mimics: 3 }))).toBe(3);
+  expect(triesUsed(st({ mimics: 2, guesses: ['a'] }))).toBe(3);
+  expect(triesUsed(live({ guesses: ['a', 'b'] }))).toBe(2);
 });
 
-test('results around par 2', () => {
-  expect(result(st({})).name).toBe('Mind reader');
-  expect(result(st({ mimics: 1 })).name).toBe('Hole in one');
-  expect(result(st({ guesses: ['a'] })).name).toBe('Par');
-  expect(result(st({ mimics: 2 })).name).toBe('Par');
-  expect(result(st({ mimics: 2, guesses: ['a'] })).name).toBe('Bogey');
-  expect(result(st({ guesses: ['a', 'b', 'c'] })).name).toBe('Double bogey');
-  expect(result(st({ guesses: ['a', 'b', 'c', 'd'] })).name).toBe('Triple bogey');
-  expect(result(st({ solved: false, failed: true, guesses: ['a', 'b', 'c', 'd', 'e'] })).name).toBe('End of the line');
+test('score is N/5, or X/5 when out of tries', () => {
+  expect(score(st({}))).toBe('1/5');
+  expect(score(st({ mimics: 2, guesses: ['a'] }))).toBe('3/5');
+  expect(score(st({ solved: false, failed: true, guesses: ['a', 'b', 'c', 'd', 'e'] }))).toBe('X/5');
 });
 
-test('a mimic can never be the 5th stroke; the first mimic is always allowed', () => {
-  expect(canMimic(live({ guesses: ['a', 'b', 'c', 'd'] }))).toBe(true); // 4 strokes, first mimic is free
-  expect(canMimic(live({ mimics: 1, guesses: ['a', 'b', 'c', 'd'] }))).toBe(false); // would be stroke 5
-  expect(canMimic(live({ mimics: 4 }))).toBe(true); // 3 strokes -> 4
-  expect(canMimic(live({ mimics: 5 }))).toBe(false); // 4 strokes used
+test('a mimic can never be the 5th try; the first mimic is always allowed', () => {
+  expect(canMimic(live({ guesses: ['a', 'b', 'c', 'd'] }))).toBe(true); // 4 used, first mimic is free
+  expect(canMimic(live({ mimics: 1, guesses: ['a', 'b', 'c', 'd'] }))).toBe(false); // would be try 5
+  expect(canMimic(live({ mimics: 4 }))).toBe(true); // 3 used -> 4
+  expect(canMimic(live({ mimics: 5 }))).toBe(false); // 4 used
   expect(canMimic(st({}))).toBe(false); // solved
 });
 
@@ -47,9 +42,9 @@ test('streak counts consecutive solved days and survives an unsolved today', () 
   expect(streak(6)).toBe(0);
 });
 
-test('share text has the result and the trail, never the answer', () => {
+test('share text has the score and the trail, never the answer', () => {
   const text = shareText(12, st({ mimics: 2, guesses: ['x'], actions: ['mimic', 'miss', 'mimic', 'hit'], phrase: 'peanut butter' }), 'https://yelnatsgame.com');
-  expect(text).toBe('Yelnats Daily #12\n🌧️ Bogey · 3 strokes\n🎙❌🎙✅\nhttps://yelnatsgame.com');
+  expect(text).toBe('Yelnats Daily #12 3/5\n🎙❌🎙✅\nhttps://yelnatsgame.com');
   expect(text).not.toMatch(/peanut/);
 });
 
@@ -57,5 +52,12 @@ test('first-timer detection and plurals', () => {
   expect(hasPlayedDaily()).toBe(false);
   updatePuzzleState(1, { guesses: ['x'] });
   expect(hasPlayedDaily()).toBe(true);
-  expect([plural(1, 'guess'), plural(2, 'guess'), plural(1, 'stroke')]).toEqual(['1 guess', '2 guesses', '1 stroke']);
+  expect([plural(1, 'try'), plural(2, 'guess'), plural(1, 'mimic')]).toEqual(['1 try', '2 guesses', '1 mimic']);
+});
+
+test('mind reader: first guess right, no mimic', () => {
+  expect(isMindReader(st({}))).toBe(true);
+  expect(isMindReader(st({ mimics: 1 }))).toBe(false); // even the free mimic counts
+  expect(isMindReader(st({ guesses: ['a'] }))).toBe(false);
+  expect(shareText(3, st({ actions: ['hit'] }), 'u')).toBe('Yelnats Daily #3 1/5 🤯 Mind reader\n✅\nu');
 });
