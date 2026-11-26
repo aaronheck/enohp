@@ -118,10 +118,13 @@ function Puzzle({ puzzle }) {
     }
   }
 
+  // One guess to start, plus one for every mimic.
+  const guessesLeft = Math.max(0, 1 + state.mimics - state.guesses.length);
+
   async function submit(e) {
     e.preventDefault();
     const g = guess.trim();
-    if (!g || checking) return;
+    if (!g || checking || guessesLeft < 1) return;
     setChecking(true);
     setError(null);
     try {
@@ -184,22 +187,30 @@ function Puzzle({ puzzle }) {
           className="input"
           value={guess}
           onChange={(e) => setGuess(e.target.value)}
-          placeholder="Your guess"
+          placeholder={guessesLeft < 1 ? 'No guesses left' : 'Your guess'}
+          disabled={guessesLeft < 1}
           aria-label="Your guess"
           autoComplete="off"
           autoCapitalize="off"
           maxLength={60}
         />
-        <Button type="submit" disabled={!guess.trim() || checking} className="guess-btn">
+        <Button type="submit" disabled={!guess.trim() || checking || guessesLeft < 1} className="guess-btn">
           {checking ? '…' : 'Guess'}
         </Button>
       </form>
+      <p className={'guesses-left' + (guessesLeft < 1 ? ' guesses-out' : '')}>
+        {guessesLeft < 1
+          ? 'Out of guesses. Mimic it to get another one.'
+          : state.mimics === 0 && state.guesses.length === 0
+          ? 'You get one guess. Mimic it for another.'
+          : `${plural(guessesLeft, 'guess')} left. Each mimic gives you another.`}
+      </p>
       <Notice>{error}</Notice>
 
       <div className="par-box">
         <div>
           <b>Mimics: {state.mimics}</b>
-          <small>Par {PAR} · guessing is free</small>
+          <small>Par {PAR} · each mimic gives you a guess</small>
         </div>
         <div className="par-dots" aria-hidden="true">
           {Array.from({ length: Math.max(PAR, state.mimics) }, (_, i) => (

@@ -33,12 +33,12 @@ const SLIDES = [
   },
   {
     title: 'Guess what it says',
-    body: 'Type your guess. Guesses are free, so go for it.',
+    body: 'You get one guess to start. Get it straight away and you’re a mind reader.',
     art: <Guess />,
   },
   {
     title: 'Stuck? Mimic it',
-    body: 'Record yourself copying the backwards sound. We flip your recording so it plays forwards, and the phrase might just pop out.',
+    body: 'Record yourself copying the backwards sound. We flip your recording so it plays forwards, and the phrase might just pop out. Each mimic gives you another guess.',
     art: <Mimic />,
   },
   {

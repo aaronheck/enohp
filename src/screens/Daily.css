@@ -47,3 +47,7 @@
 
 .mimic-list { display: flex; flex-direction: column; gap: 8px; margin-top: 12px; }
 .mimic-box .player-compact { background: var(--bg-deep); }
+
+.guesses-left { margin-top: 8px; color: var(--muted); font-weight: 700; font-size: 14px; }
+.guesses-out { color: var(--butter); }
+.guess-row .input:disabled { opacity: 0.5; }

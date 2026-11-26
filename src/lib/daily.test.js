@@ -39,3 +39,8 @@ test('first-timer detection', () => {
   updatePuzzleState(1, { guesses: ['x'] });
   expect(require('./daily').hasPlayedDaily()).toBe(true);
 });
+
+test('plural handles guess/guesses', () => {
+  const { plural } = require('./daily');
+  expect([plural(1, 'guess'), plural(2, 'guess'), plural(2, 'mimic')]).toEqual(['1 guess', '2 guesses', '2 mimics']);
+});

@@ -60,7 +60,7 @@ export function golf(mimics) {
   return { name: `+${mimics - PAR}`, emoji: '🏌️' };
 }
 
-export const plural = (n, word) => `${n} ${word}${n === 1 ? '' : 's'}`;
+export const plural = (n, word) => `${n} ${word}${n === 1 ? '' : /(s|sh|ch|x)$/.test(word) ? 'es' : 's'}`;
 
 /** Spoiler-free share text, e.g. "Yelnats Daily #12 / 🐦 Birdie · 1 mimic / ❌❌✅". */
 export function shareText(number, state, url) {
