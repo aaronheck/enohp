@@ -3,8 +3,11 @@ import { Link } from 'react-router-dom';
 import { fetchRecording, getDaily, guessDaily, revealDaily } from '../api/client';
 import useRecorder from '../audio/useRecorder';
 import {
+  ACTION_LABEL,
   MAX_TRIES,
+  actionEmoji,
   canMimic,
+  msUntilNextPuzzle,
   getPuzzleState,
   isMindReader,
   score,
@@ -16,6 +19,7 @@ import {
   updatePuzzleState,
 } from '../lib/daily';
 import { shareLink } from '../lib/share';
+import { drawShareImage } from '../lib/shareImage';
 import { listMimics, saveMimic } from '../lib/mimicStore';
 import { stopShared, unlockAudio } from '../audio/context';
 import { isDev, resetDaily } from '../lib/devReset';
@@ -327,72 +331,104 @@ function PuzzleClip({ url, highlight, onEnded }) {
   );
 }
 
+function useCountdown() {
+  const [ms, setMs] = useState(() => msUntilNextPuzzle());
+  useEffect(() => {
+    const t = setInterval(() => setMs(msUntilNextPuzzle()), 30000);
+    return () => clearInterval(t);
+  }, []);
+  const mins = Math.max(1, Math.ceil(ms / 60000));
+  return mins >= 60 ? `${Math.floor(mins / 60)}h ${mins % 60}m` : `${mins}m`;
+}
+
 function Solved({ n, state, answers, voice, days, top, mimics }) {
   const [status, setStatus] = useState(null);
+  const [showMimics, setShowMimics] = useState(false);
+  const [image, setImage] = useState(null);
   const total = triesUsed(state);
   const answerVoice = state.voice || voice;
   const answer = useClip(answers ? answers[answerVoice] : null);
-  const text = shareText(n, state, SITE);
+  const text = shareText(n, state, SITE, days);
+  const next = useCountdown();
+  const actions = state.actions && state.actions.length ? state.actions : [state.failed ? 'miss' : 'hit'];
+
+  // Draw the share image up front: phones only open the share sheet straight from a tap.
+  useEffect(() => {
+    let cancelled = false;
+    drawShareImage({
+      number: n,
+      score: score(state),
+      failed: state.failed,
+      mindReader: isMindReader(state),
+      used: total,
+      max: MAX_TRIES,
+      actions,
+      streak: days,
+    }).then((blob) => {
+      if (!cancelled && blob) setImage(new File([blob], `yelnats-daily-${n}.png`, { type: 'image/png' }));
+    });
+    return () => {
+      cancelled = true;
+    };
+  }, [n, state, total, days]); // eslint-disable-line react-hooks/exhaustive-deps
 
   async function share() {
-    const r = await shareLink(SITE, text.replace(`\n${SITE}`, ''), { copyText: text });
-    setStatus({ shared: 'Shared!', copied: 'Copied! Paste it anywhere.', failed: "Couldn't share. Copy it below." }[r] || null);
+    const r = await shareLink(SITE, text.replace(`\n${SITE}`, ''), { copyText: text, file: image });
+    setStatus({ shared: 'Shared!', copied: 'Result copied. Paste it anywhere.', failed: "Couldn't share this time." }[r] || null);
   }
 
   return (
     <Screen {...top}>
-      <p className="step-note" style={{ marginTop: 14 }}>
-        Daily #{n} · {state.failed ? 'the answer was…' : 'it was…'}
-      </p>
-      <div className="word-big">{state.phrase}</div>
-      <div className="score">
-        <b className={state.failed ? 'hot' : 'accent'}>{score(state)}</b>
-        {isMindReader(state) && <span className="mind-reader">🤯 Mind reader</span>}
+      <div className="result-card">
+        <p className="result-kicker">Yelnats Daily · Puzzle #{n}</p>
+        <div className={'result-score' + (state.failed ? ' hot' : '')}>{score(state)}</div>
+        <div className="result-dots" aria-hidden="true">
+          {Array.from({ length: MAX_TRIES }, (_, i) => (
+            <i key={i} className={i < Math.min(total, MAX_TRIES) ? (state.failed ? 'on failed' : 'on') : ''} />
+          ))}
+        </div>
+        <div className="result-moves" aria-label="Your moves">
+          {actions.map((a, i) => (
+            <span key={i} className={'move move-' + a}>
+              {actionEmoji(a)} {ACTION_LABEL[a]}
+            </span>
+          ))}
+        </div>
+        {isMindReader(state) ? (
+          <span className="mind-reader">🤯 Mind reader</span>
+        ) : days >= 2 ? (
+          <span className="result-streak">🔥 {days}-day streak</span>
+        ) : null}
       </div>
-      <p className="lede">
-        {state.failed ? 'Out of tries. A new puzzle comes out tomorrow.' : `Solved in ${plural(total, 'try')}.`}
-      </p>
-      <div className="section">
-        <TryDots used={total} max={MAX_TRIES} failed={state.failed} />
-      </div>
-      <div className="stats">
+
+      <div className="answer-row">
         <div>
-          <b>{Math.min(total, MAX_TRIES)}</b>
-          <small>{total === 1 ? 'try' : 'tries'}</small>
-        </div>
-        <div>
-          <b>{state.mimics}</b>
-          <small>{state.mimics === 1 ? 'mimic' : 'mimics'}</small>
-        </div>
-        <div>
-          <b>🔥 {days}</b>
-          <small>day streak</small>
+          <p className="step-note">{state.failed ? 'The answer was' : 'It was'}</p>
+          <div className="answer-word">{state.phrase}</div>
         </div>
       </div>
-      <pre className="share-card">{text}</pre>
-      <div className="section">
-        <ReversedPlayer
-          blob={answer.blob}
-          error={answer.error}
-          caption="hear it forwards"
-          dark
-          reverse={false}
-        />
-      </div>
-      {mimics.length > 0 && (
-        <div className="section">
-          <p className="step-note">Your mimics</p>
-          <MimicList mimics={mimics} />
-        </div>
-      )}
-      <div className="spacer" />
-      <div className="stack">
+      <ReversedPlayer blob={answer.blob} error={answer.error} caption="hear it forwards" dark compact reverse={false} />
+
+      <div className="stack" style={{ marginTop: 18 }}>
+        <Button onClick={share}>{image ? '📤 Share result' : 'Share result'}</Button>
         {status && <p className="muted center">{status}</p>}
-        <Button onClick={share}>Share result</Button>
         <Button variant="ghost" to="/friends">
           Play with friends
         </Button>
       </div>
+      <p className="next-puzzle">
+        {state.failed ? 'Out of tries. ' : ''}Next puzzle in <b>{next}</b>
+      </p>
+
+      {mimics.length > 0 && (
+        <div className="section">
+          <button className="btn-text mimics-toggle" onClick={() => setShowMimics((v) => !v)} aria-expanded={showMimics}>
+            {showMimics ? '▾' : '▸'} Your mimics ({mimics.length})
+          </button>
+          {showMimics && <MimicList mimics={mimics} />}
+        </div>
+      )}
+      <div className="spacer" />
       <DevReset />
     </Screen>
   );

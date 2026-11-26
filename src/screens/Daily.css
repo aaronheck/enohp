@@ -26,17 +26,7 @@
 
 .daily-foot { display: flex; justify-content: space-between; margin-top: 22px; font-weight: 700; font-size: 15px; color: var(--muted); }
 
-.score { margin-top: 14px; display: flex; align-items: center; gap: 14px; flex-wrap: wrap; }
 .mind-reader { background: var(--butter); color: var(--ink); font-weight: 800; font-size: 18px; border-radius: 999px; padding: 8px 14px; }
-.score b { font-size: clamp(64px, 20vw, 88px); font-weight: 800; letter-spacing: -0.04em; line-height: 0.95; }
-.stats { display: flex; gap: 8px; margin-top: 16px; }
-.stats > div { flex: 1; background: var(--bg-raised); border-radius: 16px; padding: 10px 6px; text-align: center; }
-.stats b { display: block; font-size: 24px; }
-.stats small { color: var(--muted); font-weight: 700; font-size: 12px; }
-.share-card {
-  margin: 16px 0 0; background: var(--bg-deep); border-radius: 18px; padding: 14px 16px;
-  font: 700 16px/1.5 ui-monospace, Menlo, monospace; white-space: pre-wrap; color: var(--cream);
-}
 
 .mimic-list { display: flex; flex-direction: column; gap: 8px; margin-top: 12px; }
 .mimic-box .player-compact { background: var(--bg-deep); }
@@ -88,3 +78,29 @@
 
 .guess-row .input:disabled { opacity: 0.45; }
 .mimic-cta:disabled { opacity: 0.45; }
+
+/* ---- result screen ---- */
+.result-card {
+  margin-top: 16px; background: var(--cream); color: var(--ink); border-radius: 28px;
+  padding: 22px 20px 24px; text-align: center; transform: rotate(-1.2deg);
+  box-shadow: 0 8px 0 var(--bg-deep);
+}
+.result-kicker { font-weight: 800; font-size: 15px; color: rgba(20, 36, 29, 0.55); letter-spacing: 0.01em; }
+.result-score { font-weight: 800; font-size: clamp(84px, 26vw, 112px); letter-spacing: -0.05em; line-height: 0.95; margin-top: 6px; }
+.result-score.hot { color: var(--tomato); }
+.result-dots { display: flex; justify-content: center; gap: 10px; margin-top: 12px; }
+.result-dots i { width: 22px; height: 22px; border-radius: 50%; border: 3px solid rgba(20, 36, 29, 0.2); }
+.result-dots i.on { background: var(--butter); border-color: #c9a52a; }
+.result-dots i.on.failed { background: var(--tomato); border-color: #c7402a; }
+.result-moves { display: flex; flex-wrap: wrap; justify-content: center; gap: 6px; margin-top: 16px; }
+.move { border-radius: 999px; padding: 6px 11px; font-weight: 800; font-size: 14px; background: rgba(20, 36, 29, 0.08); }
+.move-hit { background: var(--mint); }
+.move-miss { background: rgba(255, 91, 58, 0.18); }
+.result-card .mind-reader { display: inline-block; margin-top: 16px; }
+.result-streak { display: inline-block; margin-top: 14px; font-weight: 800; font-size: 17px; }
+.answer-row { margin-top: 26px; }
+.answer-row .step-note { margin: 0; }
+.answer-word { font-weight: 800; font-size: clamp(30px, 9vw, 40px); letter-spacing: -0.03em; line-height: 1; margin: 4px 0 10px; }
+.next-puzzle { text-align: center; color: var(--muted); font-weight: 700; font-size: 15px; margin-top: 16px; }
+.next-puzzle b { color: var(--cream); }
+.mimics-toggle { color: var(--muted); }

@@ -1,4 +1,4 @@
-import { canMimic, getPuzzleState, hasPlayedDaily, isMindReader, plural, score, shareText, streak, triesUsed, updatePuzzleState } from './daily';
+import { canMimic, getPuzzleState, hasPlayedDaily, isMindReader, msUntilNextPuzzle, plural, score, shareText, streak, triesUsed, updatePuzzleState } from './daily';
 
 beforeEach(() => localStorage.clear());
 
@@ -44,7 +44,8 @@ test('streak counts consecutive solved days and survives an unsolved today', () 
 
 test('share text has the score and the trail, never the answer', () => {
   const text = shareText(12, st({ mimics: 2, guesses: ['x'], actions: ['mimic', 'miss', 'mimic', 'hit'], phrase: 'peanut butter' }), 'https://yelnatsgame.com');
-  expect(text).toBe('Yelnats Daily #12 3/5\n🎙❌🎙✅\nhttps://yelnatsgame.com');
+  expect(text).toBe('Yelnats Daily #12 · 3/5\n🎙❌🎙✅\nhttps://yelnatsgame.com');
+  expect(shareText(12, st({ actions: ['hit'] }), null, 4)).toBe('Yelnats Daily #12 · 1/5 🤯 Mind reader\n✅\n🔥 4-day streak');
   expect(text).not.toMatch(/peanut/);
 });
 
@@ -59,5 +60,12 @@ test('mind reader: first guess right, no mimic', () => {
   expect(isMindReader(st({}))).toBe(true);
   expect(isMindReader(st({ mimics: 1 }))).toBe(false); // even the free mimic counts
   expect(isMindReader(st({ guesses: ['a'] }))).toBe(false);
-  expect(shareText(3, st({ actions: ['hit'] }), 'u')).toBe('Yelnats Daily #3 1/5 🤯 Mind reader\n✅\nu');
+  expect(shareText(3, st({ actions: ['hit'] }), 'u')).toBe('Yelnats Daily #3 · 1/5 🤯 Mind reader\n✅\nu');
+});
+
+test('countdown to the next puzzle at Pacific midnight', () => {
+  // 2026-11-25 22:30 Pacific (= 2026-11-26 06:30 UTC) -> 1h30m to go
+  expect(msUntilNextPuzzle(Date.parse('2026-11-26T06:30:00Z'))).toBe(90 * 60 * 1000);
+  // just after midnight Pacific -> almost a full day
+  expect(msUntilNextPuzzle(Date.parse('2026-11-26T08:00:01Z'))).toBe(86400000 - 1000);
 });

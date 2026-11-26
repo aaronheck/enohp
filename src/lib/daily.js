@@ -85,9 +85,31 @@ export function plural(n, word) {
 
 const ACTION_EMOJI = { mimic: '🎙', miss: '❌', hit: '✅' };
 
-/** Spoiler-free share text, e.g. "Yelnats Daily #12 2/5 / 🎙❌✅" (or "1/5 🤯 Mind reader"). */
-export function shareText(number, state, url) {
-  const trail = (state.actions || []).map((a) => ACTION_EMOJI[a] || '').join('') || (state.failed ? '❌' : '✅');
+export const ACTION_LABEL = { mimic: 'Mimic', miss: 'Miss', hit: 'Got it' };
+export const actionEmoji = (a) => ACTION_EMOJI[a] || '';
+
+/**
+ * Spoiler-free share text, e.g.
+ *   Yelnats Daily #12 · 2/5
+ *   🎙❌✅
+ *   🔥 3-day streak
+ */
+export function shareText(number, state, url, days = 0) {
+  const trail = (state.actions || []).map(actionEmoji).join('') || (state.failed ? '❌' : '✅');
   const badge = isMindReader(state) ? ' 🤯 Mind reader' : '';
-  return [`Yelnats Daily #${number} ${score(state)}${badge}`, trail, url].join('\n');
+  const lines = [`Yelnats Daily #${number} · ${score(state)}${badge}`, trail];
+  if (days >= 2) lines.push(`🔥 ${days}-day streak`);
+  if (url) lines.push(url);
+  return lines.join('\n');
+}
+
+/** Milliseconds until the next puzzle (midnight, Pacific time). */
+export function msUntilNextPuzzle(now = Date.now()) {
+  const parts = Object.fromEntries(
+    new Intl.DateTimeFormat('en-US', { timeZone: 'America/Los_Angeles', hour12: false, hour: '2-digit', minute: '2-digit', second: '2-digit' })
+      .formatToParts(new Date(now))
+      .map((p) => [p.type, Number(p.value)])
+  );
+  const elapsed = ((parts.hour % 24) * 3600 + parts.minute * 60 + parts.second) * 1000 + (now % 1000);
+  return 86400000 - elapsed;
 }
