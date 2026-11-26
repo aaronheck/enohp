@@ -39,6 +39,7 @@ import { MicTipCard, MicTipPopup } from '../ui/MicTip';
 import { shouldPopMicTip, shouldShowMicCard } from '../lib/micTip';
 import DailyHowTo from '../ui/DailyHowTo';
 import PastPuzzles from '../ui/PastPuzzles';
+import PuzzleVideo from '../ui/PuzzleVideo';
 import './screens.css';
 import './Daily.css';
 
@@ -586,6 +587,7 @@ function Solved({ n, state, answers, voice, days, top, mimics, puzzle }) {
       <div className="stack" style={{ marginTop: 18 }}>
         <Button onClick={share}>{image ? '📤 Share result' : 'Share result'}</Button>
         {status && <p className="muted center">{status}</p>}
+        <PuzzleVideo url={puzzle.audio[puzzle.audio[voice] ? voice : Object.keys(puzzle.audio)[0]]} n={n} />
         <Button variant="ghost" to="/friends" onClick={() => track('play_with_friends', { from: 'solved' })}>
           Play with friends
         </Button>
