@@ -1,6 +1,6 @@
 {
   "short_name": "Yelnats",
-  "name": "Yelnats: telephone, but backwards",
+  "name": "Yelnats: the reverse reverse game",
   "icons": [
     { "src": "favicon.svg", "type": "image/svg+xml", "sizes": "any" },
     { "src": "logo192.png", "type": "image/png", "sizes": "192x192", "purpose": "any maskable" },
