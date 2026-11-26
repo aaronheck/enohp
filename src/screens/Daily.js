@@ -39,7 +39,7 @@ import { MicTipCard, MicTipPopup } from '../ui/MicTip';
 import { shouldPopMicTip, shouldShowMicCard } from '../lib/micTip';
 import DailyHowTo from '../ui/DailyHowTo';
 import PastPuzzles from '../ui/PastPuzzles';
-import PuzzleVideo from '../ui/PuzzleVideo';
+import PuzzleVideo, { canMakeVideo } from '../ui/PuzzleVideo';
 import './screens.css';
 import './Daily.css';
 
@@ -518,6 +518,8 @@ function Solved({ n, state, answers, voice, days, top, mimics, puzzle }) {
   const [showMimics, setShowMimics] = useState(false);
   const [image, setImage] = useState(null);
   const [micTip, setMicTip] = useState(() => shouldShowMicCard(n));
+  const [videoOk] = useState(() => canMakeVideo());
+  const [videoError, setVideoError] = useState(null);
   const total = triesUsed(state);
   const answerVoice = state.voice || voice;
   // Older saves may name a voice we no longer serve: fall back to the one we do.
@@ -584,19 +586,23 @@ function Solved({ n, state, answers, voice, days, top, mimics, puzzle }) {
       </div>
       <ReversedPlayer blob={answer.blob} error={answer.error} caption="hear it forwards" dark compact reverse={false} />
 
-      <div className="stack" style={{ marginTop: 18 }}>
-        <Button onClick={share}>{image ? '📤 Share result' : 'Share result'}</Button>
-        {status && <p className="muted center">{status}</p>}
-        <PuzzleVideo
-          url={puzzle.audio[puzzle.audio[voice] ? voice : Object.keys(puzzle.audio)[0]]}
-          n={n}
-          mimic={mimics.length ? mimics[mimics.length - 1].blob : null}
-          result={{ tries: total, used: total, failed: !!state.failed, mindReader: isMindReader(state), actions, streak: days }}
-        />
-        <Button variant="ghost" to="/friends" onClick={() => track('play_with_friends', { from: 'solved' })}>
-          Play with friends
-        </Button>
+      {/* Bragging: one row, two ways (image card or video). */}
+      <div className={'brag-row' + (videoOk ? '' : ' single')}>
+        <button className="btn btn-primary brag-btn" onClick={share}>
+          🖼 Brag with an image
+        </button>
+        {videoOk && (
+          <PuzzleVideo
+            url={puzzle.audio[puzzle.audio[voice] ? voice : Object.keys(puzzle.audio)[0]]}
+            n={n}
+            mimic={mimics.length ? mimics[mimics.length - 1].blob : null}
+            result={{ tries: total, used: total, failed: !!state.failed, mindReader: isMindReader(state), actions, streak: days }}
+            onError={setVideoError}
+          />
+        )}
       </div>
+      {status && <p className="muted center" style={{ marginTop: 8 }}>{status}</p>}
+      {videoError && <p className="pvideo-err">{videoError}</p>}
       {archive ? (
         <p className="next-puzzle">
           {state.failed ? 'Out of tries. ' : ''}
@@ -619,6 +625,13 @@ function Solved({ n, state, answers, voice, days, top, mimics, puzzle }) {
         </div>
       )}
       <div className="spacer" />
+      <p className="solved-foot">
+        <Link to="/friends" onClick={() => track('play_with_friends', { from: 'solved' })}>
+          Play with friends
+        </Link>
+        <span aria-hidden="true"> · </span>
+        <Link to="/practice/1">Practice</Link>
+      </p>
       <DevReset />
     </Screen>
   );

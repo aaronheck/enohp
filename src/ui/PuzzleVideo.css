@@ -1,8 +1,17 @@
-.pvideo { margin-top: 10px; }
 .pvideo-note { color: var(--muted); font-size: 14px; text-align: center; margin-top: 8px; }
-.pvideo-bar { height: 14px; border-radius: 7px; background: var(--bg-raised); overflow: hidden; margin-top: 8px; }
-.pvideo-bar i { display: block; height: 100%; background: var(--butter); border-radius: 7px; transition: width 0.2s linear; }
-.pvideo-ready { display: flex; flex-direction: column; align-items: center; gap: 12px; }
-.pvideo-preview { width: 50%; max-width: 220px; aspect-ratio: 9 / 16; border-radius: 18px; background: var(--bg-deep); }
-.pvideo-ready .btn { width: 100%; }
 .pvideo-err { color: var(--rose); font-size: 13px; text-align: center; margin-top: 6px; word-break: break-word; }
+
+/* While making: the button fills up like a progress bar. */
+.pvideo-btn.is-making:disabled {
+  opacity: 1;
+  background: linear-gradient(90deg, var(--butter) var(--fill, 0%), #e8d9a0 var(--fill, 0%));
+}
+
+.pvideo-sheet { position: relative; align-items: center; gap: 12px; padding-top: 22px; }
+.pvideo-sheet .btn { width: 100%; }
+.pvideo-preview { height: min(52dvh, 440px); aspect-ratio: 9 / 16; border-radius: 18px; background: var(--bg-deep); }
+.pvideo-friend { color: var(--cream); text-decoration: underline; text-underline-offset: 3px; font-weight: 700; margin-top: 2px; }
+.pvideo-close {
+  position: absolute; top: 12px; right: 14px; width: 36px; height: 36px; border-radius: 50%;
+  border: 0; background: rgba(255, 244, 220, 0.12); color: var(--cream); font-weight: 800; cursor: pointer;
+}

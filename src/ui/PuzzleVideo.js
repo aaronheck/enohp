@@ -1,31 +1,38 @@
-import React, { useState } from 'react';
+import React, { useEffect, useState } from 'react';
 import { fetchRecording } from '../api/client';
 import { unlockAudio } from '../audio/context';
 import { bragFor, canMakeVideo, makePuzzleVideo } from '../lib/puzzleVideo';
 import { track } from '../lib/analytics';
 import { reportError } from '../lib/errors';
+import './HowToPlaySheet.css';
 import './PuzzleVideo.css';
 
 const SITE = 'https://yelnatsgame.com';
 
+export { canMakeVideo };
+
 /**
- * "Challenge friends": makes a short video of the puzzle (backwards audio + waveform,
- * no answer) and shares it. Two taps: phones only open the share sheet straight from a
- * tap, and the video takes a few seconds to make.
+ * "Brag with a video": a half-width button that makes the clip in place (progress fills
+ * the button), then opens a sheet with the preview and the ways to post it. Posting
+ * needs its own tap: phones only open the share sheet straight from a tap.
  */
-export default function PuzzleVideo({ url, n, result, mimic }) {
+export default function PuzzleVideo({ url, n, result, mimic, onError }) {
   const [state, setState] = useState('idle'); // idle | making | ready | error
   const [progress, setProgress] = useState(0);
   const [file, setFile] = useState(null);
   const [preview, setPreview] = useState(null);
+  const [open, setOpen] = useState(false);
   const [status, setStatus] = useState(null);
   const [errMsg, setErrMsg] = useState(null);
 
-  if (!url || !canMakeVideo()) return null;
+  useEffect(() => () => preview && URL.revokeObjectURL(preview), [preview]);
 
   const make = async () => {
+    if (state === 'ready') return setOpen(true);
     unlockAudio();
     setState('making');
+    setErrMsg(null);
+    if (onError) onError(null);
     setProgress(0);
     track('share', { puzzle: n, method: 'video', result: 'make' });
     try {
@@ -34,29 +41,34 @@ export default function PuzzleVideo({ url, n, result, mimic }) {
       setFile(f);
       setPreview(URL.createObjectURL(f));
       setState('ready');
+      setStatus(null);
+      setOpen(true);
     } catch (e) {
       reportError('crash', { msg: e && e.message, err: e && e.name, where: 'puzzle-video' });
-      setErrMsg(`${(e && e.name) || 'Error'}: ${(e && e.message) || e}`);
+      const msg = `${(e && e.name) || 'Error'}: ${(e && e.message) || e}`;
+      setErrMsg(msg);
+      if (onError) onError(`Couldn’t make the video. ${msg}`);
       setState('error');
     }
+    return undefined;
   };
 
   const brag = bragFor(result);
-  const text = result ? `${brag.headline} Yelnats Daily #${n}. ${brag.dare}` : `Can you decode this? 🔊 Yelnats Daily #${n}, played backwards.`;
+  const text = `${brag.headline} Yelnats Daily #${n}. ${brag.dare}`;
   const canShareFile = () => {
     try {
-      return !!(navigator.canShare && navigator.canShare({ files: [file] }));
+      return !!(file && navigator.canShare && navigator.canShare({ files: [file] }));
     } catch (e) {
       return false;
     }
   };
 
-  // target 'story': the video on its own, which is what Instagram/TikTok/Snapchat stories
-  // want. 'friend': video plus the brag text, for Messages/WhatsApp. 'save': to Photos.
+  // 'story': the video on its own (what Instagram/TikTok/Snapchat want).
+  // 'friend': video plus the brag text. 'save': download (computers).
   const share = async (target) => {
-    let result = 'failed';
+    let res = 'failed';
     try {
-      if (canShareFile()) {
+      if (target !== 'save' && canShareFile()) {
         if (target === 'friend') {
           try {
             await navigator.share({ files: [file], text: `${text} ${SITE}` });
@@ -67,84 +79,65 @@ export default function PuzzleVideo({ url, n, result, mimic }) {
         } else {
           await navigator.share({ files: [file] });
         }
-        result = 'shared';
+        res = 'shared';
       } else {
-        // Desktop: save the file instead.
         const a = document.createElement('a');
         a.href = preview;
         a.download = file.name;
         a.click();
-        result = 'downloaded';
+        res = 'downloaded';
       }
     } catch (e) {
-      result = e && e.name === 'AbortError' ? 'cancelled' : 'failed';
-      if (result === 'failed') {
+      res = e && e.name === 'AbortError' ? 'cancelled' : 'failed';
+      if (res === 'failed') {
         reportError('crash', { msg: e && e.message, err: e && e.name, where: 'puzzle-video-share' });
         setErrMsg(`${(e && e.name) || 'Error'}: ${(e && e.message) || e}`);
       }
     }
-    track('share', { puzzle: n, method: 'video', target, result });
-    setStatus(
-      {
-        shared: target === 'story' ? 'Nice! 🎉' : 'Sent!',
-        downloaded: 'Video saved. Post it from your downloads.',
-        failed: "Couldn't share this time.",
-      }[result] || null
-    );
+    track('share', { puzzle: n, method: 'video', target, result: res });
+    setStatus({ shared: 'Nice! 🎉', downloaded: 'Video saved.', failed: "Couldn't share this time." }[res] || null);
   };
 
-
+  const pct = Math.round(progress * 100);
   return (
-    <div className="pvideo">
-      {state === 'idle' && (
-        <>
-          <button className="btn btn-ghost" onClick={make}>
-            🎬 Brag with a video
-          </button>
-          <p className="pvideo-note">
-            {mimic ? 'Your score, the puzzle, then your own attempt. No spoilers.' : 'Your score + the puzzle played backwards. No spoilers.'}
-          </p>
-        </>
-      )}
-      {state === 'making' && (
-        <div className="pvideo-making" role="status">
-          <div className="pvideo-bar">
-            <i style={{ width: `${Math.round(progress * 100)}%` }} />
-          </div>
-          <p className="pvideo-note">Making your video… {Math.round(progress * 100)}%</p>
-        </div>
-      )}
-      {state === 'ready' && (
-        <div className="pvideo-ready">
-          <video className="pvideo-preview" src={preview} controls playsInline />
-          {canShareFile() ? (
-            <>
-              <button className="btn btn-primary" onClick={() => share('story')}>
-                📲 Post to your story
-              </button>
-              <p className="pvideo-note">Pick Instagram, TikTok or Snapchat in the menu. “Save Video” puts it in Photos.</p>
-              <button className="btn btn-ghost" onClick={() => share('friend')}>
-                💬 Send to a friend
-              </button>
-            </>
-          ) : (
-            <button className="btn btn-primary" onClick={() => share('save')}>
-              ⬇️ Download video
+    <>
+      <button
+        className={'btn btn-primary brag-btn pvideo-btn' + (state === 'making' ? ' is-making' : '')}
+        onClick={make}
+        disabled={state === 'making'}
+        style={state === 'making' ? { '--fill': `${pct}%` } : undefined}
+      >
+        {state === 'making' ? `Making… ${pct}%` : state === 'ready' ? '🎬 Your video' : state === 'error' ? '🎬 Try again' : '🎬 Brag with a video'}
+      </button>
+
+      {open && (
+        <div className="sheet-backdrop" onClick={() => setOpen(false)}>
+          <div className="sheet pvideo-sheet" role="dialog" aria-modal="true" aria-label="Your brag video" onClick={(e) => e.stopPropagation()}>
+            <button className="pvideo-close" onClick={() => setOpen(false)} aria-label="Close">
+              ✕
             </button>
-          )}
-          {status && <p className="pvideo-note">{status}</p>}
-          {errMsg && <p className="pvideo-err">{errMsg}</p>}
+            <video className="pvideo-preview" src={preview} controls playsInline autoPlay />
+            {canShareFile() ? (
+              <>
+                <button className="btn btn-primary" onClick={() => share('story')}>
+                  📲 Post to your story
+                </button>
+                <p className="pvideo-note">Pick Instagram, TikTok or Snapchat. “Save Video” puts it in Photos.</p>
+                <button className="btn-text pvideo-friend" onClick={() => share('friend')}>
+                  💬 Or send it to a friend
+                </button>
+              </>
+            ) : (
+              <button className="btn btn-primary" onClick={() => share('save')}>
+                ⬇️ Download video
+              </button>
+            )}
+            {status && <p className="pvideo-note">{status}</p>}
+            {errMsg && <p className="pvideo-err">{errMsg}</p>}
+          </div>
         </div>
       )}
-      {state === 'error' && (
-        <p className="pvideo-note">
-          Couldn’t make the video on this browser.{' '}
-          {errMsg && <span className="pvideo-err">{errMsg} </span>}
-          <button className="btn-text" onClick={make}>
-            Try again
-          </button>
-        </p>
-      )}
-    </div>
+    </>
   );
 }
+

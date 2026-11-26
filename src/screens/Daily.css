@@ -157,3 +157,10 @@
 .skel-text { animation: skel-fade 1.3s ease-in-out infinite; }
 @keyframes skel-fade { 50% { opacity: 0.4; } }
 @media (prefers-reduced-motion: reduce) { .skel, .skel-text { animation: none; } }
+
+/* ---- results: brag row ---- */
+.brag-row { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; margin-top: 18px; }
+.brag-row.single { grid-template-columns: 1fr; }
+.brag-btn { min-height: 58px; font-size: 16px; line-height: 1.2; padding: 8px 10px; }
+.solved-foot { text-align: center; margin-top: 22px; font-size: 14px; color: var(--muted); }
+.solved-foot a { color: var(--muted); text-decoration: underline; text-underline-offset: 3px; }
