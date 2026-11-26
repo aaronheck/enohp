@@ -41,10 +41,11 @@ function fakeWorld(env = {}) {
   };
 }
 
-const call = async (w, method, path, { body, query } = {}) => {
+const call = async (w, method, path, { body, query, ip } = {}) => {
   const res = await w.handler({
     httpMethod: method,
     path,
+    requestContext: { identity: { sourceIp: ip || '203.0.113.9' } },
     body: body === undefined ? null : typeof body === 'string' ? body : JSON.stringify(body),
     queryStringParameters: query || null,
   });
@@ -346,4 +347,16 @@ test('daily: the last 5 puzzles can be played late; older or future ones fall ba
   assert.equal((await get(3)).number, 9); // 6 days back: too old
   assert.equal((await get(10)).number, 9); // tomorrow: no peeking
   assert.equal((await get(9)).archive, false);
+});
+
+test('daily: the ?n= override only works from the allowed IPs', async () => {
+  const w = fakeWorld({ DAILY_ALLOW_OVERRIDE: '1', DAILY_OVERRIDE_IPS: '198.51.100.7, 198.51.100.8' });
+  for (let n = 1; n <= 12; n++) w.files.add(daily.puzzleKey(n, 'Kevin'));
+  const get = async (ip) => (await call(w, 'GET', '/daily', { query: { n: '12' }, ip })).body.number;
+  assert.equal(await get('198.51.100.7'), 12); // Aaron: any puzzle, even future ones
+  assert.equal(await get('198.51.100.8'), 12);
+  assert.equal(await get('203.0.113.50'), 3); // anyone else: today's
+  const guess = async (ip) => (await call(w, 'POST', '/daily/guess', { body: { number: 12, guess: 'x' }, ip })).status;
+  assert.equal(await guess('198.51.100.7'), 200);
+  assert.equal(await guess('203.0.113.50'), 400); // can't guess future puzzles either
 });

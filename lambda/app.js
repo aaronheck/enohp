@@ -199,8 +199,20 @@ function createHandler(deps) {
 
   // TEMPORARY (pre-launch testing): with DAILY_ALLOW_OVERRIDE=1, ?n= picks any puzzle
   // and guesses/reveals aren't limited to today. Turn off before launch.
-  const overrideAllowed = () => (deps.env || process.env).DAILY_ALLOW_OVERRIDE === '1';
-  const latestAllowed = () => (overrideAllowed() ? Infinity : daily.puzzleNumber(now()));
+  // The ?n= override (play any puzzle, even future ones) is for Aaron only: it needs
+  // DAILY_ALLOW_OVERRIDE=1 and, when DAILY_OVERRIDE_IPS is set, a request from one of
+  // those IP addresses (comma-separated).
+  const sourceIp = (event) => {
+    const rc = (event && event.requestContext) || {};
+    return (rc.identity && rc.identity.sourceIp) || (rc.http && rc.http.sourceIp) || '';
+  };
+  const overrideAllowed = (event) => {
+    const env = deps.env || process.env;
+    if (env.DAILY_ALLOW_OVERRIDE !== '1') return false;
+    const ips = String(env.DAILY_OVERRIDE_IPS || '').split(',').map((x) => x.trim()).filter(Boolean);
+    return !ips.length || ips.includes(sourceIp(event));
+  };
+  const latestAllowed = (event) => (overrideAllowed(event) ? Infinity : daily.puzzleNumber(now()));
 
   const VOICE = daily.VOICES[0];
   const knownAudio = new Set();
@@ -211,7 +223,7 @@ function createHandler(deps) {
     // ?n= picks one of the last ARCHIVE_DAYS puzzles (free to play late); anything else
     // gets today's, unless the pre-launch override is on.
     const inArchive = Number.isInteger(asked) && asked >= 1 && asked < today && asked >= today - ARCHIVE_DAYS;
-    const n = Number.isInteger(asked) && asked >= 1 && (overrideAllowed() || inArchive) ? asked : today;
+    const n = Number.isInteger(asked) && asked >= 1 && (overrideAllowed(event) || inArchive) ? asked : today;
     if (n < 1) return fail(404, 'No puzzle yet');
     // Audio is generated ahead of time; make sure today's is there. Remembered per
     // container, so only the first request for a puzzle pays for the S3 check.
@@ -236,7 +248,7 @@ function createHandler(deps) {
   async function guessDaily(event) {
     const body = parseBody(event);
     const n = Number(body.number);
-    if (!Number.isInteger(n) || n < 1 || n > latestAllowed()) return fail(400, 'No such puzzle');
+    if (!Number.isInteger(n) || n < 1 || n > latestAllowed(event)) return fail(400, 'No such puzzle');
     const guess = cleanText(body.guess, MAX_GUESS);
     if (!guess) return fail(400, 'Missing guess.');
     const phrase = daily.phraseFor(n);
@@ -249,7 +261,7 @@ function createHandler(deps) {
   async function revealDaily(event) {
     const body = parseBody(event);
     const n = Number(body.number);
-    if (!Number.isInteger(n) || n < 1 || n > latestAllowed()) return fail(400, 'No such puzzle');
+    if (!Number.isInteger(n) || n < 1 || n > latestAllowed(event)) return fail(400, 'No such puzzle');
     const answers = {};
     answers[VOICE.id] = await deps.signGet(daily.answerKey(n, VOICE.id), SIGNED_URL_SECONDS * 6);
     return respond(200, { phrase: daily.phraseFor(n), answers });
