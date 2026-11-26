@@ -20,18 +20,18 @@ const SLIDES = [
     art: <Listen />,
   },
   {
-    title: 'Guess what it says',
-    body: 'Type what you think it says. Every guess uses a try, right or wrong. Get it first time without mimicking and you’re a mind reader.',
-    art: <Guess />,
-  },
-  {
-    title: 'Stuck? Mimic it',
-    body: 'Record yourself copying the backwards sound. We flip your recording so it plays forwards, and the phrase might just pop out. Your first mimic doesn’t use a try; after that, each one does.',
+    title: 'Mimic it',
+    body: 'Record yourself copying the backwards sound. We flip your recording so it plays forwards, and the phrase might just pop out.',
     art: <Mimic />,
   },
   {
+    title: 'Guess what it says',
+    body: 'Type what you think it says. Feeling brave? Guess before mimicking at all, and get it first time to be a mind reader.',
+    art: <Guess />,
+  },
+  {
     title: 'You have 5 tries',
-    body: 'Solve it in as few tries as you can. The last try has to be a guess. Run out and we’ll show you the answer.',
+    body: 'Every guess uses a try, right or wrong. Your first mimic doesn’t, but each one after that does. The last try has to be a guess; run out and we’ll show you the answer.',
     art: <TriesArt />,
   },
 ];
