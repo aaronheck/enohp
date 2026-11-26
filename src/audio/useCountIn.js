@@ -1,7 +1,7 @@
 import { useCallback, useEffect, useRef, useState } from 'react';
 import { tick } from './sfx';
 
-const STEP_MS = 450;
+const STEP_MS = 750; // per number: 450 felt rushed
 
 /**
  * "3, 2, 1" before recording. The mic opens during the count (asking for permission
