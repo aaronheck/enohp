@@ -12,6 +12,7 @@
 //   GET  /daily                     -> { number, date, voices, audio: { <voice>: url } }  (puzzle audio)
 //   POST /daily/guess { number, guess } -> { correct } (+ phrase, answers: { <voice>: url } when right)
 //   POST /daily/reveal { number }   -> { phrase, answers }  (after running out of tries)
+//   POST /events { events: [{ name, props, ts }], device, session } -> 204  (analytics)
 
 const crypto = require('crypto');
 const daily = require('./daily');
@@ -34,6 +35,28 @@ const MAX_BODY = 8 * 1024;
 
 const ID_RE = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
 const KEY_RE = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}\.wav$/i;
+
+// Analytics: which events we accept, and limits so junk can't flood the logs.
+const EVENT_NAMES = new Set([
+  'page_view', 'daily_view', 'daily_listened', 'howto_open', 'howto_close', 'mimic', 'guess',
+  'daily_solved', 'daily_failed', 'share', 'play_with_friends', 'chain_started', 'turn_opened', 'turn_sent',
+]);
+const MAX_EVENTS = 50;
+const MAX_PROPS = 15;
+const MAX_STRING = 120;
+const ID_LIKE = /^[a-z0-9-]{8,40}$/i;
+
+function cleanProps(props) {
+  const out = {};
+  if (!props || typeof props !== 'object' || Array.isArray(props)) return out;
+  for (const [k, v] of Object.entries(props).slice(0, MAX_PROPS)) {
+    if (!/^[a-z_][a-z0-9_]{0,30}$/i.test(k)) continue;
+    if (typeof v === 'string') out[k] = v.replace(/[\u0000-\u001f]/g, ' ').slice(0, MAX_STRING);
+    else if (typeof v === 'number' && Number.isFinite(v)) out[k] = v;
+    else if (typeof v === 'boolean') out[k] = v;
+  }
+  return out;
+}
 
 const respond = (statusCode, body) => ({ statusCode, headers: HEADERS, body: JSON.stringify(body) });
 const fail = (statusCode, error) => respond(statusCode, { error });
@@ -213,6 +236,26 @@ function createHandler(deps) {
     return respond(200, { phrase: daily.phraseFor(n), answers });
   }
 
+  // One log line per event: {"t":"evt",...} so CloudWatch Logs Insights can query them.
+  async function recordEvents(event) {
+    let body;
+    try {
+      body = JSON.parse(event.body || '{}'); // sent as text/plain by sendBeacon
+    } catch (e) {
+      return fail(400, 'Invalid JSON');
+    }
+    const device = ID_LIKE.test(body.device || '') ? body.device : 'unknown';
+    const session = ID_LIKE.test(body.session || '') ? body.session : 'unknown';
+    const list = Array.isArray(body.events) ? body.events.slice(0, MAX_EVENTS) : [];
+    const log = deps.logEvent || ((line) => console.log(line));
+    for (const e of list) {
+      if (!e || !EVENT_NAMES.has(e.name)) continue;
+      const ts = Number.isFinite(e.ts) && Math.abs(e.ts - now()) < 86400000 ? e.ts : now();
+      log(JSON.stringify({ t: 'evt', name: e.name, ts, device, session, ...cleanProps(e.props) }));
+    }
+    return { statusCode: 204, headers: HEADERS, body: '' };
+  }
+
   return async function handler(event) {
     const method = event.httpMethod;
     const path = event.path;
@@ -225,7 +268,8 @@ function createHandler(deps) {
       if (path === '/daily' && method === 'GET') return await readDaily(event);
       if (path === '/daily/guess' && method === 'POST') return await guessDaily(event);
       if (path === '/daily/reveal' && method === 'POST') return await revealDaily(event);
-      if (['/game', '/recording', '/daily', '/daily/guess', '/daily/reveal'].includes(path)) return fail(405, 'Unsupported method');
+      if (path === '/events' && method === 'POST') return await recordEvents(event);
+      if (['/game', '/recording', '/daily', '/daily/guess', '/daily/reveal', '/events'].includes(path)) return fail(405, 'Unsupported method');
       return fail(404, 'Unsupported path!');
     } catch (e) {
       if (e instanceof HttpError) return fail(e.status, e.message);

@@ -22,6 +22,7 @@ const MAX_JSON_BYTES = 8 * 1024;
 const games = new Map();
 const files = new Map();
 const pendingUploads = new Set();
+const events = [];
 
 function send(res, status, body, type = 'application/json') {
   res.writeHead(status, { 'Content-Type': type, 'Access-Control-Allow-Origin': '*' });
@@ -95,6 +96,19 @@ async function handle(req, res) {
       pendingUploads.add(key + '.wav');
       return send(res, 200, { url: `${PREFIX}/files/${key}.wav`, key });
     }
+    // Analytics: keep the last few hundred events in memory (GET to inspect them).
+    if (path === '/events' && req.method === 'POST') {
+      try {
+        const body = JSON.parse((await readBody(req, 64 * 1024)).toString() || '{}');
+        for (const e of body.events || []) events.push({ ...e, device: body.device, session: body.session });
+        events.splice(0, Math.max(0, events.length - 500));
+      } catch (e) {
+        return send(res, 400, { error: 'Invalid JSON' });
+      }
+      res.writeHead(204);
+      return res.end();
+    }
+    if (path === '/events' && req.method === 'GET') return send(res, 200, events);
     if (path === '/daily' && req.method === 'GET') {
       // The mock always allows ?n= (like DAILY_ALLOW_OVERRIDE=1).
       const asked = Number(url.searchParams.get('n'));

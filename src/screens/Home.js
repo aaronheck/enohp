@@ -2,6 +2,7 @@ import React, { useState } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import { createGame } from '../api/client';
 import { getPlayedGames } from '../lib/storage';
+import { track } from '../lib/analytics';
 import { Button, Notice, Screen } from '../ui/components';
 import HowItWorksArt from '../ui/HowItWorksArt';
 import './screens.css';
@@ -17,6 +18,7 @@ export default function Home() {
     setError(null);
     try {
       const id = await createGame();
+      track('chain_started', {});
       navigate('/game?id=' + encodeURIComponent(id));
     } catch (e) {
       setError(e.message);

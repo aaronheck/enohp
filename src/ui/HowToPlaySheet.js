@@ -39,7 +39,10 @@ export default function HowToPlaySheet({ open, onClose, from = 'your friend' }) 
 
 const SWIPE_PX = 50;
 
-/** Bottom-sheet slideshow, one step per slide. slides: [{ title, body, art }]. */
+/**
+ * Bottom-sheet slideshow, one step per slide. slides: [{ title, body, art }].
+ * onClose(how, slideIndex): how = 'done' | 'skip' | 'dismiss'.
+ */
 export function Slideshow({ open, onClose, slides, label }) {
   const [index, setIndex] = useState(0);
   const [dir, setDir] = useState(1);
@@ -68,7 +71,7 @@ export function Slideshow({ open, onClose, slides, label }) {
   if (!open) return null;
 
   const onKeyDown = (e) => {
-    if (e.key === 'Escape') onClose();
+    if (e.key === 'Escape') onClose('dismiss', index);
     if (e.key === 'ArrowRight') go(index + 1);
     if (e.key === 'ArrowLeft') go(index - 1);
   };
@@ -86,7 +89,7 @@ export function Slideshow({ open, onClose, slides, label }) {
   const { title, body, art } = list[index];
 
   return (
-    <div className="sheet-backdrop" onClick={onClose}>
+    <div className="sheet-backdrop" onClick={() => onClose('dismiss', index)}>
       <div
         className="sheet slideshow"
         ref={dialogRef}
@@ -106,7 +109,7 @@ export function Slideshow({ open, onClose, slides, label }) {
             ))}
           </div>
           {!last && (
-            <button className="btn-text slideshow-skip" onClick={onClose}>
+            <button className="btn-text slideshow-skip" onClick={() => onClose('skip', index)}>
               Skip
             </button>
           )}
@@ -129,7 +132,7 @@ export function Slideshow({ open, onClose, slides, label }) {
               Back
             </Button>
           )}
-          <Button onClick={last ? onClose : () => go(index + 1)}>{last ? "Let's go" : 'Next'}</Button>
+          <Button onClick={last ? () => onClose('done', index) : () => go(index + 1)}>{last ? "Let's go" : 'Next'}</Button>
         </div>
       </div>
     </div>

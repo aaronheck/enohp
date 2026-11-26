@@ -8,6 +8,7 @@ const daily = require('./daily');
 function fakeWorld(env = {}) {
   const games = new Map();
   const files = new Set();
+  const logged = [];
   let clock = Date.parse('2026-11-28T20:00:00Z'); // puzzle #3 (launch 2026-11-26, Pacific time)
   let n = 0;
   const deps = {
@@ -27,11 +28,13 @@ function fakeWorld(env = {}) {
     },
     recordingExists: async (key) => files.has(key),
     signGet: async (key) => `https://s3/get/${key}`,
+    logEvent: (line) => logged.push(JSON.parse(line)),
     signPut: async (key) => `https://s3/put/${key}`,
   };
   return {
     games,
     files,
+    logged,
     tick: (ms) => (clock += ms),
     handler: createHandler(deps),
   };
@@ -288,4 +291,33 @@ test('daily override (?n=) only works when DAILY_ALLOW_OVERRIDE=1', async () => 
   assert.equal((await call(on, 'POST', '/daily/guess', { body: { number: 5, guess: daily.phraseFor(5) } })).body.correct, true);
   assert.equal((await call(on, 'POST', '/daily/reveal', { body: { number: 5 } })).body.phrase, daily.phraseFor(5));
   assert.equal((await call(on, 'GET', '/daily', { query: { n: '9' } })).status, 503); // no audio for #9
+});
+
+test('events: known events are logged one per line, junk is dropped', async () => {
+  const w = fakeWorld();
+  const r = await w.handler({
+    httpMethod: 'POST',
+    path: '/events',
+    body: JSON.stringify({
+      device: 'abc12345-device',
+      session: 'sess-12345678',
+      events: [
+        { name: 'guess', props: { puzzle: 3, correct: false, try: 1, text: 'pea and butter', nested: { no: 1 }, 'bad key': 1 } },
+        { name: 'not_a_thing', props: {} },
+        { name: 'daily_solved', props: { puzzle: 3, tries: 2, long: 'x'.repeat(500) } },
+      ],
+    }),
+  });
+  assert.equal(r.statusCode, 204);
+  assert.equal(w.logged.length, 2);
+  assert.deepEqual(
+    { ...w.logged[0], ts: 0 },
+    { t: 'evt', name: 'guess', ts: 0, device: 'abc12345-device', session: 'sess-12345678', puzzle: 3, correct: false, try: 1, text: 'pea and butter' }
+  );
+  assert.equal(w.logged[1].long.length, 120);
+  const bad = await w.handler({ httpMethod: 'POST', path: '/events', body: 'nope' });
+  assert.equal(bad.statusCode, 400);
+  const weirdIds = await w.handler({ httpMethod: 'POST', path: '/events', body: JSON.stringify({ device: '<script>', events: [{ name: 'page_view' }] }) });
+  assert.equal(weirdIds.statusCode, 204);
+  assert.equal(w.logged[2].device, 'unknown');
 });

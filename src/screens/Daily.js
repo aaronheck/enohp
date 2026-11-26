@@ -23,6 +23,7 @@ import { drawShareImage } from '../lib/shareImage';
 import { listMimics, saveMimic } from '../lib/mimicStore';
 import { stopShared, unlockAudio } from '../audio/context';
 import { isDev, resetDaily } from '../lib/devReset';
+import { track } from '../lib/analytics';
 import { Button, Notice, Screen } from '../ui/components';
 import { ReversedPlayer } from '../ui/audio';
 import { VibratingString } from '../ui/waves';
@@ -103,6 +104,18 @@ function Puzzle({ puzzle, forced }) {
   const [justRecorded, setJustRecorded] = useState(null);
   // Open the how-to automatically the first time someone plays any daily puzzle.
   const [howOpen, setHowOpen] = useState(() => !hasPlayedDaily());
+
+  // Analytics: one view per puzzle load (and whether the how-to opened by itself).
+  useEffect(() => {
+    track('daily_view', {
+      puzzle: n,
+      forced: !!forced,
+      returning: hasPlayedDaily(),
+      streak: streak(n),
+      state: state.solved ? 'solved' : state.failed ? 'failed' : state.mimics || state.guesses.length ? 'in_progress' : 'new',
+    });
+    if (howOpen) track('howto_open', { game: 'daily', source: 'auto' });
+  }, [n]); // eslint-disable-line react-hooks/exhaustive-deps
   const recorder = useRecorder();
   const recording = recorder.status === 'recording';
   const update = (patch) => setState(updatePuzzleState(n, patch));
@@ -132,6 +145,7 @@ function Puzzle({ puzzle, forced }) {
       update({ mimics: index, actions: [...state.actions, 'mimic'] });
       setMimics((prev) => [...prev, { index, blob }]);
       setJustRecorded(index);
+      track('mimic', { puzzle: n, n: index, tries_used: triesUsed({ ...state, mimics: index }) });
       saveMimic(n, index, blob);
     }
   }
@@ -150,14 +164,19 @@ function Puzzle({ puzzle, forced }) {
       const r = await guessDaily(n, g);
       if (r.correct) {
         setAnswers(r.answers);
+        const done = { ...state, solved: true };
+        track('guess', { puzzle: n, correct: true, try: used + 1 });
+        track('daily_solved', { puzzle: n, tries: triesUsed(done), mimics: state.mimics, mind_reader: isMindReader(done) });
         update({ solved: true, phrase: r.phrase, voice, actions: [...state.actions, 'hit'] });
       } else {
         const next = { guesses: [...state.guesses, g], actions: [...state.actions, 'miss'] };
+        track('guess', { puzzle: n, correct: false, try: used + 1, text: g });
         setGuess('');
         if (triesUsed({ ...state, ...next }) >= MAX_TRIES) {
           // Out of tries: show the answer.
           const rev = await revealDaily(n);
           setAnswers(rev.answers);
+          track('daily_failed', { puzzle: n, mimics: state.mimics });
           update({ ...next, failed: true, phrase: rev.phrase, voice });
         } else {
           update(next);
@@ -210,11 +229,23 @@ function Puzzle({ puzzle, forced }) {
           <br />
           <span className="accent">Puzzle #{n}</span>
         </h1>
-        <button className="how-btn" onClick={() => setHowOpen(true)}>
+        <button
+          className="how-btn"
+          onClick={() => {
+            setHowOpen(true);
+            track('howto_open', { game: 'daily', source: 'button' });
+          }}
+        >
           How to play
         </button>
       </div>
-      <DailyHowTo open={howOpen} onClose={() => setHowOpen(false)} />
+      <DailyHowTo
+        open={howOpen}
+        onClose={(how, slide) => {
+          setHowOpen(false);
+          track('howto_close', { game: 'daily', how, slide: (slide || 0) + 1 });
+        }}
+      />
       <p className="lede" style={{ marginTop: 8 }}>
         Here's the phrase in reverse.
       </p>
@@ -223,7 +254,11 @@ function Puzzle({ puzzle, forced }) {
         <PuzzleClip
           url={puzzle.audio[voice]}
           highlight={!heard}
-          onEnded={() => !heard && update({ heard: true })}
+          onEnded={() => {
+            if (heard) return;
+            update({ heard: true });
+            track('daily_listened', { puzzle: n });
+          }}
         />
       </div>
 
@@ -308,7 +343,9 @@ function Puzzle({ puzzle, forced }) {
       </div>
       <div className="spacer" />
       <div className="daily-foot">
-        <Link to="/friends">Play with friends</Link>
+        <Link to="/friends" onClick={() => track('play_with_friends', { from: 'puzzle' })}>
+          Play with friends
+        </Link>
         <Link to="/previous">My chains</Link>
       </div>
       <DevReset />
@@ -387,6 +424,7 @@ function Solved({ n, state, answers, voice, days, top, mimics }) {
 
   async function share() {
     const r = await shareLink(SITE, text.replace(`\n${SITE}`, ''), { copyText: text, file: image });
+    track('share', { puzzle: n, result: r, method: image ? 'image' : 'text', solved: !!state.solved });
     setStatus({ shared: 'Shared!', copied: 'Result copied. Paste it anywhere.', failed: "Couldn't share this time." }[r] || null);
   }
 
@@ -425,7 +463,7 @@ function Solved({ n, state, answers, voice, days, top, mimics }) {
       <div className="stack" style={{ marginTop: 18 }}>
         <Button onClick={share}>{image ? '📤 Share result' : 'Share result'}</Button>
         {status && <p className="muted center">{status}</p>}
-        <Button variant="ghost" to="/friends">
+        <Button variant="ghost" to="/friends" onClick={() => track('play_with_friends', { from: 'solved' })}>
           Play with friends
         </Button>
       </div>

@@ -9,6 +9,7 @@ import { Button, ChainAvatars, Notice, Screen, StageChips } from '../ui/componen
 import { VibratingString } from '../ui/waves';
 import { RecordButton, ReversedPlayer } from '../ui/audio';
 import HowToPlaySheet from '../ui/HowToPlaySheet';
+import { track } from '../lib/analytics';
 import Chain from '../ui/Chain';
 import './screens.css';
 
@@ -60,6 +61,14 @@ export default function Turn() {
   }, [gameId]);
 
   const prevTurn = game && game.turns.length ? game.turns[game.turns.length - 1] : null;
+
+  // Analytics: someone opened a turn (starting a chain, or a friend's link).
+  useEffect(() => {
+    if (!game) return;
+    const starter = !game.turns.length;
+    track('turn_opened', { turn: game.turns.length + 1, starter, new_player: !getPlayedGames().length && !getNickname() });
+    if (!starter && !getPlayedGames().length && !getNickname()) track('howto_open', { game: 'chain', source: 'auto' });
+  }, [game]); // eslint-disable-line react-hooks/exhaustive-deps
 
   useEffect(() => {
     if (!prevTurn) return;
@@ -120,6 +129,7 @@ export default function Turn() {
     if (!linkSent.current) {
       setShareState('pending');
       shareLink(gameUrl(gameId), SHARE_TEXT).then((r) => {
+        track('share', { game: 'chain', result: r, method: 'link', turn: turnNumber });
         if (r === 'shared' || r === 'copied') linkSent.current = true;
         setShareState(r);
       });
@@ -127,6 +137,7 @@ export default function Turn() {
     upload.then(
       () => {
         rememberGame({ id: gameId, guess: turn.guess, turn: turnNumber });
+        track('turn_sent', { turn: turnNumber });
         dispatch({ type: 'SENT' });
       },
       (e) => dispatch({ type: 'SEND_FAILED', error: sendErrorMessage(e, linkSent.current) })
@@ -146,12 +157,25 @@ export default function Turn() {
         {!isStarter && (
           <div className="turn-head turn-head-row">
             <ChainAvatars names={game.turns.map((t) => t.nickname || '?')} />
-            <button className="how-btn" onClick={() => setHowOpen(true)}>
+            <button
+              className="how-btn"
+              onClick={() => {
+                setHowOpen(true);
+                track('howto_open', { game: 'chain', source: 'button' });
+              }}
+            >
               How to play
             </button>
           </div>
         )}
-        <HowToPlaySheet open={howOpen && !isStarter} onClose={() => setHowOpen(false)} from={prevName} />
+        <HowToPlaySheet
+          open={howOpen && !isStarter}
+          onClose={(how, slide) => {
+            setHowOpen(false);
+            track('howto_close', { game: 'chain', how, slide: (slide || 0) + 1 });
+          }}
+          from={prevName}
+        />
         <h1 className="title title-sm turn-title">
           {isStarter ? (
             <>
@@ -333,6 +357,7 @@ function Sent({ gameId, top, shared }) {
 
   async function share() {
     const result = await shareLink(url, SHARE_TEXT);
+    track('share', { game: 'chain', result, method: 'link', again: true });
     setAgain(SHARE_STATUS[result] || null);
   }
 

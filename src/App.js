@@ -1,5 +1,6 @@
-import React from 'react';
-import { Navigate, Route, Routes } from 'react-router-dom';
+import React, { useEffect } from 'react';
+import { Navigate, Route, Routes, useLocation } from 'react-router-dom';
+import { track } from './lib/analytics';
 import Daily from './screens/Daily';
 import Home from './screens/Home';
 import Turn from './screens/Turn';
@@ -8,6 +9,11 @@ import MyChains from './screens/MyChains';
 import HowToPlay from './screens/HowToPlay';
 
 export default function App() {
+  const { pathname } = useLocation();
+  useEffect(() => {
+    track('page_view', { path: pathname });
+  }, [pathname]);
+
   return (
     <Routes>
       <Route path="/" element={<Daily />} />
