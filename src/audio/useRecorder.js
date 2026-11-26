@@ -13,10 +13,11 @@ function micErrorMessage(err) {
 }
 
 /**
- * Microphone recorder. The mic stream is requested on the first start() and
- * kept until the component unmounts, so the permission prompt shows once.
+ * Microphone recorder. The mic stream is requested on the first start() and kept
+ * between takes, until release() is called, the tab is hidden, or the component
+ * unmounts. After a release, the next start() asks for the mic again.
  *
- * Returns { status: 'idle' | 'starting' | 'recording', error, start, stop, getLevel }.
+ * Returns { status: 'idle' | 'starting' | 'recording', error, start, stop, release, getLevel }.
  * stop() resolves to the recorded Blob. getLevel() returns 0..1 for live meters.
  */
 export default function useRecorder() {
@@ -27,18 +28,48 @@ export default function useRecorder() {
   const recorderRef = useRef(null);
   const chunksRef = useRef([]);
   const sampleRef = useRef(null);
+  const nodesRef = useRef([]);
 
-  useEffect(
-    () => () => {
-      const r = recorderRef.current;
-      if (r && r.state !== 'inactive') {
-        r.onstop = null;
+  /** Stops any take in progress (discarding it) and gives the microphone back. */
+  const release = useCallback(() => {
+    const r = recorderRef.current;
+    recorderRef.current = null;
+    if (r && r.state !== 'inactive') {
+      r.onstop = null;
+      r.ondataavailable = null;
+      try {
         r.stop();
+      } catch (e) {
+        // already stopped
       }
-      if (streamRef.current) streamRef.current.getTracks().forEach((t) => t.stop());
-    },
-    []
-  );
+    }
+    if (streamRef.current) streamRef.current.getTracks().forEach((t) => t.stop());
+    streamRef.current = null;
+    nodesRef.current.forEach((n) => {
+      try {
+        n.disconnect();
+      } catch (e) {
+        // already disconnected
+      }
+    });
+    nodesRef.current = [];
+    analyserRef.current = null;
+    sampleRef.current = null;
+    chunksRef.current = [];
+    setStatus('idle');
+  }, []);
+
+  // Give the mic back whenever the page is hidden (other tab/app, screen locked).
+  useEffect(() => {
+    const onVisibility = () => {
+      if (document.visibilityState === 'hidden') release();
+    };
+    document.addEventListener('visibilitychange', onVisibility);
+    return () => {
+      document.removeEventListener('visibilitychange', onVisibility);
+      release();
+    };
+  }, [release]);
 
   const start = useCallback(async () => {
     if (recorderRef.current && recorderRef.current.state === 'recording') return;
@@ -56,9 +87,11 @@ export default function useRecorder() {
         // route the analyser into a muted gain node.
         const mute = ctx.createGain();
         mute.gain.value = 0;
-        ctx.createMediaStreamSource(stream).connect(analyser);
+        const source = ctx.createMediaStreamSource(stream);
+        source.connect(analyser);
         analyser.connect(mute);
         mute.connect(ctx.destination);
+        nodesRef.current = [source, analyser, mute];
         streamRef.current = stream;
         analyserRef.current = analyser;
         sampleRef.current = new Float32Array(analyser.fftSize);
@@ -107,5 +140,5 @@ export default function useRecorder() {
     return Math.min(1, Math.sqrt(rms) * 1.6);
   }, []);
 
-  return { status, error, start, stop, getLevel };
+  return { status, error, start, stop, release, getLevel };
 }

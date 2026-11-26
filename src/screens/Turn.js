@@ -67,6 +67,12 @@ export default function Turn() {
     fetchRecording(prevTurn.signedGet, { retries: 4 }).then(setPrevBlob, (e) => setPrevError(e.message));
   }, [prevTurn]);
 
+  // Turn sent: give the microphone back.
+  const { release } = recorder;
+  useEffect(() => {
+    if (turn.stage === 'sent') release();
+  }, [turn.stage, release]);
+
   if (loadError) {
     return (
       <Screen left={<Link to="/">yelnats</Link>}>

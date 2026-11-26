@@ -164,6 +164,13 @@ function Puzzle({ puzzle }) {
     }
   }
 
+  // Done with the puzzle: give the microphone back.
+  const finished = state.solved || state.failed;
+  const { release } = recorder;
+  useEffect(() => {
+    if (finished) release();
+  }, [finished, release]);
+
   const days = streak(n);
   const top = {
     left: 'yelnats',
