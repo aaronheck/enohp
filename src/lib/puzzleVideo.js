@@ -20,24 +20,10 @@ const INTRO = 0.9; // seconds before the first listen
 const GAP = 0.7; // between the two listens
 const OUTRO = 1.8;
 
-/** The best format this browser can record: MP4 where possible (best for Instagram/TikTok). */
-export function videoMimeType() {
-  if (typeof window === 'undefined' || !window.MediaRecorder || !MediaRecorder.isTypeSupported) return null;
-  const types = [
-    'video/mp4;codecs=avc1.42E01E,mp4a.40.2',
-    'video/mp4;codecs=avc1,mp4a',
-    'video/mp4',
-    'video/webm;codecs=vp9,opus',
-    'video/webm;codecs=vp8,opus',
-    'video/webm',
-  ];
-  return types.find((t) => MediaRecorder.isTypeSupported(t)) || null;
-}
-
 /** Can this browser make the video at all? */
 export function canMakeVideo() {
   const c = typeof document !== 'undefined' && document.createElement('canvas');
-  return !!(videoMimeType() && c && c.captureStream && (window.AudioContext || window.webkitAudioContext));
+  return !!(videoMimeTypes().length && c && c.captureStream && (window.AudioContext || window.webkitAudioContext));
 }
 
 function roundRect(g, x, y, w, h, r) {
@@ -166,15 +152,41 @@ function drawFrame(g, t, { n, peaks, d }) {
  * blob: the puzzle's (backwards) audio. onProgress(0..1) while recording.
  * Resolves to a File (MP4 or WebM).
  */
+/** Every format this browser claims to record, best first. */
+function videoMimeTypes() {
+  if (typeof window === 'undefined' || !window.MediaRecorder) return [];
+  const types = [
+    'video/mp4;codecs=avc1.42E01E,mp4a.40.2',
+    'video/mp4;codecs=avc1,mp4a',
+    'video/mp4',
+    'video/webm;codecs=vp9,opus',
+    'video/webm;codecs=vp8,opus',
+    'video/webm',
+  ];
+  return MediaRecorder.isTypeSupported ? types.filter((t) => MediaRecorder.isTypeSupported(t)) : [];
+}
+
+/** Errors carry the step that failed, so reports say where it broke. */
+const step = (name, fn) =>
+  Promise.resolve()
+    .then(fn)
+    .catch((e) => {
+      const err = new Error(`${name}: ${(e && e.message) || e}`);
+      err.name = (e && e.name) || 'Error';
+      err.step = name;
+      throw err;
+    });
+
 export async function makePuzzleVideo({ blob, n, onProgress }) {
-  const mimeType = videoMimeType();
-  if (!mimeType) throw new Error('This browser can’t make videos.');
+  if (!videoMimeTypes().length) throw new Error('This browser can’t make videos.');
   if (document.fonts && document.fonts.load) {
     await Promise.all([document.fonts.load(`800 96px ${FONT}`), document.fonts.load(`600 36px ${FONT}`)]).catch(() => {});
   }
   const ctx = getAudioContext();
   if (ctx.state !== 'running') await ctx.resume().catch(() => {});
-  const buffer = await ctx.decodeAudioData(await blob.arrayBuffer());
+  const bytes = await step('read audio', () => blob.arrayBuffer());
+  // Old Safari only has the callback form of decodeAudioData.
+  const buffer = await step('decode audio', () => new Promise((res, rej) => ctx.decodeAudioData(bytes, res, rej)));
   const d = buffer.duration;
   const total = INTRO + 2 * d + GAP + OUTRO;
   const peaks = peaksOf(buffer, 44);
@@ -182,18 +194,37 @@ export async function makePuzzleVideo({ blob, n, onProgress }) {
   const canvas = document.createElement('canvas');
   canvas.width = W;
   canvas.height = H;
+  // Safari only produces frames from a canvas that's in the page: add it, invisibly.
+  Object.assign(canvas.style, { position: 'fixed', left: '0', bottom: '0', width: '2px', height: '2px', opacity: '0.01', pointerEvents: 'none', zIndex: '-1' });
+  document.body.appendChild(canvas);
   const g = canvas.getContext('2d');
   drawFrame(g, 0, { n, peaks, d });
 
   // Audio goes only into the recording (not the speakers).
   const dest = ctx.createMediaStreamDestination();
-  const stream = new MediaStream([...canvas.captureStream(30).getVideoTracks(), ...dest.stream.getAudioTracks()]);
-  const recorder = new MediaRecorder(stream, { mimeType, videoBitsPerSecond: 2500000 });
+  const stream = await step('capture', () => new MediaStream([...canvas.captureStream(30).getVideoTracks(), ...dest.stream.getAudioTracks()]));
+  // Some browsers claim a format and then refuse it: try each until one starts.
+  let recorder = null;
+  let mimeType = null;
+  let lastErr = null;
+  for (const t of videoMimeTypes()) {
+    try {
+      recorder = new MediaRecorder(stream, { mimeType: t, videoBitsPerSecond: 2500000 });
+      recorder.start(250);
+      mimeType = t;
+      break;
+    } catch (e) {
+      lastErr = e;
+      recorder = null;
+    }
+  }
+  if (!recorder) {
+    canvas.remove();
+    throw Object.assign(new Error(`start recorder: ${(lastErr && lastErr.message) || 'no format worked'}`), { name: (lastErr && lastErr.name) || 'Error' });
+  }
   const chunks = [];
   recorder.ondataavailable = (e) => e.data && e.data.size && chunks.push(e.data);
   const stopped = new Promise((res) => (recorder.onstop = res));
-
-  recorder.start(250);
   const t0 = ctx.currentTime + 0.05;
   for (const at of [INTRO, INTRO + d + GAP]) {
     const src = ctx.createBufferSource();
@@ -216,8 +247,10 @@ export async function makePuzzleVideo({ blob, n, onProgress }) {
   recorder.stop();
   await stopped;
   stream.getTracks().forEach((tr) => tr.stop());
+  canvas.remove();
+  if (!chunks.length) throw new Error('record: the video came out empty');
 
-  const type = mimeType.split(';')[0];
+  const type = (recorder.mimeType || mimeType).split(';')[0] || 'video/mp4';
   const ext = type === 'video/mp4' ? 'mp4' : 'webm';
   return new File(chunks, `yelnats-${n}.${ext}`, { type });
 }

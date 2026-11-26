@@ -5,3 +5,4 @@
 .pvideo-ready { display: flex; flex-direction: column; align-items: center; gap: 12px; }
 .pvideo-preview { width: 50%; max-width: 220px; aspect-ratio: 9 / 16; border-radius: 18px; background: var(--bg-deep); }
 .pvideo-ready .btn { width: 100%; }
+.pvideo-err { color: var(--rose); font-size: 13px; text-align: center; margin-top: 6px; word-break: break-word; }

@@ -19,6 +19,7 @@ export default function PuzzleVideo({ url, n }) {
   const [file, setFile] = useState(null);
   const [preview, setPreview] = useState(null);
   const [status, setStatus] = useState(null);
+  const [errMsg, setErrMsg] = useState(null);
 
   if (!url || !canMakeVideo()) return null;
 
@@ -35,6 +36,7 @@ export default function PuzzleVideo({ url, n }) {
       setState('ready');
     } catch (e) {
       reportError('crash', { msg: e && e.message, err: e && e.name, where: 'puzzle-video' });
+      setErrMsg(`${(e && e.name) || 'Error'}: ${(e && e.message) || e}`);
       setState('error');
     }
   };
@@ -44,7 +46,13 @@ export default function PuzzleVideo({ url, n }) {
     let result = 'failed';
     try {
       if (navigator.canShare && navigator.canShare({ files: [file] })) {
-        await navigator.share({ files: [file], text: `${text} ${SITE}` });
+        try {
+          await navigator.share({ files: [file], text: `${text} ${SITE}` });
+        } catch (e) {
+          if (e && e.name === 'AbortError') throw e;
+          // Some apps refuse a video with text attached: try the video on its own.
+          await navigator.share({ files: [file] });
+        }
         result = 'shared';
       } else {
         // Desktop: save the file instead.
@@ -56,6 +64,10 @@ export default function PuzzleVideo({ url, n }) {
       }
     } catch (e) {
       result = e && e.name === 'AbortError' ? 'cancelled' : 'failed';
+      if (result === 'failed') {
+        reportError('crash', { msg: e && e.message, err: e && e.name, where: 'puzzle-video-share' });
+        setErrMsg(`${(e && e.name) || 'Error'}: ${(e && e.message) || e}`);
+      }
     }
     track('share', { puzzle: n, method: 'video', result });
     setStatus({ shared: 'Shared!', downloaded: 'Video saved.', failed: "Couldn't share this time." }[result] || null);
@@ -86,11 +98,13 @@ export default function PuzzleVideo({ url, n }) {
             📤 Share video
           </button>
           {status && <p className="pvideo-note">{status}</p>}
+          {errMsg && <p className="pvideo-err">{errMsg}</p>}
         </div>
       )}
       {state === 'error' && (
         <p className="pvideo-note">
           Couldn’t make the video on this browser.{' '}
+          {errMsg && <span className="pvideo-err">{errMsg} </span>}
           <button className="btn-text" onClick={make}>
             Try again
           </button>
