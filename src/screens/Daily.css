@@ -141,3 +141,19 @@
 @media (prefers-reduced-motion: reduce) {
   .mic-warmup-dots i, .mimic-cta.mimic-starting:disabled, .rec-dot { animation: none; }
 }
+
+/* ---- loading skeleton ---- */
+.skel {
+  border-radius: 22px;
+  background: linear-gradient(100deg, var(--bg-raised) 30%, #1d5a48 50%, var(--bg-raised) 70%);
+  background-size: 300% 100%;
+  animation: skel 1.3s ease-in-out infinite;
+}
+@keyframes skel { from { background-position: 100% 0; } to { background-position: 0 0; } }
+.skel-player { height: 104px; }
+.skel-button { height: 62px; border-radius: 999px; }
+.skel-input { height: 56px; border-radius: 16px; margin-top: 30px; }
+.skel-pill { display: inline-block; width: 64px; height: 18px; border-radius: 9px; vertical-align: middle; }
+.skel-text { animation: skel-fade 1.3s ease-in-out infinite; }
+@keyframes skel-fade { 50% { opacity: 0.4; } }
+@media (prefers-reduced-motion: reduce) { .skel, .skel-text { animation: none; } }

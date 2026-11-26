@@ -76,15 +76,11 @@ export default function Daily() {
     );
   }, [forced]);
 
-  if (loadError || !puzzle) {
+  if (loadError) {
     return (
-      <Screen left="yelnats" right={<Link to="/friends">Play with friends</Link>}>
-        <h1 className="title title-sm turn-title">
-          {loadError ? 'Hmm.' : 'Rewinding'}
-          <br />
-          <span className="accent">{loadError ? '' : "today's puzzle…"}</span>
-        </h1>
-        {loadError && <p className="lede" style={{ marginTop: 12 }}>{loadError}</p>}
+      <Screen left="yelnats">
+        <h1 className="title title-sm turn-title">Hmm.</h1>
+        <p className="lede" style={{ marginTop: 12 }}>{loadError}</p>
         <div className="spacer" />
         <Button variant="ghost" to="/friends">
           Play with friends instead
@@ -92,8 +88,39 @@ export default function Daily() {
       </Screen>
     );
   }
+  if (!puzzle) return <PuzzleSkeleton />;
 
   return <Puzzle puzzle={puzzle} forced={forced && puzzle.number === forced} />;
+}
+
+/**
+ * While today's puzzle loads: the same layout, greyed out and shimmering, with nothing
+ * to tap. (It used to show a lone "Play with friends" button, which people tapped.)
+ */
+function PuzzleSkeleton() {
+  return (
+    <Screen left="yelnats" right={<span className="skel skel-pill" />}>
+      <div className="daily-head" aria-busy="true">
+        <h1 className="title title-sm">
+          Yelnats Daily
+          <br />
+          <span className="accent skel-text">Puzzle #…</span>
+        </h1>
+      </div>
+      <p className="lede" style={{ marginTop: 8 }}>
+        Rewinding today’s puzzle…
+      </p>
+      <div className="section">
+        <div className="skel skel-player" role="status" aria-label="Loading today's puzzle" />
+      </div>
+      <div className="mimic-area">
+        <div className="skel skel-button" />
+      </div>
+      <div className="guess-area">
+        <div className="skel skel-input" />
+      </div>
+    </Screen>
+  );
 }
 
 function Puzzle({ puzzle, forced }) {
