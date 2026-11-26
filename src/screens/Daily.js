@@ -29,6 +29,7 @@ import { Button, Notice, Screen } from '../ui/components';
 import { ReversedPlayer } from '../ui/audio';
 import { VibratingString } from '../ui/waves';
 import TryDots from '../ui/TryDots';
+import Confetti from '../ui/Confetti';
 import DailyHowTo from '../ui/DailyHowTo';
 import './screens.css';
 import './Daily.css';
@@ -100,6 +101,7 @@ function Puzzle({ puzzle, forced }) {
   const [answers, setAnswers] = useState(null);
   const [guess, setGuess] = useState('');
   const [checking, setChecking] = useState(false);
+  const [justSolved, setJustSolved] = useState(false); // confetti only for a solve this visit, not on reload
   const [error, setError] = useState(null);
   const [mimics, setMimics] = useState([]); // [{ index, blob }], oldest first
   const [justRecorded, setJustRecorded] = useState(null);
@@ -170,6 +172,7 @@ function Puzzle({ puzzle, forced }) {
         const done = { ...state, solved: true };
         track('guess', { puzzle: n, correct: true, try: used + 1 });
         track('daily_solved', { puzzle: n, tries: triesUsed(done), mimics: state.mimics, mind_reader: isMindReader(done) });
+        setJustSolved(true);
         update({ solved: true, phrase: r.phrase, voice, actions: [...state.actions, 'hit'] });
       } else {
         const next = { guesses: [...state.guesses, g], actions: [...state.actions, 'miss'] };
@@ -206,7 +209,12 @@ function Puzzle({ puzzle, forced }) {
   };
 
   if (state.solved || state.failed) {
-    return <Solved n={n} state={state} answers={answers} voice={voice} days={days} top={top} mimics={mimics} />;
+    return (
+      <>
+        {justSolved && <Confetti />}
+        <Solved n={n} state={state} answers={answers} voice={voice} days={days} top={top} mimics={mimics} />
+      </>
+    );
   }
 
   // Until the first mimic, the Mimic button leads; after it, the Guess button does.

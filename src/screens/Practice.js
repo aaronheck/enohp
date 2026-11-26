@@ -8,6 +8,7 @@ import { Button, Notice, Screen } from '../ui/components';
 import { ReversedPlayer } from '../ui/audio';
 import { VibratingString } from '../ui/waves';
 import CoachMark from '../ui/CoachMark';
+import Confetti from '../ui/Confetti';
 import './screens.css';
 import './Daily.css';
 
@@ -95,6 +96,7 @@ function PracticeGame({ game }) {
   if (solved) {
     return (
       <Screen {...top}>
+        <Confetti />
         <h1 className="title title-sm turn-title">
           You got it!
           <br />
