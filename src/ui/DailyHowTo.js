@@ -31,7 +31,7 @@ const SLIDES = [
   },
   {
     title: 'You have 5 tries',
-    body: 'Every guess uses a try, right or wrong. Your first mimic doesn’t, but each one after that does. The last try has to be a guess; run out and we’ll show you the answer.',
+    body: 'Every guess uses a try. Your first mimic is free, but each one after that uses a try. Run out and you lose your streak.',
     art: <TriesArt />,
   },
 ];

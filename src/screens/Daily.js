@@ -186,19 +186,18 @@ function Puzzle({ puzzle }) {
   return (
     <Screen {...top}>
       <div className="daily-head">
-        <p className="step-note">Daily puzzle #{n}</p>
+        <h1 className="title title-sm">
+          Yelnats Daily
+          <br />
+          <span className="accent">Puzzle #{n}</span>
+        </h1>
         <button className="how-btn" onClick={() => setHowOpen(true)}>
           How to play
         </button>
       </div>
       <DailyHowTo open={howOpen} onClose={() => setHowOpen(false)} />
-      <h1 className="title title-sm">
-        Today's phrase,
-        <br />
-        <span className="accent">backwards.</span>
-      </h1>
       <p className="lede" style={{ marginTop: 8 }}>
-        Can you work out what it says?
+        Here's the phrase in reverse.
       </p>
 
       <div className="section">
@@ -235,7 +234,7 @@ function Puzzle({ puzzle }) {
             ? 'Your last try has to be a guess.'
             : state.mimics
             ? 'Uses a try.'
-            : "Copy the sound and we'll flip it so it plays forwards. Your first mimic doesn't use a try."}
+            : 'Mimic the puzzle audio to decode the word.'}
         </p>
         <Notice>{recorder.error}</Notice>
       </div>
@@ -305,7 +304,7 @@ function DevReset() {
 
 function PuzzleClip({ url }) {
   const { blob, error } = useClip(url);
-  return <ReversedPlayer key={url} blob={blob} error={error} caption="the puzzle" tilt reverse={false} />;
+  return <ReversedPlayer key={url} blob={blob} error={error} caption="the puzzle" tilt hideDuration reverse={false} />;
 }
 
 function Solved({ n, state, answers, voice, days, top, mimics }) {

@@ -11,7 +11,7 @@ function fmt(seconds) {
 }
 
 /** Card that plays a recording rewound, with a ½× toggle. */
-export function ReversedPlayer({ blob, caption, dark, tilt, compact, error: loadError, autoPlay, reverse = true }) {
+export function ReversedPlayer({ blob, caption, dark, tilt, compact, hideDuration, error: loadError, autoPlay, reverse = true }) {
   const p = useReversedPlayer(blob, { reverse });
   const error = loadError || p.error;
   const slow = p.rate !== 1;
@@ -48,9 +48,9 @@ export function ReversedPlayer({ blob, caption, dark, tilt, compact, error: load
         <Waveshape peaks={error ? [] : p.peaks} progress={p.progress} color={dark ? 'var(--butter)' : 'var(--ink)'} />
       </div>
       <div className="player-meta">
-        <span>{error ? error : p.ready ? `${fmt(p.duration)} · ${caption}` : 'Loading…'}</span>
+        <span>{error ? error : p.ready ? (hideDuration ? caption : `${fmt(p.duration)} · ${caption}`) : 'Loading…'}</span>
         <button aria-pressed={slow} onClick={() => p.setRate(slow ? 1 : 0.5)}>
-          ½× slow
+          0.5x
         </button>
       </div>
     </div>
