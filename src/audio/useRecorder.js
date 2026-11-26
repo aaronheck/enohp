@@ -38,7 +38,7 @@ function waitForSignal(analyser, sample, timeoutMs) {
  * 'starting' lasts until the mic is actually live, so the UI can say "wait" until then.
  * stop() resolves to the recorded Blob. getLevel() returns 0..1 for live meters.
  */
-export default function useRecorder() {
+export default function useRecorder({ warm = false } = {}) {
   const [status, setStatus] = useState('idle');
   const [error, setError] = useState(null);
   const streamRef = useRef(null);
@@ -47,9 +47,35 @@ export default function useRecorder() {
   const chunksRef = useRef([]);
   const sampleRef = useRef(null);
   const nodesRef = useRef([]);
+  const pendingRef = useRef(null); // getUserMedia in flight
+  const genRef = useRef(0); // bumped by release(), so a late stream from before it is dropped
+
+  /** The mic stream: the open one, the one being opened, or a new one. */
+  const acquire = useCallback(() => {
+    if (streamRef.current) return Promise.resolve(streamRef.current);
+    if (pendingRef.current) return pendingRef.current;
+    const gen = genRef.current;
+    const p = navigator.mediaDevices
+      .getUserMedia({ audio: true })
+      .then((stream) => {
+        if (genRef.current !== gen) {
+          stream.getTracks().forEach((t) => t.stop()); // released while opening
+          throw Object.assign(new Error('released'), { name: 'ReleasedError' });
+        }
+        streamRef.current = stream;
+        return stream;
+      })
+      .finally(() => {
+        if (pendingRef.current === p) pendingRef.current = null;
+      });
+    pendingRef.current = p;
+    return p;
+  }, []);
 
   /** Stops any take in progress (discarding it) and gives the microphone back. */
   const release = useCallback(() => {
+    genRef.current++;
+    pendingRef.current = null;
     const r = recorderRef.current;
     recorderRef.current = null;
     if (r && r.state !== 'inactive') {
@@ -96,8 +122,8 @@ export default function useRecorder() {
     setError(null);
     setStatus('starting');
     try {
-      if (!streamRef.current) {
-        const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
+      const stream = await acquire();
+      if (!analyserRef.current) {
         const analyser = ctx.createAnalyser();
         analyser.fftSize = 1024;
         analyser.smoothingTimeConstant = 0.6;
@@ -110,12 +136,11 @@ export default function useRecorder() {
         analyser.connect(mute);
         mute.connect(ctx.destination);
         nodesRef.current = [source, analyser, mute];
-        streamRef.current = stream;
         analyserRef.current = analyser;
         sampleRef.current = new Float32Array(analyser.fftSize);
       }
       if (ctx.state !== 'running') await ctx.resume().catch(() => {});
-      const recorder = new MediaRecorder(streamRef.current);
+      const recorder = new MediaRecorder(stream);
       chunksRef.current = [];
       recorder.ondataavailable = (e) => {
         if (e.data && e.data.size) chunksRef.current.push(e.data);
@@ -135,10 +160,36 @@ export default function useRecorder() {
       if (recorderRef.current !== recorder) return; // released or stopped meanwhile
       setStatus('recording');
     } catch (err) {
+      if (err && err.name === 'ReleasedError') return; // released while the mic was opening
       setError(micErrorMessage(err));
       setStatus('idle');
     }
-  }, []);
+  }, [acquire]);
+
+  // warm: open the mic ahead of time, so tapping record starts almost instantly.
+  // Only when the site already has mic permission, so it never pops up a prompt
+  // on its own. Nothing is recorded until start().
+  useEffect(() => {
+    if (!warm) return undefined;
+    let cancelled = false;
+    const tryWarm = async () => {
+      if (streamRef.current || pendingRef.current || document.visibilityState !== 'visible') return;
+      let state;
+      try {
+        state = (await navigator.permissions.query({ name: 'microphone' })).state;
+      } catch (e) {
+        return; // can't tell: wait for the tap
+      }
+      if (!cancelled && state === 'granted') acquire().catch(() => {});
+    };
+    tryWarm();
+    const onVisible = () => document.visibilityState === 'visible' && tryWarm();
+    document.addEventListener('visibilitychange', onVisible);
+    return () => {
+      cancelled = true;
+      document.removeEventListener('visibilitychange', onVisible);
+    };
+  }, [warm, acquire]);
 
   const stop = useCallback(
     () =>

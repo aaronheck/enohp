@@ -125,7 +125,11 @@ function Puzzle({ puzzle, forced }) {
     });
     if (howOpen) track('howto_open', { game: 'daily', source: 'auto' });
   }, [n]); // eslint-disable-line react-hooks/exhaustive-deps
-  const recorder = useRecorder();
+  // Once they've heard the puzzle, open the mic in the background (only if it's already
+  // allowed) so Mimic it starts right away.
+  const recorder = useRecorder({
+    warm: (state.heard || state.mimics > 0 || state.guesses.length > 0) && !state.solved && !state.failed && canMimic(state),
+  });
   const recording = recorder.status === 'recording';
   const update = (patch) => setState(updatePuzzleState(n, patch));
 

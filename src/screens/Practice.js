@@ -46,9 +46,6 @@ export default function Practice() {
 function PracticeGame({ game }) {
   const puzzle = useClip(practiceAudio(game.n, 'puzzle'));
   const answer = useClip(practiceAudio(game.n, 'answer'));
-  const recorder = useRecorder();
-  const recording = recorder.status === 'recording';
-  const starting = recorder.status === 'starting';
   const [heard, setHeard] = useState(false);
   const [mimics, setMimics] = useState([]); // [{ index, blob }]
   // Tips run once: they end when the player acts after hearing their first mimic.
@@ -56,6 +53,9 @@ function PracticeGame({ game }) {
   const [guess, setGuess] = useState('');
   const [misses, setMisses] = useState([]);
   const [solved, setSolved] = useState(false);
+  const recorder = useRecorder({ warm: heard && !solved }); // pre-open the mic if it's already allowed
+  const recording = recorder.status === 'recording';
+  const starting = recorder.status === 'starting';
   const { release } = recorder;
 
   useEffect(() => {
