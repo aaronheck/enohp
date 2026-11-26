@@ -223,7 +223,7 @@ function Puzzle({ puzzle }) {
           {recording ? (
             '■ Stop recording'
           ) : state.mimics ? (
-            '🎙 Mimic again'
+            '🎙 Mimic again (uses a try)'
           ) : (
             <>
               <span className="mic-wiggle" aria-hidden="true">
@@ -240,8 +240,6 @@ function Puzzle({ puzzle }) {
             ? 'Listen to the puzzle first.'
             : !mimicOk
             ? 'Your last try has to be a guess.'
-            : state.mimics
-            ? 'Uses a try.'
             : 'Mimic the puzzle audio to decode the word.'}
         </p>
         <Notice>{recorder.error}</Notice>
