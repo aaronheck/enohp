@@ -5,12 +5,13 @@ const assert = require('node:assert/strict');
 const { createHandler, ABANDONED_AFTER_MS } = require('./app');
 const daily = require('./daily');
 
-function fakeWorld() {
+function fakeWorld(env = {}) {
   const games = new Map();
   const files = new Set();
   let clock = Date.parse('2026-11-28T20:00:00Z'); // puzzle #3 (launch 2026-11-26, Pacific time)
   let n = 0;
   const deps = {
+    env,
     now: () => clock,
     newId: () => `00000000-0000-4000-8000-${String(++n).padStart(12, '0')}`,
     getGame: async (id) => (games.has(id) ? structuredClone(games.get(id)) : null),
@@ -272,4 +273,19 @@ test('daily: reveal gives the answer for today or earlier only', async () => {
   assert.equal(r.body.phrase, daily.phraseFor(3));
   assert.match(r.body.answers.Kevin, /daily\/3\/Kevin-answer\.mp3$/);
   assert.equal((await call(w, 'POST', '/daily/reveal', { body: { number: 4 } })).status, 400);
+});
+
+test('daily override (?n=) only works when DAILY_ALLOW_OVERRIDE=1', async () => {
+  const off = fakeWorld();
+  for (const v of daily.VOICES) { off.files.add(daily.puzzleKey(3, v.id)); off.files.add(daily.puzzleKey(5, v.id)); }
+  assert.equal((await call(off, 'GET', '/daily', { query: { n: '5' } })).body.number, 3); // ignored
+  assert.equal((await call(off, 'POST', '/daily/guess', { body: { number: 5, guess: 'x' } })).status, 400);
+
+  const on = fakeWorld({ DAILY_ALLOW_OVERRIDE: '1' });
+  for (const v of daily.VOICES) on.files.add(daily.puzzleKey(5, v.id));
+  const r = await call(on, 'GET', '/daily', { query: { n: '5' } });
+  assert.equal(r.body.number, 5);
+  assert.equal((await call(on, 'POST', '/daily/guess', { body: { number: 5, guess: daily.phraseFor(5) } })).body.correct, true);
+  assert.equal((await call(on, 'POST', '/daily/reveal', { body: { number: 5 } })).body.phrase, daily.phraseFor(5));
+  assert.equal((await call(on, 'GET', '/daily', { query: { n: '9' } })).status, 503); // no audio for #9
 });

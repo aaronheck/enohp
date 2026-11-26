@@ -111,9 +111,12 @@ export async function fetchRecording(signedUrl, { retries = 0 } = {}) {
   }
 }
 
-/** Today's daily puzzle: { number, date, voices: [{ id, label }], audio: { <voice>: url } }. */
-export async function getDaily() {
-  return request('/daily');
+/**
+ * Today's daily puzzle: { number, date, voices: [{ id, label }], audio: { <voice>: url } }.
+ * `number` asks for a specific puzzle (only honoured while the backend allows it).
+ */
+export async function getDaily(number) {
+  return request('/daily' + (number ? `?n=${encodeURIComponent(number)}` : ''));
 }
 
 /** Checks a guess. Resolves to { correct } plus { phrase, answers: { <voice>: url } } when right. */

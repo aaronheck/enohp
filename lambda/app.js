@@ -173,8 +173,14 @@ function createHandler(deps) {
     return respond(200, { url: await deps.signGet(key, SIGNED_URL_SECONDS) });
   }
 
-  async function readDaily() {
-    const n = daily.puzzleNumber(now());
+  // TEMPORARY (pre-launch testing): with DAILY_ALLOW_OVERRIDE=1, ?n= picks any puzzle
+  // and guesses/reveals aren't limited to today. Turn off before launch.
+  const overrideAllowed = () => (deps.env || process.env).DAILY_ALLOW_OVERRIDE === '1';
+  const latestAllowed = () => (overrideAllowed() ? Infinity : daily.puzzleNumber(now()));
+
+  async function readDaily(event) {
+    const asked = Number((event.queryStringParameters || {}).n);
+    const n = overrideAllowed() && Number.isInteger(asked) && asked >= 1 ? asked : daily.puzzleNumber(now());
     if (n < 1) return fail(404, 'No puzzle yet');
     // Audio is generated ahead of time; make sure today's is there.
     if (!(await deps.recordingExists(daily.puzzleKey(n, daily.VOICES[0].id)))) {
@@ -187,9 +193,8 @@ function createHandler(deps) {
 
   async function guessDaily(event) {
     const body = parseBody(event);
-    const today = daily.puzzleNumber(now());
     const n = Number(body.number);
-    if (!Number.isInteger(n) || n < 1 || n > today) return fail(400, 'No such puzzle');
+    if (!Number.isInteger(n) || n < 1 || n > latestAllowed()) return fail(400, 'No such puzzle');
     const guess = cleanText(body.guess, MAX_GUESS);
     if (!guess) return fail(400, 'Missing guess.');
     const phrase = daily.phraseFor(n);
@@ -202,7 +207,7 @@ function createHandler(deps) {
   async function revealDaily(event) {
     const body = parseBody(event);
     const n = Number(body.number);
-    if (!Number.isInteger(n) || n < 1 || n > daily.puzzleNumber(now())) return fail(400, 'No such puzzle');
+    if (!Number.isInteger(n) || n < 1 || n > latestAllowed()) return fail(400, 'No such puzzle');
     const answers = {};
     for (const v of daily.VOICES) answers[v.id] = await deps.signGet(daily.answerKey(n, v.id), SIGNED_URL_SECONDS * 6);
     return respond(200, { phrase: daily.phraseFor(n), answers });
@@ -217,7 +222,7 @@ function createHandler(deps) {
       if (path === '/game' && method === 'GET') return await readGame(event);
       if (path === '/recording' && method === 'POST') return await startTurn(event);
       if (path === '/recording' && method === 'GET') return await readRecording(event);
-      if (path === '/daily' && method === 'GET') return await readDaily();
+      if (path === '/daily' && method === 'GET') return await readDaily(event);
       if (path === '/daily/guess' && method === 'POST') return await guessDaily(event);
       if (path === '/daily/reveal' && method === 'POST') return await revealDaily(event);
       if (['/game', '/recording', '/daily', '/daily/guess', '/daily/reveal'].includes(path)) return fail(405, 'Unsupported method');

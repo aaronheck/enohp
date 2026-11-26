@@ -104,3 +104,6 @@
 .next-puzzle { text-align: center; color: var(--muted); font-weight: 700; font-size: 15px; margin-top: 16px; }
 .next-puzzle b { color: var(--cream); }
 .mimics-toggle { color: var(--muted); }
+
+/* TEMPORARY: ?puzzle=N marker */
+.forced-tag { border: 2px dashed var(--tomato); color: var(--tomato); border-radius: 999px; padding: 3px 10px; }

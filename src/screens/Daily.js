@@ -58,11 +58,17 @@ export default function Daily() {
   const [puzzle, setPuzzle] = useState(null);
   const [loadError, setLoadError] = useState(null);
 
+  // TEMPORARY (pre-launch): ?puzzle=3 plays puzzle #3 instead of today's.
+  const [forced] = useState(() => {
+    const v = Number(new URLSearchParams(window.location.search).get('puzzle'));
+    return Number.isInteger(v) && v >= 1 ? v : null;
+  });
+
   useEffect(() => {
-    getDaily().then(setPuzzle, (e) =>
+    getDaily(forced).then(setPuzzle, (e) =>
       setLoadError(e.status === 503 ? "Today's puzzle isn't ready yet. Check back soon!" : e.message)
     );
-  }, []);
+  }, [forced]);
 
   if (loadError || !puzzle) {
     return (
@@ -81,10 +87,10 @@ export default function Daily() {
     );
   }
 
-  return <Puzzle puzzle={puzzle} />;
+  return <Puzzle puzzle={puzzle} forced={forced && puzzle.number === forced} />;
 }
 
-function Puzzle({ puzzle }) {
+function Puzzle({ puzzle, forced }) {
   const n = puzzle.number;
   const [state, setState] = useState(() => getPuzzleState(n));
   // One voice for now; the backend still offers others for later.
@@ -174,7 +180,7 @@ function Puzzle({ puzzle }) {
   const days = streak(n);
   const top = {
     left: 'yelnats',
-    right: days > 0 ? `🔥 ${plural(days, 'day')}` : `Daily #${n}`,
+    right: forced ? <span className="forced-tag">forced #{n}</span> : days > 0 ? `🔥 ${plural(days, 'day')}` : `Daily #${n}`,
   };
 
   if (state.solved || state.failed) {

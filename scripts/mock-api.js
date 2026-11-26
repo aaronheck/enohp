@@ -96,7 +96,9 @@ async function handle(req, res) {
       return send(res, 200, { url: `${PREFIX}/files/${key}.wav`, key });
     }
     if (path === '/daily' && req.method === 'GET') {
-      const n = mockPuzzle();
+      // The mock always allows ?n= (like DAILY_ALLOW_OVERRIDE=1).
+      const asked = Number(url.searchParams.get('n'));
+      const n = Number.isInteger(asked) && asked >= 1 ? asked : mockPuzzle();
       if (!fs.existsSync(pathJoinDaily(daily.puzzleKey(n, daily.VOICES[0].id)))) {
         return send(res, 503, { error: "Today's puzzle isn't ready yet (run scripts/generate-daily.js)" });
       }
@@ -107,7 +109,7 @@ async function handle(req, res) {
     if (path === '/daily/guess' && req.method === 'POST') {
       const body = JSON.parse((await readBody(req, MAX_JSON_BYTES)).toString() || '{}');
       const n = Number(body.number);
-      if (!Number.isInteger(n) || n < 1 || n > mockPuzzle()) return send(res, 400, { error: 'No such puzzle' });
+      if (!Number.isInteger(n) || n < 1) return send(res, 400, { error: 'No such puzzle' });
       if (!str(body.guess, 60).trim()) return send(res, 400, { error: 'Missing guess.' });
       const phrase = daily.phraseFor(n);
       if (!daily.isCorrect(body.guess, phrase)) return send(res, 200, { correct: false });
@@ -118,7 +120,7 @@ async function handle(req, res) {
     if (path === '/daily/reveal' && req.method === 'POST') {
       const body = JSON.parse((await readBody(req, MAX_JSON_BYTES)).toString() || '{}');
       const n = Number(body.number);
-      if (!Number.isInteger(n) || n < 1 || n > mockPuzzle()) return send(res, 400, { error: 'No such puzzle' });
+      if (!Number.isInteger(n) || n < 1) return send(res, 400, { error: 'No such puzzle' });
       const answers = {};
       for (const v of daily.VOICES) answers[v.id] = `${PREFIX}/${daily.answerKey(n, v.id)}`;
       return send(res, 200, { phrase: daily.phraseFor(n), answers });
