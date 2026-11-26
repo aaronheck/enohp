@@ -43,15 +43,28 @@ export default function PuzzleVideo({ url, n, result, mimic }) {
 
   const brag = bragFor(result);
   const text = result ? `${brag.headline} Yelnats Daily #${n}. ${brag.dare}` : `Can you decode this? 🔊 Yelnats Daily #${n}, played backwards.`;
-  const share = async () => {
+  const canShareFile = () => {
+    try {
+      return !!(navigator.canShare && navigator.canShare({ files: [file] }));
+    } catch (e) {
+      return false;
+    }
+  };
+
+  // target 'story': the video on its own, which is what Instagram/TikTok/Snapchat stories
+  // want. 'friend': video plus the brag text, for Messages/WhatsApp. 'save': to Photos.
+  const share = async (target) => {
     let result = 'failed';
     try {
-      if (navigator.canShare && navigator.canShare({ files: [file] })) {
-        try {
-          await navigator.share({ files: [file], text: `${text} ${SITE}` });
-        } catch (e) {
-          if (e && e.name === 'AbortError') throw e;
-          // Some apps refuse a video with text attached: try the video on its own.
+      if (canShareFile()) {
+        if (target === 'friend') {
+          try {
+            await navigator.share({ files: [file], text: `${text} ${SITE}` });
+          } catch (e) {
+            if (e && e.name === 'AbortError') throw e;
+            await navigator.share({ files: [file] }); // some apps refuse text with a video
+          }
+        } else {
           await navigator.share({ files: [file] });
         }
         result = 'shared';
@@ -70,9 +83,16 @@ export default function PuzzleVideo({ url, n, result, mimic }) {
         setErrMsg(`${(e && e.name) || 'Error'}: ${(e && e.message) || e}`);
       }
     }
-    track('share', { puzzle: n, method: 'video', result });
-    setStatus({ shared: 'Shared!', downloaded: 'Video saved.', failed: "Couldn't share this time." }[result] || null);
+    track('share', { puzzle: n, method: 'video', target, result });
+    setStatus(
+      {
+        shared: target === 'story' ? 'Nice! 🎉' : 'Sent!',
+        downloaded: 'Video saved. Post it from your downloads.',
+        failed: "Couldn't share this time.",
+      }[result] || null
+    );
   };
+
 
   return (
     <div className="pvideo">
@@ -96,10 +116,22 @@ export default function PuzzleVideo({ url, n, result, mimic }) {
       )}
       {state === 'ready' && (
         <div className="pvideo-ready">
-          <video className="pvideo-preview" src={preview} controls playsInline muted={false} />
-          <button className="btn btn-primary" onClick={share}>
-            📤 Share video
-          </button>
+          <video className="pvideo-preview" src={preview} controls playsInline />
+          {canShareFile() ? (
+            <>
+              <button className="btn btn-primary" onClick={() => share('story')}>
+                📲 Post to your story
+              </button>
+              <p className="pvideo-note">Pick Instagram, TikTok or Snapchat in the menu. “Save Video” puts it in Photos.</p>
+              <button className="btn btn-ghost" onClick={() => share('friend')}>
+                💬 Send to a friend
+              </button>
+            </>
+          ) : (
+            <button className="btn btn-primary" onClick={() => share('save')}>
+              ⬇️ Download video
+            </button>
+          )}
           {status && <p className="pvideo-note">{status}</p>}
           {errMsg && <p className="pvideo-err">{errMsg}</p>}
         </div>
