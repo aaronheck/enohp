@@ -222,5 +222,8 @@ export default function useRecorder({ warm = false } = {}) {
     return Math.min(1, Math.sqrt(rms) * 1.6);
   }, []);
 
-  return { status, error, start, stop, release, getLevel };
+  /** Opens the mic ahead of start() (asks for permission if needed); never throws. */
+  const prepare = useCallback(() => acquire().catch(() => null), [acquire]);
+
+  return { status, error, start, stop, release, getLevel, prepare };
 }

@@ -2,6 +2,8 @@ import React, { useEffect, useState } from 'react';
 import { Link, useNavigate, useParams } from 'react-router-dom';
 import { fetchRecording, getDaily, guessDaily, revealDaily } from '../api/client';
 import useRecorder from '../audio/useRecorder';
+import useCountIn from '../audio/useCountIn';
+import { ding, nope, sadTrombone } from '../audio/sfx';
 import {
   ACTION_LABEL,
   MAX_TRIES,
@@ -186,6 +188,8 @@ function Puzzle({ puzzle, forced }) {
     warm: (state.heard || state.mimics > 0 || state.guesses.length > 0) && !state.solved && !state.failed && canMimic(state),
   });
   const recording = recorder.status === 'recording';
+  const countIn = useCountIn(recorder);
+  const [shake, setShake] = useState(0);
   const update = (patch) => setState(updatePuzzleState(n, patch));
 
   // Coming back to a finished puzzle: fetch fresh answer audio links.
@@ -231,6 +235,7 @@ function Puzzle({ puzzle, forced }) {
     try {
       const r = await guessDaily(n, g);
       if (r.correct) {
+        ding();
         setAnswers(r.answers);
         const done = { ...state, solved: true };
         track('guess', { puzzle: n, correct: true, try: used + 1 });
@@ -239,6 +244,8 @@ function Puzzle({ puzzle, forced }) {
         update({ solved: true, phrase: r.phrase, voice, actions: [...state.actions, 'hit'], ...(archive ? { late: true } : {}) });
       } else {
         const next = { guesses: [...state.guesses, g], actions: [...state.actions, 'miss'] };
+        nope();
+        setShake((k) => k + 1);
         track('guess', { puzzle: n, correct: false, try: used + 1, text: g });
         setGuess('');
         if (triesUsed({ ...state, ...next }) >= MAX_TRIES) {
@@ -246,6 +253,7 @@ function Puzzle({ puzzle, forced }) {
           const rev = await revealDaily(n);
           setAnswers(rev.answers);
           track('daily_failed', { puzzle: n, mimics: state.mimics });
+          sadTrombone();
           update({ ...next, failed: true, phrase: rev.phrase, voice, ...(archive ? { late: true } : {}) });
         } else {
           update(next);
@@ -294,11 +302,12 @@ function Puzzle({ puzzle, forced }) {
   const firstMimic = state.mimics === 0;
   // You have to hear the puzzle all the way through once before mimicking or guessing.
   const heard = state.heard || state.mimics > 0 || state.guesses.length > 0;
-  const starting = recorder.status === 'starting';
+  const counting = countIn.count != null;
+  const starting = recorder.status === 'starting' && !counting;
   const beginRecording = () => {
     unlockAudio(); // during the tap, so the flipped take can autoplay
     stopShared(); // don't record the puzzle playing
-    recorder.start();
+    countIn.run(); // 3, 2, 1 (the mic warms up meanwhile), then record
   };
   const startMimic = () => {
     // 3rd day on iPhone Safari: first show how to stop Safari asking for the mic every time.
@@ -368,18 +377,27 @@ function Puzzle({ puzzle, forced }) {
       {/* Same layout throughout; only the emphasis moves from Mimic (before the
           first mimic) to Guess (after). */}
       <div className="mimic-area">
+        {counting && <CountIn n={countIn.count} />}
         {starting && <MicWarmup height={56} />}
         {recording && <VibratingString active getLevel={recorder.getLevel} height={56} />}
         <Button
-          variant={recording || starting || firstMimic ? 'primary' : 'ghost'}
+          variant={recording || starting || counting || firstMimic ? 'primary' : 'ghost'}
           onClick={recording ? finishMimic : startMimic}
-          disabled={starting || (!recording && (!mimicOk || !heard))}
+          disabled={counting || starting || (!recording && (!mimicOk || !heard))}
           className={
             'mimic-cta' +
-            (starting ? ' mimic-starting' : recording ? ' mimic-recording' : heard && firstMimic && mimicOk ? ' mimic-shimmer' : '')
+            (counting || starting
+              ? ' mimic-starting'
+              : recording
+              ? ' mimic-recording'
+              : heard && firstMimic && mimicOk
+              ? ' mimic-shimmer'
+              : '')
           }
         >
-          {starting ? (
+          {counting ? (
+            'Get ready…'
+          ) : starting ? (
             'Getting the mic ready…'
           ) : recording ? (
             <>
@@ -398,7 +416,9 @@ function Puzzle({ puzzle, forced }) {
           )}
         </Button>
         <p className={'cta-note' + (recording ? ' go' : '')}>
-          {starting
+          {counting
+            ? 'Start copying the sound when it turns red.'
+            : starting
             ? 'Don’t start yet. It turns red when it’s listening.'
             : recording
             ? 'Go! Copy the sound you just heard.'
@@ -432,7 +452,7 @@ function Puzzle({ puzzle, forced }) {
             ))}
           </div>
         )}
-        <form className="guess-row" onSubmit={submit}>
+        <form className={'guess-row' + (shake ? ' shake' : '')} key={`guess-${shake}`} onSubmit={submit}>
           <input
             id="daily-guess"
             className="input"
@@ -687,5 +707,14 @@ export function PastScreen() {
       {!today && !error && <div className="skel skel-player" style={{ marginTop: 24 }} />}
       {today && <PastPuzzles today={today.today} todayDate={today.todayDate} title="" />}
     </Screen>
+  );
+}
+
+/** The big 3 / 2 / 1 shown above the mimic button before recording. */
+export function CountIn({ n }) {
+  return (
+    <div className="countin" aria-live="assertive">
+      <span key={n}>{n}</span>
+    </div>
   );
 }

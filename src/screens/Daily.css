@@ -166,3 +166,11 @@
 .solved-foot a { color: var(--muted); text-decoration: underline; text-underline-offset: 3px; }
 .streak-btn { color: inherit; font: inherit; padding: 4px 0; }
 .stats-link { color: var(--butter); font: inherit; font-weight: 700; padding: 0; }
+
+/* ---- count-in, wrong-guess shake ---- */
+.countin { height: 56px; margin-bottom: 8px; display: flex; align-items: center; justify-content: center; }
+.countin span { font-size: 52px; font-weight: 800; color: var(--butter); line-height: 1; animation: countin-pop 0.45s ease-out; }
+@keyframes countin-pop { from { transform: scale(1.6); opacity: 0; } 40% { opacity: 1; } to { transform: scale(1); } }
+.guess-row.shake { animation: shake 0.38s ease-in-out; }
+@keyframes shake { 20%, 60% { transform: translateX(-7px); } 40%, 80% { transform: translateX(7px); } }
+@media (prefers-reduced-motion: reduce) { .countin span, .guess-row.shake { animation: none; } }
