@@ -549,7 +549,8 @@ function Solved({ n, state, answers, voice, days, top, mimics, puzzle, onStats }
   const answerVoice = state.voice || voice;
   // Older saves may name a voice we no longer serve: fall back to the one we do.
   const answer = useClip(answers ? answers[answerVoice] || Object.values(answers)[0] : null);
-  const text = shareText(n, state, SITE, days);
+  const link = `${SITE}/p/${n}`; // shows a preview card for this puzzle
+  const text = shareText(n, state, link, days);
   const next = useCountdown();
   const actions = state.actions && state.actions.length ? state.actions : [state.failed ? 'miss' : 'hit'];
 
@@ -574,7 +575,7 @@ function Solved({ n, state, answers, voice, days, top, mimics, puzzle, onStats }
   }, [n, state, total, days]); // eslint-disable-line react-hooks/exhaustive-deps
 
   async function share() {
-    const r = await shareLink(SITE, text.replace(`\n${SITE}`, ''), { copyText: text, file: image });
+    const r = await shareLink(link, text.replace(`\n${link}`, ''), { copyText: text, file: image });
     track('share', { puzzle: n, result: r, method: image ? 'image' : 'text', solved: !!state.solved });
     setStatus({ shared: 'Shared!', copied: 'Result copied. Paste it anywhere.', failed: "Couldn't share this time." }[r] || null);
   }

@@ -71,7 +71,7 @@ export default function PuzzleVideo({ url, n, result, mimic, onError }) {
       if (target !== 'save' && canShareFile()) {
         if (target === 'friend') {
           try {
-            await navigator.share({ files: [file], text: `${text} ${SITE}` });
+            await navigator.share({ files: [file], text: `${text} ${SITE}/p/${n}` });
           } catch (e) {
             if (e && e.name === 'AbortError') throw e;
             await navigator.share({ files: [file] }); // some apps refuse text with a video
