@@ -24,6 +24,7 @@ import { listMimics, saveMimic } from '../lib/mimicStore';
 import { stopShared, unlockAudio } from '../audio/context';
 import { isDev, resetDaily } from '../lib/devReset';
 import { track } from '../lib/analytics';
+import { practiceDone } from '../lib/practice';
 import { Button, Notice, Screen } from '../ui/components';
 import { ReversedPlayer } from '../ui/audio';
 import { VibratingString } from '../ui/waves';
@@ -249,6 +250,11 @@ function Puzzle({ puzzle, forced }) {
       <p className="lede" style={{ marginTop: 8 }}>
         Here's the phrase in reverse.
       </p>
+      {!heard && !practiceDone().length && (
+        <Link to="/practice/1" className="practice-link" onClick={() => track('page_view', { path: '/practice-link' })}>
+          First time? Try a quick practice game →
+        </Link>
+      )}
 
       <div className="section">
         <PuzzleClip

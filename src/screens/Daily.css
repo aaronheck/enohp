@@ -107,3 +107,7 @@
 
 /* TEMPORARY: ?puzzle=N marker */
 .forced-tag { border: 2px dashed var(--tomato); color: var(--tomato); border-radius: 999px; padding: 3px 10px; }
+
+/* Practice */
+.practice-hint { margin-top: 10px; background: var(--bg-raised); border-radius: 14px; padding: 10px 12px; font-weight: 700; font-size: 15px; }
+.practice-link { display: inline-block; margin-top: 10px; font-weight: 800; color: var(--butter); text-underline-offset: 3px; }

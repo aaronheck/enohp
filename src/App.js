@@ -7,6 +7,7 @@ import Turn from './screens/Turn';
 import Recap from './screens/Recap';
 import MyChains from './screens/MyChains';
 import HowToPlay from './screens/HowToPlay';
+import Practice from './screens/Practice';
 
 export default function App() {
   const { pathname } = useLocation();
@@ -22,6 +23,8 @@ export default function App() {
       <Route path="recap" element={<Recap />} />
       <Route path="previous" element={<MyChains />} />
       <Route path="tutorial" element={<HowToPlay />} />
+      <Route path="practice" element={<Practice />} />
+      <Route path="practice/:n" element={<Practice />} />
       {/* Old "Create Game" page; chains now start from Play with friends. */}
       <Route path="create" element={<Navigate to="/friends" replace />} />
       <Route path="*" element={<Navigate to="/" replace />} />
