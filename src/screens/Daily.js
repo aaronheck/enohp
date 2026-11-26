@@ -22,7 +22,7 @@ import { isDev, resetDaily } from '../lib/devReset';
 import { Button, Notice, Screen } from '../ui/components';
 import { ReversedPlayer } from '../ui/audio';
 import { VibratingString } from '../ui/waves';
-import TryString from '../ui/TryString';
+import TryDots from '../ui/TryDots';
 import DailyHowTo from '../ui/DailyHowTo';
 import './screens.css';
 import './Daily.css';
@@ -269,16 +269,10 @@ function Puzzle({ puzzle }) {
         <Notice>{error}</Notice>
       </div>
 
-      <div className="spacer" />
-      <div className="tries-line">
-        <TryString used={used} max={MAX_TRIES} />
-        <span>
-          <b>
-            Tries {used}/{MAX_TRIES}
-          </b>{' '}
-          · guesses and mimics cost tries
-        </span>
+      <div className="tries-area">
+        <TryDots used={used} max={MAX_TRIES} note="Guesses and mimics cost tries." />
       </div>
+      <div className="spacer" />
       <div className="daily-foot">
         <Link to="/friends">Play with friends</Link>
         <Link to="/previous">My chains</Link>
@@ -328,8 +322,8 @@ function Solved({ n, state, answers, voice, days, top, mimics }) {
       <p className="lede">
         {state.failed ? 'Out of tries. A new puzzle comes out tomorrow.' : `Solved in ${plural(total, 'try')}.`}
       </p>
-      <div className="solved-string">
-        <TryString used={Math.min(total, MAX_TRIES)} max={MAX_TRIES} failed={state.failed} />
+      <div className="section">
+        <TryDots used={total} max={MAX_TRIES} failed={state.failed} />
       </div>
       <div className="stats">
         <div>

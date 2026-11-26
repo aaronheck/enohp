@@ -1,11 +1,7 @@
 .daily-head { display: flex; align-items: center; justify-content: space-between; margin: 12px 0 8px; }
 .daily-head .step-note { margin: 0; }
 
-.tries-box { margin-top: 16px; background: var(--bg-raised); border-radius: 18px; padding: 12px 14px 8px; }
-.tries-box b { display: block; font-size: 17px; }
-.tries-box b span { color: var(--muted); font-weight: 700; }
 .tries-note { display: block; color: var(--muted); font-weight: 600; font-size: 13px; margin-top: 1px; }
-.try-string { display: block; width: 100%; height: auto; margin-top: 4px; }
 
 .mimic-box { margin-top: 12px; background: var(--bg-raised); border-radius: 20px; padding: 14px; }
 .mimic-head { display: flex; gap: 14px; align-items: center; }
@@ -32,7 +28,6 @@
 .score { margin-top: 14px; display: flex; align-items: center; gap: 14px; flex-wrap: wrap; }
 .mind-reader { background: var(--butter); color: var(--ink); font-weight: 800; font-size: 18px; border-radius: 999px; padding: 8px 14px; }
 .score b { font-size: clamp(64px, 20vw, 88px); font-weight: 800; letter-spacing: -0.04em; line-height: 0.95; }
-.solved-string { margin-top: 12px; background: var(--bg-raised); border-radius: 18px; padding: 8px 12px; }
 .stats { display: flex; gap: 8px; margin-top: 16px; }
 .stats > div { flex: 1; background: var(--bg-raised); border-radius: 16px; padding: 10px 6px; text-align: center; }
 .stats b { display: block; font-size: 24px; }
@@ -58,9 +53,7 @@
 .guess-area .label { font-size: 18px; font-weight: 800; }
 .guess-area .misses { margin: 0 0 10px; }
 .guess-area .guess-row { margin-top: 0; }
-.tries-line { display: flex; align-items: center; gap: 10px; margin-top: 18px; color: var(--muted); font-size: 13px; font-weight: 600; }
-.tries-line .try-string { width: 160px; flex: none; margin: 0; }
-.tries-line b { color: var(--cream); }
+.tries-area { margin-top: 20px; }
 .mimic-list { margin-top: 12px; }
 
 /* TEMPORARY dev reset button */

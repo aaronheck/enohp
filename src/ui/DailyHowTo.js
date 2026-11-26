@@ -1,6 +1,6 @@
 import React from 'react';
 import { Slideshow } from './HowToPlaySheet';
-import TryString from './TryString';
+import TryDots from './TryDots';
 import { ReactComponent as Listen } from './art/turn-slide-1.svg';
 import { ReactComponent as Guess } from './art/turn-slide-2.svg';
 import { ReactComponent as Mimic } from './art/turn-slide-4.svg';
@@ -8,8 +8,7 @@ import { ReactComponent as Mimic } from './art/turn-slide-4.svg';
 function TriesArt() {
   return (
     <div className="tries-art">
-      <TryString used={2} max={5} />
-      <p>2 of 5 tries used</p>
+      <TryDots used={2} max={5} note="Guesses and mimics cost tries." />
     </div>
   );
 }
