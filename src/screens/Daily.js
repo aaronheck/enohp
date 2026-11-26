@@ -1,5 +1,5 @@
 import React, { useEffect, useState } from 'react';
-import { Link } from 'react-router-dom';
+import { Link, useNavigate } from 'react-router-dom';
 import { fetchRecording, getDaily, guessDaily, revealDaily } from '../api/client';
 import useRecorder from '../audio/useRecorder';
 import {
@@ -105,6 +105,8 @@ function Puzzle({ puzzle, forced }) {
   const [justRecorded, setJustRecorded] = useState(null);
   // Open the how-to automatically the first time someone plays any daily puzzle.
   const [howOpen, setHowOpen] = useState(() => !hasPlayedDaily());
+  const [howSource, setHowSource] = useState(() => (hasPlayedDaily() ? 'button' : 'auto'));
+  const navigate = useNavigate();
 
   // Analytics: one view per puzzle load (and whether the how-to opened by itself).
   useEffect(() => {
@@ -233,6 +235,7 @@ function Puzzle({ puzzle, forced }) {
         <button
           className="how-btn"
           onClick={() => {
+            setHowSource('button');
             setHowOpen(true);
             track('howto_open', { game: 'daily', source: 'button' });
           }}
@@ -242,9 +245,11 @@ function Puzzle({ puzzle, forced }) {
       </div>
       <DailyHowTo
         open={howOpen}
+        source={howSource}
         onClose={(how, slide) => {
           setHowOpen(false);
-          track('howto_close', { game: 'daily', how, slide: (slide || 0) + 1 });
+          track('howto_close', { game: 'daily', how, slide: (slide || 0) + 1, source: howSource });
+          if (how === 'practice') navigate('/practice/1');
         }}
       />
       <p className="lede" style={{ marginTop: 8 }}>
@@ -352,6 +357,7 @@ function Puzzle({ puzzle, forced }) {
         <Link to="/friends" onClick={() => track('play_with_friends', { from: 'puzzle' })}>
           Play with friends
         </Link>
+        <Link to="/practice/1">Practice</Link>
         <Link to="/previous">My chains</Link>
       </div>
       <DevReset />

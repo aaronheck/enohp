@@ -41,9 +41,11 @@ const SWIPE_PX = 50;
 
 /**
  * Bottom-sheet slideshow, one step per slide. slides: [{ title, body, art }].
- * onClose(how, slideIndex): how = 'done' | 'skip' | 'dismiss'.
+ * onClose(how, slideIndex): how = 'done' | 'skip' | 'dismiss' | 'practice'.
+ * finish: optional last-slide buttons { primary: { label, how }, secondary: { label, how } };
+ * defaults to a single "Let's go".
  */
-export function Slideshow({ open, onClose, slides, label }) {
+export function Slideshow({ open, onClose, slides, label, finish }) {
   const [index, setIndex] = useState(0);
   const [dir, setDir] = useState(1);
   const dialogRef = useRef(null);
@@ -132,8 +134,15 @@ export function Slideshow({ open, onClose, slides, label }) {
               Back
             </Button>
           )}
-          <Button onClick={last ? () => onClose('done', index) : () => go(index + 1)}>{last ? "Let's go" : 'Next'}</Button>
+          <Button onClick={last ? () => onClose((finish && finish.primary.how) || 'done', index) : () => go(index + 1)}>
+            {last ? (finish && finish.primary.label) || "Let's go" : 'Next'}
+          </Button>
         </div>
+        {last && finish && finish.secondary && (
+          <button className="btn-text slideshow-secondary" onClick={() => onClose(finish.secondary.how, index)}>
+            {finish.secondary.label}
+          </button>
+        )}
       </div>
     </div>
   );

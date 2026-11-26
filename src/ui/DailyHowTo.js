@@ -36,7 +36,14 @@ const SLIDES = [
   },
 ];
 
-/** How to play the daily puzzle. */
-export default function DailyHowTo({ open, onClose }) {
-  return <Slideshow open={open} onClose={onClose} slides={SLIDES} label="How to play the daily puzzle" />;
+// First visit (opened by itself): nudge towards a guided practice game.
+// Opened from the button: "Let's go" first, practice as the smaller option.
+const FINISH = {
+  auto: { primary: { label: 'Try a practice game', how: 'practice' }, secondary: { label: 'Skip to today’s puzzle', how: 'done' } },
+  button: { primary: { label: "Let's go", how: 'done' }, secondary: { label: 'Try a practice game', how: 'practice' } },
+};
+
+/** How to play the daily puzzle. onClose(how, slide); how === 'practice' means go practise. */
+export default function DailyHowTo({ open, onClose, source = 'button' }) {
+  return <Slideshow open={open} onClose={onClose} slides={SLIDES} label="How to play the daily puzzle" finish={FINISH[source]} />;
 }
