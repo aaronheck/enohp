@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { useNavigate } from 'react-router-dom';
+import { Link, useNavigate } from 'react-router-dom';
 import { createGame } from '../api/client';
 import { getPlayedGames } from '../lib/storage';
 import { Button, Notice, Screen } from '../ui/components';
@@ -25,14 +25,14 @@ export default function Home() {
   }
 
   return (
-    <Screen left="yelnats" className="home">
+    <Screen left={<Link to="/">← Daily puzzle</Link>} right="play with friends" className="home">
       <h1 className="title" style={{ marginTop: 28 }}>
         Say it
         <br />
         <span className="accent">backwards.</span>
       </h1>
       <p className="lede" style={{ marginTop: 14 }}>
-        Telephone, but backwards.
+        Telephone, but backwards. Start a chain and pass it to your friends.
       </p>
 
       <HowItWorksArt />

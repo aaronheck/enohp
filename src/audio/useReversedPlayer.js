@@ -6,7 +6,7 @@ import { playShared, sharedProgress, stopShared } from './context';
  * Plays a recording in reverse through the app's shared audio element.
  * Returns { ready, error, playing, progress (0..1), duration, peaks, rate, setRate, toggle, play, stop }.
  */
-export default function useReversedPlayer(blob) {
+export default function useReversedPlayer(blob, { reverse = true } = {}) {
   const [reversed, setReversed] = useState(null);
   const [url, setUrl] = useState(null);
   const [error, setError] = useState(null);
@@ -32,14 +32,14 @@ export default function useReversedPlayer(blob) {
     setReversed(null);
     setError(null);
     if (!blob) return undefined;
-    reverseRecording(blob).then(
+    reverseRecording(blob, { reverse }).then(
       (r) => !cancelled && setReversed(r),
       () => !cancelled && setError("Couldn't load this recording.")
     );
     return () => {
       cancelled = true;
     };
-  }, [blob]);
+  }, [blob, reverse]);
 
   useEffect(() => {
     if (!reversed) return undefined;

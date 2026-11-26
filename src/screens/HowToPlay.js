@@ -42,7 +42,7 @@ export default function HowToPlay() {
         </li>
       </ol>
       <div className="spacer" />
-      <Button to="/">Got it</Button>
+      <Button to="/friends">Got it</Button>
     </Screen>
   );
 }

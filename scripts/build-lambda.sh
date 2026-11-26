@@ -10,7 +10,7 @@ REPO=$(cd "$(dirname "$0")/.." && pwd)
 WORK=$(mktemp -d)
 OUT=/tmp/enohp-lambda-$MODE.zip
 if [ "$MODE" = current ]; then
-  cp "$REPO"/lambda/index.js "$REPO"/lambda/app.js "$REPO"/lambda/package.json "$WORK"/
+  cp "$REPO"/lambda/index.js "$REPO"/lambda/app.js "$REPO"/lambda/daily.js "$REPO"/lambda/daily-phrases.json "$REPO"/lambda/package.json "$WORK"/
 elif [ "$MODE" = legacy ]; then
   git -C "$REPO" show 729f0be:lambda/index.js > "$WORK"/index.js
   printf '{"name":"enohp-lambda-legacy","private":true,"dependencies":{"uuid":"^9.0.1","aws-sdk":"^2.1691.0"}}\n' > "$WORK"/package.json

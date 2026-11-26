@@ -3,6 +3,14 @@
 // Games and recordings live in memory and vanish when this stops.
 const http = require('http');
 const crypto = require('crypto');
+const fs = require('fs');
+const nodePath = require('path');
+const daily = require('../lambda/daily');
+
+// Daily puzzle audio made by scripts/generate-daily.js (default output folder).
+const DAILY_AUDIO = nodePath.resolve(process.env.DAILY_AUDIO_DIR || nodePath.join(__dirname, '..', '.daily-audio'));
+// Before launch day, the mock pretends it's puzzle #1 (override with MOCK_DAILY_NUMBER).
+const mockPuzzle = () => Number(process.env.MOCK_DAILY_NUMBER) || Math.max(1, daily.puzzleNumber(Date.now()));
 
 const PREFIX = '/mock-api';
 // Caps so a publicly reachable preview can't eat the Pi's memory.
@@ -42,6 +50,7 @@ function evictOldestGame() {
   games.delete(oldestId);
 }
 
+const pathJoinDaily = (key) => nodePath.join(DAILY_AUDIO, key);
 const str = (v, max) => (typeof v === 'string' ? v.slice(0, max) : '');
 
 /** Handles a request whose path starts with /mock-api. */
@@ -85,6 +94,32 @@ async function handle(req, res) {
       });
       pendingUploads.add(key + '.wav');
       return send(res, 200, { url: `${PREFIX}/files/${key}.wav`, key });
+    }
+    if (path === '/daily' && req.method === 'GET') {
+      const n = mockPuzzle();
+      if (!fs.existsSync(pathJoinDaily(daily.puzzleKey(n, daily.VOICES[0].id)))) {
+        return send(res, 503, { error: "Today's puzzle isn't ready yet (run scripts/generate-daily.js)" });
+      }
+      const audio = {};
+      for (const v of daily.VOICES) audio[v.id] = `${PREFIX}/${daily.puzzleKey(n, v.id)}`;
+      return send(res, 200, { number: n, date: daily.localDate(Date.now()), voices: daily.VOICES, audio });
+    }
+    if (path === '/daily/guess' && req.method === 'POST') {
+      const body = JSON.parse((await readBody(req, MAX_JSON_BYTES)).toString() || '{}');
+      const n = Number(body.number);
+      if (!Number.isInteger(n) || n < 1 || n > mockPuzzle()) return send(res, 400, { error: 'No such puzzle' });
+      if (!str(body.guess, 60).trim()) return send(res, 400, { error: 'Missing guess.' });
+      const phrase = daily.phraseFor(n);
+      if (!daily.isCorrect(body.guess, phrase)) return send(res, 200, { correct: false });
+      const answers = {};
+      for (const v of daily.VOICES) answers[v.id] = `${PREFIX}/${daily.answerKey(n, v.id)}`;
+      return send(res, 200, { correct: true, phrase, answers });
+    }
+    const dm = path.match(/^\/daily\/(\d+)\/(\w+)-(puzzle|answer)\.mp3$/);
+    if (dm && req.method === 'GET') {
+      const file = pathJoinDaily(path.slice(1));
+      if (fs.existsSync(file)) return send(res, 200, fs.readFileSync(file), 'audio/mpeg');
+      return send(res, 404, 'Not found', 'text/plain');
     }
     const m = path.match(/^\/files\/([\w-]+\.wav)$/);
     if (m && req.method === 'PUT' && pendingUploads.has(m[1])) {

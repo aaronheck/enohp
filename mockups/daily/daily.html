@@ -1,0 +1,128 @@
+<!doctype html>
+<html><head><meta charset="utf-8">
+<link href="https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:opsz,wght@12..96,500;12..96,600;12..96,700;12..96,800&display=swap" rel="stylesheet">
+<style>
+:root{--bg:#0f3a2d;--raised:#15493a;--deep:#0a2a20;--cream:#fff4dc;--ink:#14241d;--butter:#ffd84d;--tomato:#ff5b3a;--sky:#8fd3ff;--lilac:#c9a7ff;--muted:rgba(255,244,220,.66)}
+*{box-sizing:border-box;margin:0;padding:0}
+body{background:#0a2219;font-family:'Bricolage Grotesque',sans-serif;color:var(--cream);padding:36px}
+.label{font:700 13px 'Bricolage Grotesque';letter-spacing:.18em;text-transform:uppercase;margin-bottom:22px}
+.label b{color:var(--butter)}
+.grid{display:grid;grid-template-columns:repeat(3,390px);gap:28px;align-items:start}
+.cap{font-weight:700;color:var(--muted);margin:10px 4px 0;font-size:14px}
+.phone{width:390px;height:844px;background:var(--bg);border-radius:44px;overflow:hidden;position:relative;padding:20px 24px 24px;display:flex;flex-direction:column}
+.top{display:flex;justify-content:space-between;font-size:14px;font-weight:700;color:var(--muted);min-height:32px;align-items:center}
+.title{font-weight:800;font-size:44px;line-height:.92;letter-spacing:-.035em}
+.accent{color:var(--butter)}
+.lede{color:var(--muted);font-size:16px;line-height:1.4;font-weight:500}
+.btn{display:flex;align-items:center;justify-content:center;gap:8px;border-radius:20px;min-height:58px;font-weight:800;font-size:18px}
+.btn.y{background:var(--butter);color:var(--ink);box-shadow:0 4px 0 #c9a52a}
+.btn.g{background:var(--raised);box-shadow:0 4px 0 var(--deep)}
+.card{background:var(--cream);color:var(--ink);border-radius:26px;padding:16px}
+.play{width:64px;height:64px;border-radius:50%;background:var(--tomato);color:var(--cream);display:flex;align-items:center;justify-content:center;font-size:24px;box-shadow:0 4px 0 #c7402a;flex:none}
+.wave{flex:1;height:60px}
+.chips{display:flex;gap:6px;flex-wrap:wrap}
+.chip{border-radius:999px;padding:7px 12px;font-weight:700;font-size:13px;background:var(--raised);color:var(--muted)}
+.chip.on{background:var(--butter);color:var(--ink)}
+.par{display:flex;align-items:center;justify-content:space-between;background:var(--raised);border-radius:18px;padding:12px 14px}
+.flags{display:flex;gap:6px}
+.flag{width:26px;height:26px;border-radius:50%;border:2.5px dashed rgba(255,244,220,.4)}
+.flag.used{background:var(--sky);border:0}
+.flag.par{border-color:var(--butter)}
+.input{background:var(--raised);border:2px solid var(--butter);border-radius:18px;padding:14px 16px;font-weight:700;font-size:22px}
+.miss{display:flex;gap:6px;flex-wrap:wrap}
+.miss span{background:rgba(255,91,58,.15);color:#ffb3a4;border-radius:999px;padding:5px 11px;font-weight:700;font-size:13px;text-decoration:line-through}
+.rec{width:56px;height:56px;border-radius:50%;background:var(--tomato);box-shadow:0 4px 0 #c7402a;display:flex;align-items:center;justify-content:center;flex:none}
+.rec i{width:18px;height:18px;border-radius:50%;background:var(--cream)}
+.mimic{background:var(--raised);border-radius:20px;padding:14px}
+.big{font-weight:800;font-size:64px;line-height:.9;letter-spacing:-.04em}
+.share{background:var(--deep);border-radius:18px;padding:16px;font-weight:700;font-size:17px;line-height:1.5;font-family:ui-monospace,Menlo,monospace}
+.stat{flex:1;background:var(--raised);border-radius:16px;padding:10px;text-align:center}
+.stat b{display:block;font-size:26px}
+.stat small{color:var(--muted);font-weight:700;font-size:12px}
+.daily{background:var(--butter);color:var(--ink);border-radius:24px;padding:16px;display:flex;gap:14px;align-items:center}
+.daily .robot{width:58px;height:58px;border-radius:16px;background:var(--ink);display:flex;align-items:center;justify-content:center;flex:none}
+</style></head><body>
+<div class="label">Daily puzzle — <b>draft</b> · golf scoring: backwards mimics, par 2</div>
+<div class="grid">
+
+<!-- HOME -->
+<div>
+<div class="phone">
+  <div class="top"><span>yelnats</span><span>🔥 4-day streak</span></div>
+  <h1 class="title" style="margin-top:22px">Say it<br><span class="accent">backwards.</span></h1>
+  <p class="lede" style="margin-top:12px">Telephone, but backwards.</p>
+  <div class="daily" style="margin-top:22px">
+    <div class="robot"><svg width="34" height="34" viewBox="0 0 34 34"><rect x="5" y="9" width="24" height="18" rx="6" fill="#ffd84d"/><circle cx="13" cy="18" r="3" fill="#14241d"/><circle cx="21" cy="18" r="3" fill="#14241d"/><rect x="15.5" y="3" width="3" height="6" rx="1.5" fill="#ffd84d"/><circle cx="17" cy="3" r="2.5" fill="#ff5b3a"/></svg></div>
+    <div style="flex:1"><div style="font-weight:800;font-size:20px">Daily puzzle #12</div><div style="font-weight:600;font-size:14px;opacity:.7">The robot said something backwards. What?</div></div>
+    <div style="font-weight:800;font-size:22px">→</div>
+  </div>
+  <div style="flex:1;margin:18px 0;border-radius:22px;border:2px dashed rgba(255,244,220,.15);display:flex;align-items:center;justify-content:center;color:var(--muted);font-weight:700;font-size:14px;text-align:center;padding:20px">(the 4-panel comic,<br>a bit shorter)</div>
+  <div class="btn y">Start a chain</div>
+  <div style="display:flex;gap:10px;margin-top:10px"><div class="btn g" style="flex:1">How to play</div><div class="btn g" style="flex:1">My chains</div></div>
+</div>
+<p class="cap">Home: the daily puzzle gets a big card above the chain game. Turns into "✓ Birdie today" once solved.</p>
+</div>
+
+<!-- PUZZLE -->
+<div>
+<div class="phone">
+  <div class="top"><span>← yelnats</span><span>Daily #12</span></div>
+  <h1 class="title" style="font-size:36px;margin-top:12px">What's the<br><span class="accent">robot saying?</span></h1>
+  <div class="card" style="margin-top:16px;transform:rotate(-1deg)">
+    <div style="display:flex;align-items:center;gap:12px">
+      <div class="play">▶</div>
+      <svg class="wave" viewBox="0 0 200 60" preserveAspectRatio="none"><path d="M0 30 C 10 28,14 14,24 16 S 38 46,50 40 S 66 6,80 12 S 96 50,110 44 S 126 20,138 22 S 156 52,168 40 S 186 26,200 30 L200 30 C 186 34,170 20,168 20 S 150 8,138 38 S 120 44,110 16 S 94 10,80 48 S 62 54,50 20 S 34 14,24 44 S 8 32,0 30Z" fill="#ffd84d"/></svg>
+    </div>
+    <div style="display:flex;justify-content:space-between;font-weight:700;font-size:13px;margin-top:8px;color:rgba(20,36,29,.6)"><span>the puzzle · 1.4s</span><span style="border:2px solid rgba(20,36,29,.2);border-radius:999px;padding:2px 9px;color:var(--ink)">½× slow</span></div>
+  </div>
+  <div style="margin-top:12px"><div style="font-weight:700;font-size:13px;color:var(--muted);margin-bottom:6px">Robot voice</div>
+    <div class="chips"><span class="chip">Joanna</span><span class="chip">Ruth</span><span class="chip">Matthew</span><span class="chip">Stephen</span><span class="chip on">Kevin</span></div></div>
+
+  <div class="par" style="margin-top:14px">
+    <div><div style="font-weight:800;font-size:16px">Mimics: 1</div><div style="font-weight:600;font-size:12px;color:var(--muted)">Par 2 · guessing is free</div></div>
+    <div class="flags"><span class="flag used"></span><span class="flag par"></span></div>
+  </div>
+
+  <div class="mimic" style="margin-top:12px">
+    <div style="display:flex;gap:12px;align-items:center">
+      <div class="rec"><i></i></div>
+      <div style="flex:1"><div style="font-weight:800;font-size:16px">Mimic it</div><div style="font-weight:600;font-size:13px;color:var(--muted);line-height:1.3">Copy the robot's sound. We'll flip your recording so it sounds forwards. Costs a stroke.</div></div>
+    </div>
+    <div style="display:flex;align-items:center;gap:10px;margin-top:10px;background:var(--deep);border-radius:14px;padding:8px 10px">
+      <div style="width:34px;height:34px;border-radius:50%;background:var(--sky);color:var(--ink);display:flex;align-items:center;justify-content:center;font-size:13px">▶</div>
+      <div style="font-weight:700;font-size:14px">Mimic #1, flipped</div>
+    </div>
+  </div>
+
+  <div style="margin-top:14px" class="miss"><span>peanut brittle</span><span>pea and butter</span></div>
+  <div style="display:flex;gap:10px;margin-top:10px">
+    <div class="input" style="flex:1">peanut butter<span style="color:var(--butter)">|</span></div>
+    <div class="btn y" style="width:96px">Guess</div>
+  </div>
+</div>
+<p class="cap">Puzzle: listen free, guess free. Only "Mimic it" costs a stroke. Wrong guesses stack up as crossed-out chips.</p>
+</div>
+
+<!-- SOLVED -->
+<div>
+<div class="phone">
+  <div class="top"><span>← yelnats</span><span>Daily #12</span></div>
+  <div style="margin-top:22px;font-weight:700;color:var(--muted)">It was…</div>
+  <div class="title" style="font-size:46px;margin-top:4px">peanut<br>butter</div>
+  <div style="display:flex;align-items:baseline;gap:12px;margin-top:20px"><div class="big accent">Birdie</div><div style="font-size:40px">🐦</div></div>
+  <p class="lede" style="margin-top:6px">Solved with 1 mimic. Par is 2.</p>
+  <div style="display:flex;gap:8px;margin-top:16px">
+    <div class="stat"><b>1</b><small>mimic</small></div>
+    <div class="stat"><b>3</b><small>guesses</small></div>
+    <div class="stat"><b>🔥 4</b><small>day streak</small></div>
+  </div>
+  <div class="share" style="margin-top:16px">Yelnats Daily #12<br>🐦 Birdie · 1 mimic<br>🎙 Kevin · ❌❌✅<br><span style="color:var(--muted)">yelnatsgame.com</span></div>
+  <div style="flex:1"></div>
+  <div class="btn y">Share result</div>
+  <div style="display:flex;gap:10px;margin-top:10px"><div class="btn g" style="flex:1">▶ Forwards</div><div class="btn g" style="flex:1">Start a chain</div></div>
+</div>
+<p class="cap">Solved: golf result, stats, and a spoiler-free share card. Ends by nudging into the chain game.</p>
+</div>
+
+</div>
+</body></html>

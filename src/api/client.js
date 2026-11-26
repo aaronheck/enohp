@@ -110,3 +110,17 @@ export async function fetchRecording(signedUrl, { retries = 0 } = {}) {
     await sleep(1500);
   }
 }
+
+/** Today's daily puzzle: { number, date, voices: [{ id, label }], audio: { <voice>: url } }. */
+export async function getDaily() {
+  return request('/daily');
+}
+
+/** Checks a guess. Resolves to { correct } plus { phrase, answers: { <voice>: url } } when right. */
+export async function guessDaily(number, guess) {
+  return request('/daily/guess', {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ number, guess }),
+  });
+}

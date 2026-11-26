@@ -7,7 +7,7 @@ export function gameUrl(id) {
  * from a tap handler: Safari refuses navigator.share() after an await.
  * Resolves to 'shared' | 'copied' | 'cancelled' | 'failed'.
  */
-export async function shareLink(url, text) {
+export async function shareLink(url, text, { copyText } = {}) {
   if (navigator.share) {
     try {
       await navigator.share({ title: 'Yelnats', text, url });
@@ -17,7 +17,7 @@ export async function shareLink(url, text) {
     }
   }
   try {
-    await navigator.clipboard.writeText(url);
+    await navigator.clipboard.writeText(copyText || url);
     return 'copied';
   } catch (e) {
     return 'failed';

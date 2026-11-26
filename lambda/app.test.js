@@ -3,11 +3,12 @@
 const test = require('node:test');
 const assert = require('node:assert/strict');
 const { createHandler, ABANDONED_AFTER_MS } = require('./app');
+const daily = require('./daily');
 
 function fakeWorld() {
   const games = new Map();
   const files = new Set();
-  let clock = 1_000_000;
+  let clock = Date.parse('2026-11-28T20:00:00Z'); // puzzle #3 (launch 2026-11-26, Pacific time)
   let n = 0;
   const deps = {
     now: () => clock,
@@ -213,4 +214,53 @@ test('missing or invalid scores are ignored, never blocking the turn', async () 
   const g = await call(w, 'GET', '/game', { query: { id } });
   assert.equal(g.body.game.turns.length, 6);
   assert.ok(g.body.game.turns.every((t) => !('score' in t)));
+});
+
+test('daily: puzzle number follows Pacific midnight from launch', () => {
+  assert.equal(daily.puzzleNumber(Date.parse('2026-11-25T20:00:00Z')), 0);
+  assert.equal(daily.puzzleNumber(Date.parse('2026-11-26T08:30:00Z')), 1); // 00:30 Pacific
+  assert.equal(daily.puzzleNumber(Date.parse('2026-11-27T07:59:00Z')), 1); // 23:59 Pacific
+  assert.equal(daily.puzzleNumber(Date.parse('2026-11-27T08:01:00Z')), 2);
+  assert.equal(daily.phraseFor(61), daily.phraseFor(1)); // list repeats
+});
+
+test('daily: answers are forgiving about case, spacing, punctuation and small typos', () => {
+  assert.ok(daily.isCorrect('Peanut-Butter!', 'peanut butter'));
+  assert.ok(daily.isCorrect('peanutbuter', 'peanut butter'));
+  assert.ok(daily.isCorrect('bread & butter', 'bread and butter'));
+  assert.ok(!daily.isCorrect('peanut brittle', 'peanut butter'));
+  assert.ok(!daily.isCorrect('hot dot', 'hot dog')); // short phrases need to be exact
+  assert.ok(!daily.isCorrect('', 'hot dog'));
+});
+
+test('daily: today\'s puzzle returns signed audio for every voice, never the phrase', async () => {
+  const w = fakeWorld();
+  for (const v of daily.VOICES) w.files.add(daily.puzzleKey(3, v.id));
+  const r = await call(w, 'GET', '/daily');
+  assert.equal(r.status, 200);
+  assert.equal(r.body.number, 3);
+  assert.equal(r.body.date, '2026-11-28');
+  assert.deepEqual(Object.keys(r.body.audio).sort(), daily.VOICES.map((v) => v.id).sort());
+  assert.ok(!JSON.stringify(r.body).includes(daily.phraseFor(3)));
+  assert.ok(!JSON.stringify(r.body).includes('answer'));
+});
+
+test('daily: missing audio is a 503, not a broken puzzle', async () => {
+  const w = fakeWorld();
+  assert.equal((await call(w, 'GET', '/daily')).status, 503);
+});
+
+test('daily: guessing', async () => {
+  const w = fakeWorld();
+  const wrong = await call(w, 'POST', '/daily/guess', { body: { number: 3, guess: 'nope' } });
+  assert.deepEqual(wrong.body, { correct: false });
+  const right = await call(w, 'POST', '/daily/guess', { body: { number: 3, guess: daily.phraseFor(3).toUpperCase() } });
+  assert.equal(right.body.correct, true);
+  assert.equal(right.body.phrase, daily.phraseFor(3));
+  assert.match(right.body.answers.Kevin, /daily\/3\/Kevin-answer\.mp3$/);
+  // Past puzzles are fine; future ones and junk are not.
+  assert.equal((await call(w, 'POST', '/daily/guess', { body: { number: 1, guess: 'x' } })).status, 200);
+  assert.equal((await call(w, 'POST', '/daily/guess', { body: { number: 4, guess: 'x' } })).status, 400);
+  assert.equal((await call(w, 'POST', '/daily/guess', { body: { number: 'abc', guess: 'x' } })).status, 400);
+  assert.equal((await call(w, 'POST', '/daily/guess', { body: { number: 3, guess: '  ' } })).status, 400);
 });

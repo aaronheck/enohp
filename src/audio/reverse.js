@@ -29,17 +29,18 @@ export function peaks(data, count) {
 const cache = new WeakMap();
 
 /**
- * Decodes a recording and reverses it.
+ * Decodes a recording and (by default) reverses it.
  * Resolves to { blob: WAV Blob, duration: seconds, peaks: number[] }.
  */
-export function reverseRecording(blob) {
-  if (!cache.has(blob)) {
-    cache.set(blob, decodeAndReverse(blob));
-  }
-  return cache.get(blob);
+export function reverseRecording(blob, { reverse = true } = {}) {
+  if (!cache.has(blob)) cache.set(blob, {});
+  const entry = cache.get(blob);
+  const k = reverse ? 'rev' : 'fwd';
+  if (!entry[k]) entry[k] = decodeAndReverse(blob, reverse);
+  return entry[k];
 }
 
-async function decodeAndReverse(blob) {
+async function decodeAndReverse(blob, reverse) {
   const ctx = getAudioContext();
   const bytes = await blob.arrayBuffer();
   // Promise form isn't available on older Safari, so wrap the callback form.
@@ -50,8 +51,8 @@ async function decodeAndReverse(blob) {
   );
   const original = [];
   for (let i = 0; i < buffer.numberOfChannels; i++) original.push(buffer.getChannelData(i));
-  const reversed = reverseChannels(original);
-  reversed.forEach((data, i) => buffer.copyToChannel(data, i));
+  const reversed = reverse ? reverseChannels(original) : original;
+  if (reverse) reversed.forEach((data, i) => buffer.copyToChannel(data, i));
   const wav = toWav(buffer);
   return {
     blob: new Blob([new DataView(wav)], { type: 'audio/wav' }),

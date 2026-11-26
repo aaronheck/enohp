@@ -9,8 +9,11 @@
 //   POST /recording { id, consistencyToken, guess, nickname, score?, scoreVersion? }
 //                                   -> { url (presigned PUT for audio/wav), key }
 //   GET  /recording?id=<key>.wav    -> { url }
+//   GET  /daily                     -> { number, date, voices, audio: { <voice>: url } }  (puzzle audio)
+//   POST /daily/guess { number, guess } -> { correct } (+ phrase, answers: { <voice>: url } when right)
 
 const crypto = require('crypto');
+const daily = require('./daily');
 
 const HEADERS = {
   'Content-Type': 'application/json',
@@ -169,6 +172,32 @@ function createHandler(deps) {
     return respond(200, { url: await deps.signGet(key, SIGNED_URL_SECONDS) });
   }
 
+  async function readDaily() {
+    const n = daily.puzzleNumber(now());
+    if (n < 1) return fail(404, 'No puzzle yet');
+    // Audio is generated ahead of time; make sure today's is there.
+    if (!(await deps.recordingExists(daily.puzzleKey(n, daily.VOICES[0].id)))) {
+      return fail(503, "Today's puzzle isn't ready yet");
+    }
+    const audio = {};
+    for (const v of daily.VOICES) audio[v.id] = await deps.signGet(daily.puzzleKey(n, v.id), SIGNED_URL_SECONDS * 6);
+    return respond(200, { number: n, date: daily.localDate(now()), voices: daily.VOICES, audio });
+  }
+
+  async function guessDaily(event) {
+    const body = parseBody(event);
+    const today = daily.puzzleNumber(now());
+    const n = Number(body.number);
+    if (!Number.isInteger(n) || n < 1 || n > today) return fail(400, 'No such puzzle');
+    const guess = cleanText(body.guess, MAX_GUESS);
+    if (!guess) return fail(400, 'Missing guess.');
+    const phrase = daily.phraseFor(n);
+    if (!daily.isCorrect(guess, phrase)) return respond(200, { correct: false });
+    const answers = {};
+    for (const v of daily.VOICES) answers[v.id] = await deps.signGet(daily.answerKey(n, v.id), SIGNED_URL_SECONDS * 6);
+    return respond(200, { correct: true, phrase, answers });
+  }
+
   return async function handler(event) {
     const method = event.httpMethod;
     const path = event.path;
@@ -178,7 +207,9 @@ function createHandler(deps) {
       if (path === '/game' && method === 'GET') return await readGame(event);
       if (path === '/recording' && method === 'POST') return await startTurn(event);
       if (path === '/recording' && method === 'GET') return await readRecording(event);
-      if (path === '/game' || path === '/recording') return fail(405, 'Unsupported method');
+      if (path === '/daily' && method === 'GET') return await readDaily();
+      if (path === '/daily/guess' && method === 'POST') return await guessDaily(event);
+      if (['/game', '/recording', '/daily', '/daily/guess'].includes(path)) return fail(405, 'Unsupported method');
       return fail(404, 'Unsupported path!');
     } catch (e) {
       if (e instanceof HttpError) return fail(e.status, e.message);

@@ -1,0 +1,47 @@
+.voice-row { margin-top: 12px; }
+.voice-label { display: block; font-weight: 700; font-size: 13px; color: var(--muted); margin-bottom: 6px; }
+.chip-btn { border: 0; cursor: pointer; font-family: inherit; }
+
+.par-box {
+  margin-top: 16px; display: flex; align-items: center; justify-content: space-between;
+  background: var(--bg-raised); border-radius: 18px; padding: 12px 14px;
+}
+.par-box b { display: block; font-size: 17px; }
+.par-box small { color: var(--muted); font-weight: 600; font-size: 13px; }
+.par-dots { display: flex; gap: 6px; }
+.par-dot { width: 24px; height: 24px; border-radius: 50%; border: 2.5px dashed var(--butter); }
+.par-dot-used { background: var(--sky); border: 0; }
+
+.mimic-box { margin-top: 12px; background: var(--bg-raised); border-radius: 20px; padding: 14px; }
+.mimic-head { display: flex; gap: 14px; align-items: center; }
+.mimic-head .rec-wrap { gap: 0; flex: none; }
+.mimic-head .rec-hint { display: none; }
+.mimic-head b { display: block; font-size: 17px; }
+.mimic-head small { display: block; color: var(--muted); font-weight: 600; font-size: 14px; line-height: 1.35; margin-top: 2px; }
+.mimic-box .rec { width: 64px; height: 64px; box-shadow: 0 4px 0 #c7402a; }
+.mimic-box .rec-ring { inset: -8px; }
+.mimic-box .rec-icon { width: 22px; height: 22px; }
+.mimic-box .rec-on .rec-icon { width: 22px; height: 22px; }
+
+.misses { display: flex; flex-wrap: wrap; gap: 6px; margin-top: 12px; }
+.misses span {
+  background: rgba(255, 91, 58, 0.15); color: #ffb3a4; border-radius: 999px; padding: 5px 11px;
+  font-weight: 700; font-size: 14px; text-decoration: line-through;
+}
+.guess-row { display: flex; gap: 10px; margin-top: 16px; }
+.guess-row .input { flex: 1; min-width: 0; font-size: 22px; }
+.guess-row .guess-btn { width: 96px; flex: none; }
+
+.daily-foot { display: flex; justify-content: space-between; margin-top: 22px; font-weight: 700; font-size: 15px; color: var(--muted); }
+
+.golf { display: flex; align-items: baseline; gap: 12px; margin-top: 18px; }
+.golf b { font-size: clamp(48px, 15vw, 64px); font-weight: 800; letter-spacing: -0.04em; line-height: 0.95; }
+.golf span { font-size: 40px; }
+.stats { display: flex; gap: 8px; margin-top: 16px; }
+.stats > div { flex: 1; background: var(--bg-raised); border-radius: 16px; padding: 10px 6px; text-align: center; }
+.stats b { display: block; font-size: 24px; }
+.stats small { color: var(--muted); font-weight: 700; font-size: 12px; }
+.share-card {
+  margin: 16px 0 0; background: var(--bg-deep); border-radius: 18px; padding: 14px 16px;
+  font: 700 16px/1.5 ui-monospace, Menlo, monospace; white-space: pre-wrap; color: var(--cream);
+}
