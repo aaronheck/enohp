@@ -213,9 +213,20 @@ function Puzzle({ puzzle }) {
           variant={recording || firstMimic ? 'primary' : 'ghost'}
           onClick={recording ? finishMimic : startMimic}
           disabled={starting || (!recording && !mimicOk)}
-          className="mimic-cta"
+          className={'mimic-cta' + (firstMimic && !recording && mimicOk ? ' mimic-shimmer' : '')}
         >
-          {recording ? '■ Stop recording' : state.mimics ? '🎙 Mimic again' : '🎙 Mimic it'}
+          {recording ? (
+            '■ Stop recording'
+          ) : state.mimics ? (
+            '🎙 Mimic again'
+          ) : (
+            <>
+              <span className="mic-wiggle" aria-hidden="true">
+                🎙
+              </span>{' '}
+              Mimic it
+            </>
+          )}
         </Button>
         <p className="cta-note">
           {recording

@@ -61,3 +61,26 @@
   margin: 18px auto 0; display: block; border: 2px dashed var(--tomato); background: none; color: var(--tomato);
   border-radius: 999px; padding: 8px 16px; font: 700 14px var(--font); cursor: pointer;
 }
+
+/* Mimic it: a light sweep + mic wiggle while it's the suggested next step */
+.mimic-shimmer { position: relative; overflow: hidden; }
+.mimic-shimmer::after {
+  content: ''; position: absolute; top: 0; bottom: 0; left: -60%; width: 45%;
+  background: linear-gradient(100deg, transparent, rgba(255, 255, 255, 0.65), transparent);
+  transform: skewX(-18deg);
+  animation: mimic-sweep 2.8s ease-in-out infinite;
+  pointer-events: none;
+}
+@keyframes mimic-sweep {
+  0%, 35% { left: -60%; }
+  75%, 100% { left: 130%; }
+}
+.mic-wiggle { display: inline-block; transform-origin: 50% 80%; }
+.mimic-shimmer .mic-wiggle { animation: mic-wiggle 2.8s ease-in-out infinite; }
+@keyframes mic-wiggle {
+  0%, 60%, 100% { transform: rotate(0); }
+  66% { transform: rotate(-14deg); }
+  72% { transform: rotate(12deg); }
+  78% { transform: rotate(-8deg); }
+  84% { transform: rotate(0); }
+}
