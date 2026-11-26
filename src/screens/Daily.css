@@ -5,7 +5,11 @@
   margin-top: 16px; display: flex; align-items: center; justify-content: space-between;
   background: var(--bg-raised); border-radius: 18px; padding: 12px 14px;
 }
-.par-box b { display: block; font-size: 17px; }
+.par-box { flex-direction: column; align-items: stretch; gap: 2px; }
+.par-text { display: flex; justify-content: space-between; align-items: baseline; }
+.par-box b { display: block; font-size: 17px; white-space: nowrap; }
+.par-box b span { color: var(--muted); font-weight: 700; }
+.stroke-string { display: block; width: 100%; height: auto; }
 .par-box small { color: var(--muted); font-weight: 600; font-size: 13px; }
 .par-dots { display: flex; gap: 6px; }
 .par-dot { width: 24px; height: 24px; border-radius: 50%; border: 2.5px dashed var(--butter); }
@@ -36,6 +40,9 @@
 .golf { display: flex; align-items: baseline; gap: 12px; margin-top: 18px; }
 .golf b { font-size: clamp(48px, 15vw, 64px); font-weight: 800; letter-spacing: -0.04em; line-height: 0.95; }
 .golf span { font-size: 40px; }
+.golf-long b { font-size: clamp(36px, 11vw, 46px); }
+.golf-long span { font-size: 32px; }
+.solved-string { margin-top: 12px; background: var(--bg-raised); border-radius: 18px; padding: 4px 12px; }
 .stats { display: flex; gap: 8px; margin-top: 16px; }
 .stats > div { flex: 1; background: var(--bg-raised); border-radius: 16px; padding: 10px 6px; text-align: center; }
 .stats b { display: block; font-size: 24px; }

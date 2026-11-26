@@ -1,0 +1,56 @@
+<!doctype html>
+<html><head><meta charset="utf-8">
+<link href="https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:opsz,wght@12..96,500;12..96,700;12..96,800&display=swap" rel="stylesheet">
+<style>
+:root{--bg:#0f3a2d;--raised:#15493a;--deep:#0a2a20;--cream:#fff4dc;--ink:#14241d;--butter:#ffd84d;--tomato:#ff5b3a;--sky:#8fd3ff;--muted:rgba(255,244,220,.66)}
+*{box-sizing:border-box;margin:0}
+body{background:#0a2219;color:var(--cream);font-family:'Bricolage Grotesque',sans-serif;padding:28px;width:760px}
+h1{font-size:15px;letter-spacing:.16em;text-transform:uppercase;margin-bottom:6px}
+h1 b{color:var(--butter)}
+p.note{color:var(--muted);font-size:14px;margin-bottom:18px;line-height:1.4}
+.grid{display:grid;grid-template-columns:1fr 1fr;gap:16px}
+.card{background:var(--bg);border-radius:22px;padding:16px 16px 12px}
+.state{font-weight:800;font-size:15px;margin-bottom:2px}
+.sub{color:var(--muted);font-weight:600;font-size:13px}
+svg{display:block;width:100%;height:auto;margin-top:8px}
+.legend{display:flex;justify-content:space-between;font-weight:700;font-size:12px;color:var(--muted);margin-top:2px;padding:0 8px}
+</style></head><body>
+<h1>Stroke indicator — <b>beads on the string</b></h1>
+<p class="note">The telephone string runs from a red knot to a yellow knot. Each stroke slides a bead along it. A little flag marks par; the yellow knot at the end is the max ("end of the line"). Mind reader = no beads at all.</p>
+<div class="grid" id="grid"></div>
+<script>
+const MAX = 8, PAR = 2;
+const states = [
+  ['Fresh puzzle', '0 strokes · 1st mimic is free', 0, false],
+  ['Under par', '1 stroke', 1, false],
+  ['At par', '2 strokes', 2, false],
+  ['Over par', '5 strokes', 5, false],
+  ['One left', '7 of 8 strokes', 7, false],
+  ['End of the line', '8 strokes · answer revealed', 8, true],
+];
+function svg(strokes, dead) {
+  const W = 340, H = 92, pad = 22, y = 54, span = W - pad * 2;
+  const x = (i) => pad + (span * i) / MAX;
+  let s = `<svg viewBox="0 0 ${W} ${H}">`;
+  // string: taut wave, slack beyond the beads
+  s += `<path d="M${pad} ${y} Q ${W/4} ${y-8}, ${W/2} ${y} T ${W-pad} ${y}" stroke="#fff4dc" stroke-width="3" fill="none" opacity="${dead?0.35:0.85}"/>`;
+  // slots
+  for (let i = 1; i <= MAX; i++) s += `<circle cx="${x(i)-span/MAX/2}" cy="${y}" r="7" fill="none" stroke="rgba(255,244,220,.28)" stroke-width="2" stroke-dasharray="3 3"/>`;
+  // par flag
+  const px = x(PAR) - span / MAX / 2;
+  s += `<line x1="${px}" y1="${y-12}" x2="${px}" y2="${y-40}" stroke="#fff4dc" stroke-width="2.5" stroke-linecap="round"/><path d="M${px} ${y-40} L${px+18} ${y-34} L${px} ${y-28} Z" fill="#ff5b3a"/>`;
+  s += `<text x="${px+22}" y="${y-30}" fill="#fff4dc" font-size="12" font-weight="800">par</text>`;
+  // beads
+  for (let i = 1; i <= strokes; i++) {
+    const over = i > PAR;
+    s += `<circle cx="${x(i)-span/MAX/2}" cy="${y+3}" r="10" fill="#0a2a20"/><circle cx="${x(i)-span/MAX/2}" cy="${y}" r="10" fill="${over ? '#ff5b3a' : '#8fd3ff'}"/>`;
+  }
+  // knots: start (tomato) and end-of-line (butter)
+  s += `<circle cx="${pad-8}" cy="${y}" r="7" fill="#ff5b3a"/><circle cx="${W-pad+8}" cy="${y}" r="9" fill="${dead ? '#ff5b3a' : '#ffd84d'}"/>`;
+  if (dead) s += `<text x="${W-pad+8}" y="${y+4}" text-anchor="middle" font-size="11" font-weight="800" fill="#14241d">✕</text>`;
+  return s + '</svg>';
+}
+document.getElementById('grid').innerHTML = states.map(([t, sub, n, dead]) =>
+  `<div class="card"><div class="state">${t}</div><div class="sub">${sub}</div>${svg(n, dead)}<div class="legend"><span>start</span><span>end of the line</span></div></div>`).join('');
+</script>
+</body></html>

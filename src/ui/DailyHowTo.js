@@ -5,10 +5,11 @@ import { ReactComponent as Guess } from './art/turn-slide-2.svg';
 import { ReactComponent as Mimic } from './art/turn-slide-4.svg';
 
 const SCORECARD = [
-  ['🤯', 'Mind reader', '0 mimics'],
-  ['🐦', 'Birdie', '1 mimic'],
-  ['⛳', 'Par', '2 mimics'],
-  ['🌧️', 'Bogey', '3 mimics'],
+  ['🤯', 'Mind reader', '1 · no mimic'],
+  ['⛳', 'Hole in one', '1 stroke'],
+  ['🏌️', 'Par', '2 strokes'],
+  ['🌧️', 'Bogey', '3 strokes'],
+  ['🧵', 'End of the line', '5 · out'],
 ];
 
 function Scorecard() {
@@ -33,17 +34,17 @@ const SLIDES = [
   },
   {
     title: 'Guess what it says',
-    body: 'You get one guess to start. Get it straight away and you’re a mind reader.',
+    body: 'Every guess is a stroke, right or wrong. Get it first try, without mimicking, and you’re a mind reader.',
     art: <Guess />,
   },
   {
     title: 'Stuck? Mimic it',
-    body: 'Record yourself copying the backwards sound. We flip your recording so it plays forwards, and the phrase might just pop out. Each mimic gives you another guess.',
+    body: 'Record yourself copying the backwards sound. We flip your recording so it plays forwards, and the phrase might just pop out. Your first mimic is free; after that each one is a stroke.',
     art: <Mimic />,
   },
   {
     title: 'Scored like golf',
-    body: 'Each mimic is a stroke. Par is 2. Get it with no mimics at all and you’re a mind reader.',
+    body: 'Par is 2. You have 5 strokes, and the last one has to be a guess. Run out and it’s the end of the line.',
     art: <Scorecard />,
   },
 ];

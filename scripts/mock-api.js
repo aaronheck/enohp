@@ -115,6 +115,14 @@ async function handle(req, res) {
       for (const v of daily.VOICES) answers[v.id] = `${PREFIX}/${daily.answerKey(n, v.id)}`;
       return send(res, 200, { correct: true, phrase, answers });
     }
+    if (path === '/daily/reveal' && req.method === 'POST') {
+      const body = JSON.parse((await readBody(req, MAX_JSON_BYTES)).toString() || '{}');
+      const n = Number(body.number);
+      if (!Number.isInteger(n) || n < 1 || n > mockPuzzle()) return send(res, 400, { error: 'No such puzzle' });
+      const answers = {};
+      for (const v of daily.VOICES) answers[v.id] = `${PREFIX}/${daily.answerKey(n, v.id)}`;
+      return send(res, 200, { phrase: daily.phraseFor(n), answers });
+    }
     const dm = path.match(/^\/daily\/(\d+)\/(\w+)-(puzzle|answer)\.mp3$/);
     if (dm && req.method === 'GET') {
       const file = pathJoinDaily(path.slice(1));

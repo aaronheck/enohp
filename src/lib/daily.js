@@ -18,7 +18,8 @@ function save(d) {
   }
 }
 
-const blank = () => ({ mimics: 0, guesses: [], solved: false, phrase: null, voice: null });
+// guesses = wrong guesses; actions = what happened in order ('mimic' | 'miss' | 'hit').
+const blank = () => ({ mimics: 0, guesses: [], actions: [], solved: false, failed: false, phrase: null, voice: null });
 
 export function getPuzzleState(n) {
   return { ...blank(), ...(load().puzzles[n] || {}) };
@@ -49,28 +50,43 @@ export function streak(today) {
 }
 
 export const PAR = 2;
+export const MAX_STROKES = 5;
 
-/** Golf result for a number of backwards mimics. */
-export function golf(mimics) {
-  if (mimics <= 0) return { name: 'Mind reader', emoji: '🤯' };
-  if (mimics === 1) return { name: 'Birdie', emoji: '🐦' };
-  if (mimics === 2) return { name: 'Par', emoji: '⛳' };
-  if (mimics === 3) return { name: 'Bogey', emoji: '🌧️' };
-  if (mimics === 4) return { name: 'Double bogey', emoji: '🌧️' };
-  return { name: `+${mimics - PAR}`, emoji: '🏌️' };
+/** Strokes so far: every guess (right or wrong), and every mimic after the first (which is free). */
+export function strokes(state) {
+  return state.guesses.length + (state.solved ? 1 : 0) + Math.max(0, state.mimics - 1);
+}
+
+/** What the next mimic would cost (the first one is free). */
+export const mimicCost = (state) => (state.mimics >= 1 ? 1 : 0);
+
+/**
+ * A mimic is allowed unless it would use up the last stroke: the 5th stroke must be
+ * a guess, otherwise you'd spend it on a mimic you can't use.
+ * (state.guesses holds wrong guesses only, so strokes() here = strokes used so far.)
+ */
+export function canMimic(state) {
+  return !state.solved && !state.failed && strokes(state) + mimicCost(state) < MAX_STROKES;
+}
+
+/** Golf-style result for a finished puzzle (par 2; 1 is the best possible). */
+export function result(state) {
+  if (state.failed) return { name: 'End of the line', emoji: '🧵' };
+  const n = strokes(state);
+  if (n <= 1) return state.mimics === 0 ? { name: 'Mind reader', emoji: '🤯' } : { name: 'Hole in one', emoji: '⛳' };
+  if (n === 2) return { name: 'Par', emoji: '🏌️' };
+  if (n === 3) return { name: 'Bogey', emoji: '🌧️' };
+  if (n === 4) return { name: 'Double bogey', emoji: '🌧️' };
+  return { name: 'Triple bogey', emoji: '🌧️' };
 }
 
 export const plural = (n, word) => `${n} ${word}${n === 1 ? '' : /(s|sh|ch|x)$/.test(word) ? 'es' : 's'}`;
 
-/** Spoiler-free share text, e.g. "Yelnats Daily #12 / 🐦 Birdie · 1 mimic / ❌❌✅". */
+const ACTION_EMOJI = { mimic: '🎙', miss: '❌', hit: '✅' };
+
+/** Spoiler-free share text, e.g. "Yelnats Daily #12 / 🐦 Birdie · 1 stroke / 🎙❌🎙✅". */
 export function shareText(number, state, url) {
-  const g = golf(state.mimics);
-  const misses = Math.min(state.guesses.length, 10);
-  const marks = '❌'.repeat(misses) + (state.guesses.length > 10 ? '…' : '') + '✅';
-  return [
-    `Yelnats Daily #${number}`,
-    `${g.emoji} ${g.name} · ${plural(state.mimics, 'mimic')}`,
-    marks,
-    url,
-  ].join('\n');
+  const r = result(state);
+  const trail = (state.actions || []).map((a) => ACTION_EMOJI[a] || '').join('') || (state.failed ? '❌' : '✅');
+  return [`Yelnats Daily #${number}`, `${r.emoji} ${r.name} · ${plural(strokes(state), 'stroke')}`, trail, url].join('\n');
 }

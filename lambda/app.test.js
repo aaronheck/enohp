@@ -264,3 +264,12 @@ test('daily: guessing', async () => {
   assert.equal((await call(w, 'POST', '/daily/guess', { body: { number: 'abc', guess: 'x' } })).status, 400);
   assert.equal((await call(w, 'POST', '/daily/guess', { body: { number: 3, guess: '  ' } })).status, 400);
 });
+
+test('daily: reveal gives the answer for today or earlier only', async () => {
+  const w = fakeWorld();
+  const r = await call(w, 'POST', '/daily/reveal', { body: { number: 3 } });
+  assert.equal(r.status, 200);
+  assert.equal(r.body.phrase, daily.phraseFor(3));
+  assert.match(r.body.answers.Kevin, /daily\/3\/Kevin-answer\.mp3$/);
+  assert.equal((await call(w, 'POST', '/daily/reveal', { body: { number: 4 } })).status, 400);
+});

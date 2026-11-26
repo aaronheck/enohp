@@ -124,3 +124,12 @@ export async function guessDaily(number, guess) {
     body: JSON.stringify({ number, guess }),
   });
 }
+
+/** Gives up on a puzzle (out of strokes): { phrase, answers: { <voice>: url } }. */
+export async function revealDaily(number) {
+  return request('/daily/reveal', {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ number }),
+  });
+}

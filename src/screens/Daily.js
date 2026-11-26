@@ -1,11 +1,15 @@
 import React, { useEffect, useState } from 'react';
 import { Link } from 'react-router-dom';
-import { fetchRecording, getDaily, guessDaily } from '../api/client';
+import { fetchRecording, getDaily, guessDaily, revealDaily } from '../api/client';
 import useRecorder from '../audio/useRecorder';
 import {
+  MAX_STROKES,
   PAR,
+  canMimic,
   getPuzzleState,
-  golf,
+  mimicCost,
+  result,
+  strokes,
   plural,
   shareText,
   hasPlayedDaily,
@@ -17,6 +21,7 @@ import { listMimics, saveMimic } from '../lib/mimicStore';
 import { Button, Notice, Screen } from '../ui/components';
 import { RecordButton, ReversedPlayer } from '../ui/audio';
 import { VibratingString } from '../ui/waves';
+import StrokeString from '../ui/StrokeString';
 import DailyHowTo from '../ui/DailyHowTo';
 import './screens.css';
 import './Daily.css';
@@ -91,12 +96,14 @@ function Puzzle({ puzzle }) {
   const recording = recorder.status === 'recording';
   const update = (patch) => setState(updatePuzzleState(n, patch));
 
-  // Coming back to an already-solved puzzle: fetch fresh answer audio links.
+  // Coming back to a finished puzzle: fetch fresh answer audio links.
   useEffect(() => {
-    if (state.solved && state.phrase && !answers) {
+    if (answers) return;
+    if (state.failed) revealDaily(n).then((r) => setAnswers(r.answers), () => {});
+    else if (state.solved && state.phrase) {
       guessDaily(n, state.phrase).then((r) => r.correct && setAnswers(r.answers), () => {});
     }
-  }, [state.solved, state.phrase, answers, n]);
+  }, [state.solved, state.failed, state.phrase, answers, n]);
 
   // Earlier mimics for this puzzle, saved on this device.
   useEffect(() => {
@@ -111,30 +118,39 @@ function Puzzle({ puzzle }) {
     const blob = await recorder.stop();
     if (blob && blob.size) {
       const index = state.mimics + 1;
-      update({ mimics: index });
+      update({ mimics: index, actions: [...state.actions, 'mimic'] });
       setMimics((prev) => [...prev, { index, blob }]);
       setJustRecorded(index);
       saveMimic(n, index, blob);
     }
   }
 
-  // One guess to start, plus one for every mimic.
-  const guessesLeft = Math.max(0, 1 + state.mimics - state.guesses.length);
+  const used = strokes(state);
+  const left = MAX_STROKES - used;
+  const mimicOk = canMimic(state);
 
   async function submit(e) {
     e.preventDefault();
     const g = guess.trim();
-    if (!g || checking || guessesLeft < 1) return;
+    if (!g || checking || left < 1) return;
     setChecking(true);
     setError(null);
     try {
       const r = await guessDaily(n, g);
       if (r.correct) {
         setAnswers(r.answers);
-        update({ solved: true, phrase: r.phrase, voice });
+        update({ solved: true, phrase: r.phrase, voice, actions: [...state.actions, 'hit'] });
       } else {
-        update({ guesses: [...state.guesses, g] });
+        const next = { guesses: [...state.guesses, g], actions: [...state.actions, 'miss'] };
         setGuess('');
+        if (strokes({ ...state, ...next }) >= MAX_STROKES) {
+          // Out of strokes: end of the line, show the answer.
+          const rev = await revealDaily(n);
+          setAnswers(rev.answers);
+          update({ ...next, failed: true, phrase: rev.phrase, voice });
+        } else {
+          update(next);
+        }
       }
     } catch (err) {
       setError(err.message);
@@ -149,7 +165,7 @@ function Puzzle({ puzzle }) {
     right: days > 0 ? `🔥 ${plural(days, 'day')}` : `Daily #${n}`,
   };
 
-  if (state.solved) {
+  if (state.solved || state.failed) {
     return <Solved n={n} state={state} answers={answers} voice={voice} days={days} top={top} mimics={mimics} />;
   }
 
@@ -187,36 +203,29 @@ function Puzzle({ puzzle }) {
           className="input"
           value={guess}
           onChange={(e) => setGuess(e.target.value)}
-          placeholder={guessesLeft < 1 ? 'No guesses left' : 'Your guess'}
-          disabled={guessesLeft < 1}
+          placeholder="Your guess"
           aria-label="Your guess"
           autoComplete="off"
           autoCapitalize="off"
           maxLength={60}
         />
-        <Button type="submit" disabled={!guess.trim() || checking || guessesLeft < 1} className="guess-btn">
+        <Button type="submit" disabled={!guess.trim() || checking} className="guess-btn">
           {checking ? '…' : 'Guess'}
         </Button>
       </form>
-      <p className={'guesses-left' + (guessesLeft < 1 ? ' guesses-out' : '')}>
-        {guessesLeft < 1
-          ? 'Out of guesses. Mimic it to get another one.'
-          : state.mimics === 0 && state.guesses.length === 0
-          ? 'You get one guess. Mimic it for another.'
-          : `${plural(guessesLeft, 'guess')} left. Each mimic gives you another.`}
+      <p className={'guesses-left' + (left === 1 ? ' guesses-out' : '')}>
+        {left === 1 ? 'Last stroke! Make this guess count.' : 'Every guess is a stroke, right or wrong.'}
       </p>
       <Notice>{error}</Notice>
 
       <div className="par-box">
-        <div>
-          <b>Mimics: {state.mimics}</b>
-          <small>Par {PAR} · each mimic gives you a guess</small>
+        <div className="par-text">
+          <b>
+            Strokes: {used} <span>/ {MAX_STROKES}</span>
+          </b>
+          <small>Par {PAR}</small>
         </div>
-        <div className="par-dots" aria-hidden="true">
-          {Array.from({ length: Math.max(PAR, state.mimics) }, (_, i) => (
-            <span key={i} className={'par-dot' + (i < state.mimics ? ' par-dot-used' : '')} />
-          ))}
-        </div>
+        <StrokeString used={used} par={PAR} max={MAX_STROKES} />
       </div>
 
       <div className="mimic-box">
@@ -226,11 +235,18 @@ function Puzzle({ puzzle }) {
             starting={recorder.status === 'starting'}
             onStart={recorder.start}
             onStop={stopMimic}
+            disabled={!mimicOk && !recording}
             idleHint=""
           />
           <div>
             <b>{recording ? 'Recording… tap to stop' : state.mimics ? 'Mimic again' : 'Stuck? Mimic it'}</b>
-            <small>Copy the backwards sound. We'll flip your recording so it plays forwards. Costs a stroke.</small>
+            <small>
+              {!mimicOk
+                ? 'Your last stroke has to be a guess.'
+                : `Copy the backwards sound and we'll flip it so it plays forwards. ${
+                    mimicCost(state) ? 'Costs a stroke.' : 'Your first mimic is free.'
+                  }`}
+            </small>
           </div>
         </div>
         {recording && <VibratingString active={recording} getLevel={recorder.getLevel} height={56} />}
@@ -253,7 +269,8 @@ function PuzzleClip({ url }) {
 
 function Solved({ n, state, answers, voice, days, top, mimics }) {
   const [status, setStatus] = useState(null);
-  const g = golf(state.mimics);
+  const g = result(state);
+  const total = strokes(state);
   const answerVoice = state.voice || voice;
   const answer = useClip(answers ? answers[answerVoice] : null);
   const text = shareText(n, state, SITE);
@@ -266,24 +283,29 @@ function Solved({ n, state, answers, voice, days, top, mimics }) {
   return (
     <Screen {...top}>
       <p className="step-note" style={{ marginTop: 14 }}>
-        Daily #{n} · it was…
+        Daily #{n} · {state.failed ? 'the answer was…' : 'it was…'}
       </p>
       <div className="word-big">{state.phrase}</div>
-      <div className="golf">
+      <div className={'golf' + (g.name.length > 12 ? ' golf-long' : '')}>
         <b className="accent">{g.name}</b>
         <span aria-hidden="true">{g.emoji}</span>
       </div>
       <p className="lede">
-        Solved with {plural(state.mimics, 'mimic')}. Par is {PAR}.
+        {state.failed
+          ? 'Out of strokes. A new puzzle comes out tomorrow.'
+          : `Solved in ${plural(total, 'stroke')}. Par is ${PAR}.`}
       </p>
+      <div className="solved-string">
+        <StrokeString used={Math.min(total, MAX_STROKES)} par={PAR} max={MAX_STROKES} failed={state.failed} />
+      </div>
       <div className="stats">
+        <div>
+          <b>{total}</b>
+          <small>{total === 1 ? 'stroke' : 'strokes'}</small>
+        </div>
         <div>
           <b>{state.mimics}</b>
           <small>{state.mimics === 1 ? 'mimic' : 'mimics'}</small>
-        </div>
-        <div>
-          <b>{state.guesses.length + 1}</b>
-          <small>guesses</small>
         </div>
         <div>
           <b>🔥 {days}</b>

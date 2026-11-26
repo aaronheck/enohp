@@ -11,6 +11,7 @@
 //   GET  /recording?id=<key>.wav    -> { url }
 //   GET  /daily                     -> { number, date, voices, audio: { <voice>: url } }  (puzzle audio)
 //   POST /daily/guess { number, guess } -> { correct } (+ phrase, answers: { <voice>: url } when right)
+//   POST /daily/reveal { number }   -> { phrase, answers }  (after running out of strokes)
 
 const crypto = require('crypto');
 const daily = require('./daily');
@@ -198,6 +199,15 @@ function createHandler(deps) {
     return respond(200, { correct: true, phrase, answers });
   }
 
+  async function revealDaily(event) {
+    const body = parseBody(event);
+    const n = Number(body.number);
+    if (!Number.isInteger(n) || n < 1 || n > daily.puzzleNumber(now())) return fail(400, 'No such puzzle');
+    const answers = {};
+    for (const v of daily.VOICES) answers[v.id] = await deps.signGet(daily.answerKey(n, v.id), SIGNED_URL_SECONDS * 6);
+    return respond(200, { phrase: daily.phraseFor(n), answers });
+  }
+
   return async function handler(event) {
     const method = event.httpMethod;
     const path = event.path;
@@ -209,7 +219,8 @@ function createHandler(deps) {
       if (path === '/recording' && method === 'GET') return await readRecording(event);
       if (path === '/daily' && method === 'GET') return await readDaily();
       if (path === '/daily/guess' && method === 'POST') return await guessDaily(event);
-      if (['/game', '/recording', '/daily', '/daily/guess'].includes(path)) return fail(405, 'Unsupported method');
+      if (path === '/daily/reveal' && method === 'POST') return await revealDaily(event);
+      if (['/game', '/recording', '/daily', '/daily/guess', '/daily/reveal'].includes(path)) return fail(405, 'Unsupported method');
       return fail(404, 'Unsupported path!');
     } catch (e) {
       if (e instanceof HttpError) return fail(e.status, e.message);
