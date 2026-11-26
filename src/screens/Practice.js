@@ -9,13 +9,14 @@ import { ReversedPlayer } from '../ui/audio';
 import { VibratingString } from '../ui/waves';
 import CoachMark from '../ui/CoachMark';
 import Confetti from '../ui/Confetti';
+import MicWarmup from '../ui/MicWarmup';
 import './screens.css';
 import './Daily.css';
 
 const STEPS = {
   listen: { target: '.practice-clip .player-play', text: 'Tap play to hear the puzzle. It’s a word said backwards.' },
   mimic: { target: '.mimic-cta', text: 'Now tap Mimic it and copy that sound out loud. Weird is good!' },
-  stop: { target: '.mimic-cta', text: 'Copy the sound you heard, then tap Stop.' },
+  stop: { target: '.mimic-cta', text: 'Go! Copy the sound you heard, then tap the red button to stop.' },
   hear: { target: '.mimic-list .player', text: 'This is you, flipped forwards. Listen: does it sound like a word?' },
 };
 const ORDER = ['listen', 'mimic', 'stop', 'hear'];
@@ -47,6 +48,7 @@ function PracticeGame({ game }) {
   const answer = useClip(practiceAudio(game.n, 'answer'));
   const recorder = useRecorder();
   const recording = recorder.status === 'recording';
+  const starting = recorder.status === 'starting';
   const [heard, setHeard] = useState(false);
   const [mimics, setMimics] = useState([]); // [{ index, blob }]
   // Tips run once: they end when the player acts after hearing their first mimic.
@@ -89,7 +91,7 @@ function PracticeGame({ game }) {
   };
 
   const step = coachStep({ heard, recording, mimics: mimics.length, coached });
-  const coach = step && SHOWN[game.coach].includes(step) ? STEPS[step] : null;
+  const coach = step && !starting && SHOWN[game.coach].includes(step) ? STEPS[step] : null; // no tip while the mic warms up
   const next = PRACTICE.find((p) => p.n === game.n + 1);
   const top = { left: <Link to="/">← Daily puzzle</Link>, right: `Practice ${game.n} of ${PRACTICE.length}` };
 
@@ -158,16 +160,36 @@ function PracticeGame({ game }) {
       </div>
 
       <div className="mimic-area">
+        {starting && <MicWarmup height={56} />}
         {recording && <VibratingString active getLevel={recorder.getLevel} height={56} />}
         <Button
-          variant={recording || !mimics.length ? 'primary' : 'ghost'}
+          variant={recording || starting || !mimics.length ? 'primary' : 'ghost'}
           onClick={recording ? stopMimic : startMimic}
-          disabled={!heard || recorder.status === 'starting'}
-          className="mimic-cta"
+          disabled={!heard || starting}
+          className={'mimic-cta' + (starting ? ' mimic-starting' : recording ? ' mimic-recording' : '')}
         >
-          {recording ? '■ Stop recording' : mimics.length ? '🎙 Mimic again' : '🎙 Mimic it'}
+          {starting ? (
+            'Getting the mic ready…'
+          ) : recording ? (
+            <>
+              <span className="rec-dot" aria-hidden="true" />
+              Recording · tap to stop
+            </>
+          ) : mimics.length ? (
+            '🎙 Mimic again'
+          ) : (
+            '🎙 Mimic it'
+          )}
         </Button>
-        <p className="cta-note">{heard ? 'Copy the puzzle sound. We’ll flip it forwards.' : 'Listen to the puzzle first.'}</p>
+        <p className={'cta-note' + (recording ? ' go' : '')}>
+          {starting
+            ? 'Don’t start yet. It turns red when it’s listening.'
+            : recording
+            ? 'Go! Copy the sound you just heard.'
+            : heard
+            ? 'Copy the puzzle sound. We’ll flip it forwards.'
+            : 'Listen to the puzzle first.'}
+        </p>
         <Notice>{recorder.error}</Notice>
       </div>
 

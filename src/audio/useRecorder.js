@@ -12,12 +12,30 @@ function micErrorMessage(err) {
   return "Couldn't start the microphone.";
 }
 
+/** Resolves once the mic delivers any non-zero sample (warming-up mics send exact zeros). */
+function waitForSignal(analyser, sample, timeoutMs) {
+  if (!analyser || !sample) return Promise.resolve();
+  const until = performance.now() + timeoutMs;
+  return new Promise((resolve) => {
+    const check = () => {
+      analyser.getFloatTimeDomainData(sample);
+      for (let i = 0; i < sample.length; i++) {
+        if (Math.abs(sample[i]) > 1e-6) return resolve();
+      }
+      if (performance.now() > until) return resolve();
+      setTimeout(check, 30);
+    };
+    check();
+  });
+}
+
 /**
  * Microphone recorder. The mic stream is requested on the first start() and kept
  * between takes, until release() is called, the tab is hidden, or the component
  * unmounts. After a release, the next start() asks for the mic again.
  *
  * Returns { status: 'idle' | 'starting' | 'recording', error, start, stop, release, getLevel }.
+ * 'starting' lasts until the mic is actually live, so the UI can say "wait" until then.
  * stop() resolves to the recorded Blob. getLevel() returns 0..1 for live meters.
  */
 export default function useRecorder() {
@@ -103,7 +121,18 @@ export default function useRecorder() {
         if (e.data && e.data.size) chunksRef.current.push(e.data);
       };
       recorderRef.current = recorder;
+      const started = new Promise((res) => {
+        recorder.onstart = res;
+        setTimeout(res, 1000);
+      });
       recorder.start();
+      // Phones take a moment to bring the mic up, and the first stretch of a take is
+      // silence. Only say "recording" once the mic is really sending sound, so people
+      // don't start talking too early and get cut off.
+      await started;
+      await waitForSignal(analyserRef.current, sampleRef.current, 1500);
+      await new Promise((res) => setTimeout(res, 150));
+      if (recorderRef.current !== recorder) return; // released or stopped meanwhile
       setStatus('recording');
     } catch (err) {
       setError(micErrorMessage(err));

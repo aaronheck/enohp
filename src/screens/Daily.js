@@ -30,6 +30,7 @@ import { ReversedPlayer } from '../ui/audio';
 import { VibratingString } from '../ui/waves';
 import TryDots from '../ui/TryDots';
 import Confetti from '../ui/Confetti';
+import MicWarmup from '../ui/MicWarmup';
 import MicTip from '../ui/MicTip';
 import { shouldOfferMicTip } from '../lib/micTip';
 import DailyHowTo from '../ui/DailyHowTo';
@@ -286,15 +287,24 @@ function Puzzle({ puzzle, forced }) {
       {/* Same layout throughout; only the emphasis moves from Mimic (before the
           first mimic) to Guess (after). */}
       <div className="mimic-area">
+        {starting && <MicWarmup height={56} />}
         {recording && <VibratingString active getLevel={recorder.getLevel} height={56} />}
         <Button
-          variant={recording || firstMimic ? 'primary' : 'ghost'}
+          variant={recording || starting || firstMimic ? 'primary' : 'ghost'}
           onClick={recording ? finishMimic : startMimic}
           disabled={starting || (!recording && (!mimicOk || !heard))}
-          className={'mimic-cta' + (heard && firstMimic && !recording && mimicOk ? ' mimic-shimmer' : '')}
+          className={
+            'mimic-cta' +
+            (starting ? ' mimic-starting' : recording ? ' mimic-recording' : heard && firstMimic && mimicOk ? ' mimic-shimmer' : '')
+          }
         >
-          {recording ? (
-            '■ Stop recording'
+          {starting ? (
+            'Getting the mic ready…'
+          ) : recording ? (
+            <>
+              <span className="rec-dot" aria-hidden="true" />
+              Recording · tap to stop
+            </>
           ) : state.mimics ? (
             '🎙 Mimic again (uses a try)'
           ) : (
@@ -306,9 +316,11 @@ function Puzzle({ puzzle, forced }) {
             </>
           )}
         </Button>
-        <p className="cta-note">
-          {recording
-            ? 'Copy the sound you just heard, as best you can.'
+        <p className={'cta-note' + (recording ? ' go' : '')}>
+          {starting
+            ? 'Don’t start yet. It turns red when it’s listening.'
+            : recording
+            ? 'Go! Copy the sound you just heard.'
             : !heard
             ? 'Listen to the puzzle first.'
             : !mimicOk

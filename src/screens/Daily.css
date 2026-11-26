@@ -111,3 +111,33 @@
 /* Practice */
 .practice-hint { margin-top: 10px; background: var(--bg-raised); border-radius: 14px; padding: 10px 12px; font-weight: 700; font-size: 15px; }
 .practice-link { display: inline-block; margin-top: 10px; font-weight: 800; color: var(--butter); text-underline-offset: 3px; }
+
+/* ---- mic warm-up → recording ---- */
+.mic-warmup {
+  display: flex; align-items: center; justify-content: center; gap: 10px; margin-bottom: 8px;
+  color: var(--butter); font-weight: 800; font-size: 16px;
+  border: 2px dashed rgba(255, 216, 77, 0.4); border-radius: 16px;
+}
+.mic-warmup-dots { display: inline-flex; gap: 5px; }
+.mic-warmup-dots i { width: 8px; height: 8px; border-radius: 50%; background: var(--butter); animation: warm-dot 0.9s ease-in-out infinite; }
+.mic-warmup-dots i:nth-child(2) { animation-delay: 0.15s; }
+.mic-warmup-dots i:nth-child(3) { animation-delay: 0.3s; }
+@keyframes warm-dot { 0%, 100% { opacity: 0.25; transform: translateY(0); } 50% { opacity: 1; transform: translateY(-4px); } }
+
+/* Waiting: clearly "not yet", not faded like a disabled button. */
+.mimic-cta.mimic-starting:disabled {
+  opacity: 1; color: var(--ink);
+  background: repeating-linear-gradient(-45deg, #e8c33f 0 14px, var(--butter) 14px 28px);
+  background-size: 40px 40px; animation: warm-stripes 0.8s linear infinite;
+}
+@keyframes warm-stripes { to { background-position: 40px 0; } }
+
+/* Live: red, with a pulsing dot. */
+.mimic-cta.mimic-recording { background: var(--tomato); color: #fff; box-shadow: 0 4px 0 #b83a20; animation: rec-in 0.25s ease-out; }
+.rec-dot { display: inline-block; width: 12px; height: 12px; border-radius: 50%; background: #fff; margin-right: 8px; vertical-align: 1px; animation: rec-dot 1s ease-in-out infinite; }
+@keyframes rec-dot { 50% { opacity: 0.25; } }
+@keyframes rec-in { from { transform: scale(0.96); } }
+.cta-note.go { color: var(--cream); font-weight: 800; font-size: 16px; }
+@media (prefers-reduced-motion: reduce) {
+  .mic-warmup-dots i, .mimic-cta.mimic-starting:disabled, .rec-dot { animation: none; }
+}
