@@ -13,7 +13,7 @@ const SITE = 'https://yelnatsgame.com';
  * no answer) and shares it. Two taps: phones only open the share sheet straight from a
  * tap, and the video takes a few seconds to make.
  */
-export default function PuzzleVideo({ url, n, result }) {
+export default function PuzzleVideo({ url, n, result, mimic }) {
   const [state, setState] = useState('idle'); // idle | making | ready | error
   const [progress, setProgress] = useState(0);
   const [file, setFile] = useState(null);
@@ -30,7 +30,7 @@ export default function PuzzleVideo({ url, n, result }) {
     track('share', { puzzle: n, method: 'video', result: 'make' });
     try {
       const blob = await fetchRecording(url, { retries: 1 });
-      const f = await makePuzzleVideo({ blob, n, result, onProgress: setProgress });
+      const f = await makePuzzleVideo({ blob, mimic, n, result, onProgress: setProgress });
       setFile(f);
       setPreview(URL.createObjectURL(f));
       setState('ready');
@@ -81,7 +81,9 @@ export default function PuzzleVideo({ url, n, result }) {
           <button className="btn btn-ghost" onClick={make}>
             🎬 Brag with a video
           </button>
-          <p className="pvideo-note">Your score + the puzzle played backwards, as a 7-second clip. No spoilers.</p>
+          <p className="pvideo-note">
+            {mimic ? 'Your score, the puzzle, then your own attempt. No spoilers.' : 'Your score + the puzzle played backwards. No spoilers.'}
+          </p>
         </>
       )}
       {state === 'making' && (

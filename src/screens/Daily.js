@@ -590,6 +590,7 @@ function Solved({ n, state, answers, voice, days, top, mimics, puzzle }) {
         <PuzzleVideo
           url={puzzle.audio[puzzle.audio[voice] ? voice : Object.keys(puzzle.audio)[0]]}
           n={n}
+          mimic={mimics.length ? mimics[mimics.length - 1].blob : null}
           result={{ tries: total, used: total, failed: !!state.failed, mindReader: isMindReader(state), actions, streak: days }}
         />
         <Button variant="ghost" to="/friends" onClick={() => track('play_with_friends', { from: 'solved' })}>

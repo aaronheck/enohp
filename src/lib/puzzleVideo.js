@@ -14,6 +14,7 @@ const C = {
   muted: 'rgba(255,244,220,0.62)',
   butter: '#ffd84d',
   tomato: '#ff5b3a',
+  sky: '#8fd3ff',
 };
 const FONT = "'Bricolage Grotesque', system-ui, sans-serif";
 const INTRO = 0.9; // seconds before the first listen
@@ -114,10 +115,7 @@ function drawScorecard(g, x, y, w, h, r) {
   g.textAlign = 'left';
 }
 
-function drawFrame(g, t, { n, peaks, d, result }) {
-  const first = [INTRO, INTRO + d];
-  const second = [INTRO + d + GAP, INTRO + 2 * d + GAP];
-  const end = second[1];
+function drawFrame(g, t, { n, clips, end, result }) {
   const ease = (x) => 1 - Math.pow(1 - Math.min(1, Math.max(0, x)), 3);
   const brag = bragFor(result);
 
@@ -156,21 +154,14 @@ function drawFrame(g, t, { n, peaks, d, result }) {
   roundRect(g, 48, cardY, W - 96, cardH, 40);
   g.fill();
 
-  let progress = 0;
-  let label = 'listen…';
-  if (t >= first[0] && t < first[1]) {
-    progress = (t - first[0]) / d;
-    label = '1st listen';
-  } else if (t >= first[1] && t < second[0]) {
-    progress = 1;
-    label = 'again…';
-  } else if (t >= second[0] && t < second[1]) {
-    progress = (t - second[0]) / d;
-    label = '2nd listen';
-  } else if (t >= end) {
-    progress = 1;
-    label = 'what did it say?';
-  }
+  // Which clip the card shows: the one playing, or the last one that played.
+  let k = 0;
+  for (let i = 0; i < clips.length; i++) if (t >= clips[i].at) k = i;
+  const clip = clips[k];
+  const progress = Math.min(1, Math.max(0, (t - clip.at) / clip.d));
+  const playing = t >= clip.at && t < clip.at + clip.d;
+  const label = t < clips[0].at ? 'listen…' : t >= end ? 'what did it say?' : clip.label;
+  const peaks = clip.peaks;
   const bars = peaks.length;
   const left = 96;
   const span = W - 192;
@@ -180,8 +171,8 @@ function drawFrame(g, t, { n, peaks, d, result }) {
     const h = Math.max(8, peaks[i] * 220);
     const played = i / bars < progress;
     // A little bounce on the bar under the playhead.
-    const live = played && Math.abs(i / bars - progress) < 0.04 && t < end ? 1.12 : 1;
-    g.fillStyle = played ? C.butter : 'rgba(255,244,220,0.35)';
+    const live = playing && played && Math.abs(i / bars - progress) < 0.04 ? 1.12 : 1;
+    g.fillStyle = played ? clip.color : 'rgba(255,244,220,0.35)';
     roundRect(g, left + i * bw + bw * 0.18, mid - (h * live) / 2, bw * 0.64, h * live, Math.min(6, bw * 0.3));
     g.fill();
   }
@@ -208,10 +199,6 @@ function drawFrame(g, t, { n, peaks, d, result }) {
   g.textAlign = 'left';
 }
 
-/**
- * blob: the puzzle's (backwards) audio. onProgress(0..1) while recording.
- * Resolves to a File (MP4 or WebM).
- */
 /** Every format this browser claims to record, best first. */
 function videoMimeTypes() {
   if (typeof window === 'undefined' || !window.MediaRecorder) return [];
@@ -237,20 +224,64 @@ const step = (name, fn) =>
       throw err;
     });
 
-/** result: { tries, used, failed, mindReader, actions, streak } — the player's brag (optional). */
-export async function makePuzzleVideo({ blob, n, result, onProgress }) {
+/** Cuts silence off both ends (keeping a little), caps the length, and returns a gain that evens out loudness. */
+function tidy(ctx, buffer, maxSeconds = 6) {
+  const data = buffer.getChannelData(0);
+  let peak = 0;
+  for (let i = 0; i < data.length; i++) peak = Math.max(peak, Math.abs(data[i]));
+  const gain = peak > 0 ? Math.min(4, 0.9 / peak) : 1;
+  const floor = peak * 0.06;
+  let a = 0;
+  let b = data.length - 1;
+  while (a < b && Math.abs(data[a]) < floor) a++;
+  while (b > a && Math.abs(data[b]) < floor) b--;
+  const pad = Math.round(0.12 * buffer.sampleRate);
+  a = Math.max(0, a - pad);
+  b = Math.min(data.length, b + pad, a + Math.round(maxSeconds * buffer.sampleRate));
+  if (b - a < buffer.sampleRate * 0.2) return { buffer, gain };
+  const out = ctx.createBuffer(buffer.numberOfChannels, b - a, buffer.sampleRate);
+  for (let ch = 0; ch < buffer.numberOfChannels; ch++) out.copyToChannel(buffer.getChannelData(ch).subarray(a, b), ch);
+  return { buffer: out, gain };
+}
+
+/**
+ * blob: the puzzle's (backwards) audio. mimic: the player's own attempt, as they
+ * recorded it (still backwards, so no spoiler). Without a mimic the puzzle plays twice.
+ * result: { tries, used, failed, mindReader, actions, streak } for the brag.
+ * Resolves to a File (MP4 or WebM).
+ */
+export async function makePuzzleVideo({ blob, mimic, n, result, onProgress }) {
   if (!videoMimeTypes().length) throw new Error('This browser can’t make videos.');
   if (document.fonts && document.fonts.load) {
     await Promise.all([document.fonts.load(`800 96px ${FONT}`), document.fonts.load(`600 36px ${FONT}`)]).catch(() => {});
   }
   const ctx = getAudioContext();
   if (ctx.state !== 'running') await ctx.resume().catch(() => {});
-  const bytes = await step('read audio', () => blob.arrayBuffer());
   // Old Safari only has the callback form of decodeAudioData.
-  const buffer = await step('decode audio', () => new Promise((res, rej) => ctx.decodeAudioData(bytes, res, rej)));
-  const d = buffer.duration;
-  const total = INTRO + 2 * d + GAP + OUTRO;
-  const peaks = peaksOf(buffer, 44);
+  const decode = async (b, name) => {
+    const bytes = await step(`read ${name}`, () => b.arrayBuffer());
+    return step(`decode ${name}`, () => new Promise((res, rej) => ctx.decodeAudioData(bytes, res, rej)));
+  };
+  const puzzleBuf = await decode(blob, 'puzzle');
+  const mimicBuf = mimic ? await decode(mimic, 'mimic').catch(() => null) : null;
+
+  const p = { buffer: puzzleBuf, gain: 1 };
+  const m = mimicBuf ? tidy(ctx, mimicBuf) : null;
+  const second = m || p;
+  const clips = [
+    { ...p, at: INTRO, d: p.buffer.duration, peaks: peaksOf(p.buffer, 44), label: m ? '🔊 the puzzle' : '1st listen', color: C.butter },
+  ];
+  clips.push({
+    ...second,
+    at: INTRO + p.buffer.duration + GAP,
+    d: second.buffer.duration,
+    peaks: peaksOf(second.buffer, 44),
+    label: m ? '🎙 my attempt' : '2nd listen',
+    color: m ? C.sky : C.butter,
+  });
+  const end = clips[1].at + clips[1].d;
+  const total = end + OUTRO;
+  const frame = { n, clips, end, result };
 
   const canvas = document.createElement('canvas');
   canvas.width = W;
@@ -259,7 +290,7 @@ export async function makePuzzleVideo({ blob, n, result, onProgress }) {
   Object.assign(canvas.style, { position: 'fixed', left: '0', bottom: '0', width: '2px', height: '2px', opacity: '0.01', pointerEvents: 'none', zIndex: '-1' });
   document.body.appendChild(canvas);
   const g = canvas.getContext('2d');
-  drawFrame(g, 0, { n, peaks, d, result });
+  drawFrame(g, 0, frame);
 
   // Audio goes only into the recording (not the speakers).
   const dest = ctx.createMediaStreamDestination();
@@ -295,17 +326,20 @@ export async function makePuzzleVideo({ blob, n, result, onProgress }) {
   });
   await new Promise((res) => setTimeout(res, 250));
   const t0 = ctx.currentTime + 0.05;
-  for (const at of [INTRO, INTRO + d + GAP]) {
+  for (const c of clips) {
     const src = ctx.createBufferSource();
-    src.buffer = buffer;
-    src.connect(dest);
-    src.start(t0 + at);
+    src.buffer = c.buffer;
+    const gain = ctx.createGain();
+    gain.gain.value = c.gain;
+    src.connect(gain);
+    gain.connect(dest);
+    src.start(t0 + c.at);
   }
 
   await new Promise((resolve) => {
     const tick = () => {
       const t = ctx.currentTime - t0;
-      drawFrame(g, Math.max(0, t), { n, peaks, d, result });
+      drawFrame(g, Math.max(0, t), frame);
       if (onProgress) onProgress(Math.min(1, Math.max(0, t / (total + TAIL))));
       // Keep recording the last frame a bit longer: the end of a recording can get clipped.
       if (t >= total + TAIL) return resolve();
