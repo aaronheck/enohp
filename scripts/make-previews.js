@@ -14,18 +14,24 @@ const AUDIO = process.env.DAILY_AUDIO_DIR || path.join(ROOT, '.daily-audio');
 const first = Number(process.argv[2]) || 1;
 const last = Number(process.argv[3]) || 60;
 const SITE = 'https://yelnatsgame.com';
+// Puzzle #1's date (Pacific); must match the backend's DAILY_LAUNCH.
+const LAUNCH = process.env.DAILY_LAUNCH || '2026-11-25';
+const dateOf = (n, opts) =>
+  new Intl.DateTimeFormat('en-US', { timeZone: 'UTC', ...opts }).format(new Date(Date.parse(`${LAUNCH}T12:00:00Z`) + (n - 1) * 86400000));
+const longDate = (n) => dateOf(n, { weekday: 'long', month: 'short', day: 'numeric' });
+const shortDate = (n) => dateOf(n, { weekday: 'short', month: 'short', day: 'numeric' });
 
 const page = (n) => `<!doctype html>
 <html lang="en">
 <head>
 <meta charset="utf-8" />
-<title>Yelnats Daily #${n}: can you decode it?</title>
+<title>Yelnats Daily #${n} · ${shortDate(n)}: can you decode it?</title>
 <meta name="viewport" content="width=device-width, initial-scale=1" />
-<meta name="description" content="A phrase, played backwards. Mimic it, flip it, guess it." />
+<meta name="description" content="Today's phrase, played backwards. Can you decode it? Mimic it, flip it, guess it." />
 <meta property="og:type" content="website" />
 <meta property="og:site_name" content="Yelnats" />
-<meta property="og:title" content="Yelnats Daily #${n}: can you decode it? 🔊" />
-<meta property="og:description" content="A phrase, played backwards. Mimic it, flip it, guess it." />
+<meta property="og:title" content="Yelnats Daily #${n} · ${longDate(n)} 🔊" />
+<meta property="og:description" content="Can you decode it? A new phrase, played backwards, every day." />
 <meta property="og:url" content="${SITE}/p/${n}" />
 <meta property="og:image" content="${SITE}/og/${n}.png" />
 <meta property="og:image:width" content="1200" />
@@ -47,7 +53,7 @@ const card = `<!doctype html><html><head>
 <style>html,body{margin:0}canvas{display:block}</style></head>
 <body><canvas id="c" width="1200" height="630"></canvas>
 <script>
-window.draw = async (n, b64) => {
+window.draw = async (n, b64, date) => {
   await document.fonts.load('800 100px "Bricolage Grotesque"');
   await document.fonts.load('600 40px "Bricolage Grotesque"');
   let peaks;
@@ -65,9 +71,9 @@ window.draw = async (n, b64) => {
   const g = document.getElementById('c').getContext('2d');
   const F = '"Bricolage Grotesque", system-ui, sans-serif';
   g.fillStyle = '#0f3a2d'; g.fillRect(0, 0, 1200, 630);
-  g.fillStyle = '#ffd84d'; g.font = '800 34px ' + F; g.fillText('YELNATS DAILY', 72, 112);
-  g.fillStyle = '#fff4dc'; g.font = '800 150px ' + F; g.fillText('#' + n, 64, 262);
-  g.font = '800 64px ' + F; g.fillText('Can you decode it?', 72, 352);
+  g.fillStyle = '#ffd84d'; g.font = '800 34px ' + F; g.fillText(date.toUpperCase(), 72, 112);
+  g.fillStyle = '#fff4dc'; g.font = '800 150px ' + F; g.fillText('#' + n, 64, 262); const w = g.measureText('#' + n).width; g.fillStyle = 'rgba(255,244,220,0.62)'; g.font = '800 40px ' + F; g.fillText('YELNATS DAILY', 64 + w + 28, 250);
+  g.fillStyle = '#fff4dc'; g.font = '800 64px ' + F; g.fillText('Can you decode it?', 72, 352);
   g.fillStyle = 'rgba(255,244,220,0.62)'; g.font = '600 34px ' + F; g.fillText('A phrase, played backwards. 🔊', 72, 410);
   // waveform card
   const rr = (x, y, w, h, r) => { g.beginPath(); g.moveTo(x + r, y); g.arcTo(x + w, y, x + w, y + h, r); g.arcTo(x + w, y + h, x, y + h, r); g.arcTo(x, y + h, x, y, r); g.arcTo(x, y, x + w, y, r); g.closePath(); };
@@ -87,7 +93,7 @@ window.draw = async (n, b64) => {
   for (let n = first; n <= last; n++) {
     const mp3 = path.join(AUDIO, 'daily', String(n), 'Kevin-puzzle.mp3');
     const b64 = fs.existsSync(mp3) ? fs.readFileSync(mp3).toString('base64') : null;
-    const url = await p.evaluate(([num, data]) => window.draw(num, data), [n, b64]);
+    const url = await p.evaluate(([num, data, date]) => window.draw(num, data, date), [n, b64, longDate(n)]);
     fs.writeFileSync(path.join(ROOT, 'public/og', `${n}.png`), Buffer.from(url.split(',')[1], 'base64'));
     fs.writeFileSync(path.join(ROOT, 'public/p', `${n}.html`), page(n));
     process.stdout.write(`${n}${b64 ? '' : '(generic)'} `);

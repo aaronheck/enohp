@@ -20,7 +20,7 @@ import {
   markHowtoSeen,
   streak,
   updatePuzzleState,
-  shortDate,
+  longDate,
 } from '../lib/daily';
 import { shareLink } from '../lib/share';
 import { drawShareImage } from '../lib/shareImage';
@@ -323,7 +323,11 @@ function Puzzle({ puzzle, forced }) {
 
   return (
     <Screen {...top}>
-      <div className="daily-head">
+      <p className="daily-date">
+        {longDate(puzzle.date)}
+        {archive && <span className="daily-date-past"> · past puzzle</span>}
+      </p>
+      <div className="daily-head daily-head-dated">
         <h1 className="title title-sm">
           Yelnats Daily
           <br />
@@ -351,7 +355,7 @@ function Puzzle({ puzzle, forced }) {
         }}
       />
       <p className="lede" style={{ marginTop: 8 }}>
-        {archive ? `From ${shortDate(puzzle.date)}. ` : ''}Here's the phrase in reverse.
+        Here's the phrase in reverse.
       </p>
       {!heard && !practiceDone().length && (
         <Link to="/practice/1" className="practice-link" onClick={() => track('page_view', { path: '/practice-link' })}>
@@ -542,7 +546,7 @@ function Solved({ n, state, answers, voice, days, top, mimics, puzzle, onStats }
   // Older saves may name a voice we no longer serve: fall back to the one we do.
   const answer = useClip(answers ? answers[answerVoice] || Object.values(answers)[0] : null);
   const link = `${SITE}/p/${n}`; // shows a preview card for this puzzle
-  const text = shareText(n, state, link, days);
+  const text = shareText(n, state, link, days, puzzle.date);
   const next = useCountdown();
   const actions = state.actions && state.actions.length ? state.actions : [state.failed ? 'miss' : 'hit'];
 
@@ -551,6 +555,7 @@ function Solved({ n, state, answers, voice, days, top, mimics, puzzle, onStats }
     let cancelled = false;
     drawShareImage({
       number: n,
+      date: longDate(puzzle.date),
       score: score(state),
       failed: state.failed,
       mindReader: isMindReader(state),
@@ -575,6 +580,7 @@ function Solved({ n, state, answers, voice, days, top, mimics, puzzle, onStats }
   return (
     <Screen {...top}>
       <div className="result-card">
+        <p className="result-date">{longDate(puzzle.date)}</p>
         <p className="result-kicker">Yelnats Daily · Puzzle #{n}</p>
         <div className={'result-score' + (state.failed ? ' hot' : '')}>{score(state)}</div>
         <div className="result-dots" aria-hidden="true">
@@ -613,6 +619,7 @@ function Solved({ n, state, answers, voice, days, top, mimics, puzzle, onStats }
           <PuzzleVideo
             url={puzzle.audio[puzzle.audio[voice] ? voice : Object.keys(puzzle.audio)[0]]}
             n={n}
+            date={puzzle.date}
             mimic={mimics.length ? mimics[mimics.length - 1].blob : null}
             result={{ tries: total, used: total, failed: !!state.failed, mindReader: isMindReader(state), actions, streak: days }}
             onError={setVideoError}

@@ -115,7 +115,7 @@ function drawScorecard(g, x, y, w, h, r) {
   g.textAlign = 'left';
 }
 
-function drawFrame(g, t, { n, clips, end, result }) {
+function drawFrame(g, t, { n, clips, end, result, dateLabel }) {
   const ease = (x) => 1 - Math.pow(1 - Math.min(1, Math.max(0, x)), 3);
   const brag = bragFor(result);
 
@@ -128,7 +128,7 @@ function drawFrame(g, t, { n, clips, end, result }) {
   g.fillStyle = C.butter;
   g.font = `800 34px ${FONT}`;
   g.textAlign = 'left';
-  g.fillText(`YELNATS DAILY · #${n}`, 64, 130);
+  g.fillText(dateLabel ? `${dateLabel.toUpperCase()} · DAILY #${n}` : `YELNATS DAILY · #${n}`, 64, 130);
   g.fillStyle = C.cream;
   g.font = `800 84px ${FONT}`;
   const lines = wrap(g, brag.headline, W - 128).slice(0, 2);
@@ -250,7 +250,7 @@ function tidy(ctx, buffer, maxSeconds = 6) {
  * result: { tries, used, failed, mindReader, actions, streak } for the brag.
  * Resolves to a File (MP4 or WebM).
  */
-export async function makePuzzleVideo({ blob, mimic, n, result, onProgress }) {
+export async function makePuzzleVideo({ blob, mimic, n, date, result, onProgress }) {
   if (!videoMimeTypes().length) throw new Error('This browser can’t make videos.');
   if (document.fonts && document.fonts.load) {
     await Promise.all([document.fonts.load(`800 96px ${FONT}`), document.fonts.load(`600 36px ${FONT}`)]).catch(() => {});
@@ -281,7 +281,10 @@ export async function makePuzzleVideo({ blob, mimic, n, result, onProgress }) {
   });
   const end = clips[1].at + clips[1].d;
   const total = end + OUTRO;
-  const frame = { n, clips, end, result };
+  const dateLabel = date
+    ? new Intl.DateTimeFormat('en-US', { timeZone: 'UTC', weekday: 'short', month: 'short', day: 'numeric' }).format(new Date(`${date}T12:00:00Z`))
+    : null;
+  const frame = { n, clips, end, result, dateLabel };
 
   const canvas = document.createElement('canvas');
   canvas.width = W;

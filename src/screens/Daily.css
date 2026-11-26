@@ -171,3 +171,10 @@
 .guess-row.shake { animation: shake 0.38s ease-in-out; }
 @keyframes shake { 20%, 60% { transform: translateX(-7px); } 40%, 80% { transform: translateX(7px); } }
 @media (prefers-reduced-motion: reduce) { .guess-row.shake { animation: none; } }
+
+/* ---- the date, featured: it's a daily game ---- */
+.daily-date { color: var(--butter); font-weight: 800; font-size: 16px; letter-spacing: 0.01em; margin-top: 14px; }
+.daily-date-past { color: var(--muted); font-weight: 700; }
+.daily-head.daily-head-dated { margin-top: 2px; }
+.result-date { font-weight: 800; font-size: 20px; color: var(--ink); letter-spacing: -0.01em; }
+.result-date + .result-kicker { margin-top: 2px; }

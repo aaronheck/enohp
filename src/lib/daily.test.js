@@ -85,3 +85,8 @@ test('past puzzles: the 5 before today, newest first, never below #1', () => {
   ]);
   expect(pastPuzzles(3, '2026-11-27').map((p) => p.n)).toEqual([2, 1]);
 });
+
+test('share text names the day when it has one', () => {
+  const st2 = { ...getPuzzleState(5), solved: true, mimics: 1, actions: ['mimic', 'hit'] };
+  expect(shareText(2, st2, 'u', 0, '2026-11-26')).toBe('Yelnats Daily #2 · Thu, Nov 26\n1/5\n🎙✅\nu');
+});

@@ -48,9 +48,10 @@ export async function drawShareImage(result) {
     g.fillText('Yelnats', 90, 150);
     g.fillStyle = C.butter;
     g.fillText('Daily', 90 + g.measureText('Yelnats ').width, 150);
-    g.fillStyle = 'rgba(255,244,220,0.66)';
-    g.font = `700 38px ${FONT}`;
-    g.fillText('The reverse reverse game.', 90, 210);
+    // The day, front and centre: it's a daily game.
+    g.fillStyle = result.date ? C.cream : 'rgba(255,244,220,0.66)';
+    g.font = result.date ? `800 46px ${FONT}` : `700 38px ${FONT}`;
+    g.fillText(result.date || 'The reverse reverse game.', 90, 214);
 
     // Card (slightly tilted, like a sticker)
     g.save();

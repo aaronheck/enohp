@@ -3,6 +3,7 @@ import { fetchRecording } from '../api/client';
 import { unlockAudio } from '../audio/context';
 import { bragFor, canMakeVideo, makePuzzleVideo } from '../lib/puzzleVideo';
 import { track } from '../lib/analytics';
+import { shortDate } from '../lib/daily';
 import { reportError } from '../lib/errors';
 import './HowToPlaySheet.css';
 import './PuzzleVideo.css';
@@ -16,7 +17,7 @@ export { canMakeVideo };
  * the button), then opens a sheet with the preview and the ways to post it. Posting
  * needs its own tap: phones only open the share sheet straight from a tap.
  */
-export default function PuzzleVideo({ url, n, result, mimic, onError }) {
+export default function PuzzleVideo({ url, n, date, result, mimic, onError }) {
   const [state, setState] = useState('idle'); // idle | making | ready | error
   const [progress, setProgress] = useState(0);
   const [file, setFile] = useState(null);
@@ -37,7 +38,7 @@ export default function PuzzleVideo({ url, n, result, mimic, onError }) {
     track('share', { puzzle: n, method: 'video', result: 'make' });
     try {
       const blob = await fetchRecording(url, { retries: 1 });
-      const f = await makePuzzleVideo({ blob, mimic, n, result, onProgress: setProgress });
+      const f = await makePuzzleVideo({ blob, mimic, n, date, result, onProgress: setProgress });
       setFile(f);
       setPreview(URL.createObjectURL(f));
       setState('ready');
@@ -54,7 +55,7 @@ export default function PuzzleVideo({ url, n, result, mimic, onError }) {
   };
 
   const brag = bragFor(result);
-  const text = `${brag.headline} Yelnats Daily #${n}. ${brag.dare}`;
+  const text = `${brag.headline} Yelnats Daily #${n}${date ? `, ${shortDate(date)}` : ''}. ${brag.dare}`;
   const canShareFile = () => {
     try {
       return !!(file && navigator.canShare && navigator.canShare({ files: [file] }));

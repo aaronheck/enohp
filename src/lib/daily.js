@@ -95,10 +95,13 @@ export const actionEmoji = (a) => ACTION_EMOJI[a] || '';
  *   🎙❌✅
  *   🔥 3-day streak
  */
-export function shareText(number, state, url, days = 0) {
+export function shareText(number, state, url, days = 0, date = null) {
   const trail = (state.actions || []).map(actionEmoji).join('') || (state.failed ? '❌' : '✅');
   const badge = isMindReader(state) ? ' 🤯 Mind reader' : '';
-  const lines = [`Yelnats Daily #${number} · ${score(state)}${badge}`, trail];
+  // With the date: it's a daily game, so say which day.
+  const lines = date
+    ? [`Yelnats Daily #${number} · ${shortDate(date)}`, `${score(state)}${badge}`, trail]
+    : [`Yelnats Daily #${number} · ${score(state)}${badge}`, trail];
   if (days >= 2) lines.push(`🔥 ${days}-day streak`);
   if (url) lines.push(url);
   return lines.join('\n');
@@ -183,4 +186,10 @@ export function playerStats(today) {
     dist,
     days,
   };
+}
+
+/** "Thursday, Nov 26" for a YYYY-MM-DD date. */
+export function longDate(ymd) {
+  if (!ymd) return '';
+  return new Intl.DateTimeFormat('en-US', { timeZone: 'UTC', weekday: 'long', month: 'short', day: 'numeric' }).format(new Date(`${ymd}T12:00:00Z`));
 }
