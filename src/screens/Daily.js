@@ -31,8 +31,8 @@ import { VibratingString } from '../ui/waves';
 import TryDots from '../ui/TryDots';
 import Confetti from '../ui/Confetti';
 import MicWarmup from '../ui/MicWarmup';
-import MicTip from '../ui/MicTip';
-import { shouldOfferMicTip } from '../lib/micTip';
+import { MicTipCard, MicTipPopup } from '../ui/MicTip';
+import { shouldPopMicTip, shouldShowMicCard } from '../lib/micTip';
 import DailyHowTo from '../ui/DailyHowTo';
 import './screens.css';
 import './Daily.css';
@@ -104,6 +104,7 @@ function Puzzle({ puzzle, forced }) {
   const [answers, setAnswers] = useState(null);
   const [guess, setGuess] = useState('');
   const [checking, setChecking] = useState(false);
+  const [micPop, setMicPop] = useState(false);
   const [justSolved, setJustSolved] = useState(false); // confetti only for a solve this visit, not on reload
   const [error, setError] = useState(null);
   const [mimics, setMimics] = useState([]); // [{ index, blob }], oldest first
@@ -225,10 +226,20 @@ function Puzzle({ puzzle, forced }) {
   // You have to hear the puzzle all the way through once before mimicking or guessing.
   const heard = state.heard || state.mimics > 0 || state.guesses.length > 0;
   const starting = recorder.status === 'starting';
-  const startMimic = () => {
+  const beginRecording = () => {
     unlockAudio(); // during the tap, so the flipped take can autoplay
     stopShared(); // don't record the puzzle playing
     recorder.start();
+  };
+  const startMimic = () => {
+    // 3rd day on iPhone Safari: first show how to stop Safari asking for the mic every time.
+    if (shouldPopMicTip(n)) {
+      stopShared();
+      track('howto_open', { game: 'mic', source: 'popup', puzzle: n });
+      setMicPop(true);
+      return;
+    }
+    beginRecording();
   };
   const finishMimic = () => {
     unlockAudio();
@@ -328,6 +339,14 @@ function Puzzle({ puzzle, forced }) {
             : 'Mimic the puzzle audio to decode the word.'}
         </p>
         <Notice>{recorder.error}</Notice>
+        <MicTipPopup
+          open={micPop}
+          puzzle={n}
+          onContinue={() => {
+            setMicPop(false);
+            beginRecording();
+          }}
+        />
       </div>
 
       {!recording && <MimicList mimics={mimics} autoPlayIndex={justRecorded} />}
@@ -429,7 +448,7 @@ function Solved({ n, state, answers, voice, days, top, mimics }) {
   const [status, setStatus] = useState(null);
   const [showMimics, setShowMimics] = useState(false);
   const [image, setImage] = useState(null);
-  const [micTip, setMicTip] = useState(() => shouldOfferMicTip());
+  const [micTip, setMicTip] = useState(() => shouldShowMicCard(n));
   const total = triesUsed(state);
   const answerVoice = state.voice || voice;
   const answer = useClip(answers ? answers[answerVoice] : null);
@@ -505,7 +524,7 @@ function Solved({ n, state, answers, voice, days, top, mimics }) {
       <p className="next-puzzle">
         {state.failed ? 'Out of tries. ' : ''}Next puzzle in <b>{next}</b>
       </p>
-      {micTip && <MicTip onGone={() => setMicTip(false)} />}
+      {micTip && <MicTipCard puzzle={n} onGone={() => setMicTip(false)} />}
 
       {mimics.length > 0 && (
         <div className="section">

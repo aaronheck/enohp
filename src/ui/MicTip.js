@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
 import { Slideshow } from './HowToPlaySheet';
-import { markMicTipSeen } from '../lib/micTip';
+import { markMicTip } from '../lib/micTip';
 import { track } from '../lib/analytics';
 import './MicTip.css';
 
@@ -108,18 +108,59 @@ const SLIDES = [
   },
 ];
 
-const FINISH = { primary: { label: 'Done', how: 'done' } };
+/** Safari's own mic popup, the thing they're tired of. */
+function PromptArt() {
+  return (
+    <div className="ios-phone ios-phone-dim">
+      <div className="ios-alert">
+        <p className="ios-alert-text">
+          “{SITE}” would like to access the microphone.
+        </p>
+        <div className="ios-alert-btns">
+          <span>Don’t Allow</span>
+          <span className="ios-alert-allow">Allow</span>
+        </div>
+      </div>
+    </div>
+  );
+}
+
+const INTRO = {
+  kicker: 'Quick tip before you record',
+  next: 'Show me how',
+  title: 'Tired of tapping Allow?',
+  body: 'Safari asks for the mic every time. Three taps and it never asks on Yelnats again.',
+  art: <PromptArt />,
+};
 
 /**
- * Card on the results screen: "Tired of tapping Allow?" Opens the 3-step walkthrough.
- * Shows once; any choice (walkthrough finished, ✕, "already did it") puts it away for good.
+ * Pops up when they tap Mimic it on their 3rd day. However it closes, recording starts
+ * next (they did tap Mimic): onContinue runs inside the tap, so iOS lets the mic start.
  */
-export default function MicTip({ onGone }) {
+export function MicTipPopup({ open, puzzle, onContinue }) {
+  return (
+    <Slideshow
+      open={open}
+      label="Always allow the microphone in Safari"
+      slides={[INTRO, ...SLIDES]}
+      skipLabel="Not now"
+      finish={{ primary: { label: 'Done. Start recording', how: 'done' } }}
+      onClose={(how, slide) => {
+        track('howto_close', { game: 'mic', source: 'popup', how, slide });
+        markMicTip(how === 'done' ? 'done' : 'later', puzzle);
+        onContinue();
+      }}
+    />
+  );
+}
+
+/** Results-screen reminder, only on the day they tapped "Not now". Shows once. */
+export function MicTipCard({ puzzle, onGone }) {
   const [open, setOpen] = useState(false);
 
   const gone = (how, log) => {
-    if (log) track('howto_close', { game: 'mic', how });
-    markMicTipSeen(how);
+    if (log) track('howto_close', { game: 'mic', source: 'card', how });
+    markMicTip(how, puzzle);
     onGone && onGone();
   };
 
@@ -148,9 +189,9 @@ export default function MicTip({ onGone }) {
         open={open}
         label="Always allow the microphone in Safari"
         slides={SLIDES}
-        finish={FINISH}
+        finish={{ primary: { label: 'Done', how: 'done' } }}
         onClose={(how, slide) => {
-          track('howto_close', { game: 'mic', how, slide });
+          track('howto_close', { game: 'mic', source: 'card', how, slide });
           setOpen(false);
           if (how === 'done') gone('done');
         }}

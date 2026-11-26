@@ -45,7 +45,7 @@ const SWIPE_PX = 50;
  * finish: optional last-slide buttons { primary: { label, how }, secondary: { label, how } };
  * defaults to a single "Let's go".
  */
-export function Slideshow({ open, onClose, slides, label, finish }) {
+export function Slideshow({ open, onClose, slides, label, finish, skipLabel = 'Skip' }) {
   const [index, setIndex] = useState(0);
   const [dir, setDir] = useState(1);
   const dialogRef = useRef(null);
@@ -88,7 +88,10 @@ export function Slideshow({ open, onClose, slides, label, finish }) {
     if (dx > SWIPE_PX) go(index - 1);
   };
 
-  const { title, body, art } = list[index];
+  const { title, body, art, kicker } = list[index];
+  // Slides with a kicker (e.g. an intro) aren't numbered steps.
+  const stepCount = list.filter((x) => !x.kicker).length;
+  const stepNo = list.slice(0, index + 1).filter((x) => !x.kicker).length;
 
   return (
     <div className="sheet-backdrop" onClick={() => onClose('dismiss', index)}>
@@ -112,7 +115,7 @@ export function Slideshow({ open, onClose, slides, label, finish }) {
           </div>
           {!last && (
             <button className="btn-text slideshow-skip" onClick={() => onClose('skip', index)}>
-              Skip
+              {skipLabel}
             </button>
           )}
         </div>
@@ -121,9 +124,7 @@ export function Slideshow({ open, onClose, slides, label, finish }) {
           <div className="slide-art" aria-hidden="true">
             {art}
           </div>
-          <p className="slide-step">
-            Step {index + 1} of {list.length}
-          </p>
+          <p className="slide-step">{kicker || `Step ${stepNo} of ${stepCount}`}</p>
           <h2 className="slide-title">{title}</h2>
           <p className="slide-body">{body}</p>
         </div>
@@ -135,7 +136,7 @@ export function Slideshow({ open, onClose, slides, label, finish }) {
             </Button>
           )}
           <Button onClick={last ? () => onClose((finish && finish.primary.how) || 'done', index) : () => go(index + 1)}>
-            {last ? (finish && finish.primary.label) || "Let's go" : 'Next'}
+            {last ? (finish && finish.primary.label) || "Let's go" : list[index].next || 'Next'}
           </Button>
         </div>
         {last && finish && finish.secondary && (

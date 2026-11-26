@@ -1,4 +1,4 @@
-import { isIOSSafari, playHistory, shouldOfferMicTip, markMicTipSeen } from './micTip';
+import { isIOSSafari, playHistory, shouldPopMicTip, shouldShowMicCard, markMicTip } from './micTip';
 
 const SAFARI = 'Mozilla/5.0 (iPhone; CPU iPhone OS 18_5 like Mac OS X) AppleWebKit/605.1.15 (KHTML, like Gecko) Version/18.5 Mobile/15E148 Safari/604.1';
 const CHROME_IOS = 'Mozilla/5.0 (iPhone; CPU iPhone OS 18_5 like Mac OS X) AppleWebKit/605.1.15 (KHTML, like Gecko) CriOS/138.0 Mobile/15E148 Safari/604.1';
@@ -13,21 +13,33 @@ test('only Safari on iPhone/iPad', () => {
   expect(isIOSSafari(ANDROID, 5)).toBe(false);
 });
 
-test('offered from the third day played, if they have mimicked, once', () => {
-  const ua = jest.spyOn(window.navigator, 'userAgent', 'get').mockReturnValue(SAFARI);
-
+describe('on iPhone Safari', () => {
+  let ua;
+  beforeEach(() => {
+    ua = jest.spyOn(window.navigator, 'userAgent', 'get').mockReturnValue(SAFARI);
+    localStorage.clear();
+  });
+  afterEach(() => ua.mockRestore());
   const days = (puzzles) => localStorage.setItem('yelnats.daily', JSON.stringify({ puzzles }));
-  localStorage.clear();
-  days({ 1: { solved: true, mimics: 1 }, 2: { solved: true, mimics: 0 }, 3: { heard: true } });
-  expect(playHistory()).toEqual({ days: 2, mimicked: true });
-  expect(shouldOfferMicTip()).toBe(false);
-  days({ 1: { solved: true, mimics: 1 }, 2: { solved: true }, 3: { failed: true, guesses: ['x'] } });
-  expect(shouldOfferMicTip()).toBe(true);
-  days({ 1: { solved: true }, 2: { solved: true }, 3: { solved: true } });
-  expect(shouldOfferMicTip()).toBe(false); // never used the mic
-  days({ 1: { solved: true, mimics: 2 }, 2: { solved: true }, 3: { solved: true } });
-  markMicTipSeen('x');
-  expect(shouldOfferMicTip()).toBe(false);
-  ua.mockRestore();
 
+  test('pops up on the 3rd day (2 earlier days played, mic used), not the 2nd', () => {
+    days({ 1: { solved: true, mimics: 1 }, 2: { heard: true } });
+    expect(shouldPopMicTip(2)).toBe(false); // day 2
+    days({ 1: { solved: true, mimics: 1 }, 2: { failed: true, guesses: ['x'] }, 3: { heard: true } });
+    expect(playHistory(3)).toEqual({ daysBefore: 2, mimicked: true });
+    expect(shouldPopMicTip(3)).toBe(true); // day 3
+    days({ 1: { solved: true }, 2: { solved: true } });
+    expect(shouldPopMicTip(3)).toBe(false); // never used the mic
+  });
+
+  test('"Not now": results card that day only; then never again', () => {
+    days({ 1: { solved: true, mimics: 1 }, 2: { solved: true } });
+    markMicTip('later', 3);
+    expect(shouldPopMicTip(3)).toBe(false);
+    expect(shouldShowMicCard(3)).toBe(true);
+    expect(shouldShowMicCard(4)).toBe(false);
+    expect(shouldPopMicTip(4)).toBe(false);
+    markMicTip('done', 3);
+    expect(shouldShowMicCard(3)).toBe(false);
+  });
 });

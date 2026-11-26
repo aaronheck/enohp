@@ -76,3 +76,12 @@
 .ios-choices { display: flex; gap: 6px; margin-top: 10px; }
 .ios-choices span { flex: 1; text-align: center; background: #fff; border-radius: 10px; padding: 7px 0; color: #8e8e93; }
 .ios-choices .ios-choice-on { color: #fff; background: #1c8c3c; font-weight: 700; }
+
+/* intro: Safari's mic popup */
+.ios-phone-dim { background: #8e8e93; justify-content: center; align-items: center; }
+.ios-alert { width: 78%; background: rgba(250, 250, 252, 0.97); border-radius: 16px; text-align: center; overflow: hidden; }
+.ios-alert-text { padding: 16px 14px 14px; font-weight: 600; font-size: 14px; line-height: 1.3; }
+.ios-alert-btns { display: flex; border-top: 1px solid #d1d1d6; }
+.ios-alert-btns span { flex: 1; padding: 10px 0; color: #007aff; font-size: 15px; }
+.ios-alert-btns span + span { border-left: 1px solid #d1d1d6; }
+.ios-alert-allow { font-weight: 700; }
