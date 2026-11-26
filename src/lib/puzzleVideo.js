@@ -19,6 +19,7 @@ const FONT = "'Bricolage Grotesque', system-ui, sans-serif";
 const INTRO = 0.9; // seconds before the first listen
 const GAP = 0.7; // between the two listens
 const OUTRO = 1.8;
+const TAIL = 1.0; // extra recorded after the outro, as a safety margin
 
 /** Can this browser make the video at all? */
 export function canMakeVideo() {
@@ -270,7 +271,8 @@ export async function makePuzzleVideo({ blob, n, result, onProgress }) {
   for (const t of videoMimeTypes()) {
     try {
       recorder = new MediaRecorder(stream, { mimeType: t, videoBitsPerSecond: 2500000 });
-      recorder.start(250);
+      // No timeslice: Safari is more reliable handing over the whole video at the end.
+      recorder.start();
       mimeType = t;
       break;
     } catch (e) {
@@ -285,6 +287,13 @@ export async function makePuzzleVideo({ blob, n, result, onProgress }) {
   const chunks = [];
   recorder.ondataavailable = (e) => e.data && e.data.size && chunks.push(e.data);
   const stopped = new Promise((res) => (recorder.onstop = res));
+  // Recording really begins a moment after start(): wait for it (and a little more)
+  // before starting the timeline, so the beginning isn't lost.
+  await new Promise((res) => {
+    recorder.onstart = res;
+    setTimeout(res, 800);
+  });
+  await new Promise((res) => setTimeout(res, 250));
   const t0 = ctx.currentTime + 0.05;
   for (const at of [INTRO, INTRO + d + GAP]) {
     const src = ctx.createBufferSource();
@@ -297,8 +306,9 @@ export async function makePuzzleVideo({ blob, n, result, onProgress }) {
     const tick = () => {
       const t = ctx.currentTime - t0;
       drawFrame(g, Math.max(0, t), { n, peaks, d, result });
-      if (onProgress) onProgress(Math.min(1, Math.max(0, t / total)));
-      if (t >= total) return resolve();
+      if (onProgress) onProgress(Math.min(1, Math.max(0, t / (total + TAIL))));
+      // Keep recording the last frame a bit longer: the end of a recording can get clipped.
+      if (t >= total + TAIL) return resolve();
       // rAF pauses in background tabs; a timer keeps going.
       setTimeout(tick, 1000 / 30);
     };
