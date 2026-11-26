@@ -2,7 +2,9 @@
 // Generates daily puzzle audio with Amazon Polly: for each puzzle and voice, the phrase
 // forwards (the answer) and reversed (the puzzle). Files never contain the phrase.
 //
-//   node scripts/generate-daily.js --from 1 --to 60 [--upload] [--out .daily-audio]
+//   node scripts/generate-daily.js --from 1 --to 60 [--upload] [--out .daily-audio] [--voices Kevin,Joanna|all]
+//
+// Defaults to just Kevin, the voice the site uses.
 //
 // Writes to --out (default .daily-audio/, used by the mock API) and, with --upload,
 // copies to s3://enohp/daily/<n>/. Needs the AWS CLI (profile from AWS_PROFILE) and ffmpeg.
@@ -20,13 +22,16 @@ const from = Number(opt('from', 1));
 const to = Number(opt('to', from));
 const out = path.resolve(opt('out', path.join(__dirname, '..', '.daily-audio')));
 const upload = args.includes('--upload');
+const voiceArg = opt('voices', 'Kevin');
+const voices = voiceArg === 'all' ? daily.VOICES : daily.VOICES.filter((v) => voiceArg.split(',').includes(v.id));
+if (!voices.length) throw new Error(`No known voices in --voices ${voiceArg}`);
 const BUCKET = process.env.RECORDING_BUCKET || 'enohp';
 
 const run = (cmd, a) => execFileSync(cmd, a, { stdio: ['ignore', 'ignore', 'inherit'] });
 
 for (let n = from; n <= to; n++) {
   const phrase = daily.phraseFor(n);
-  for (const v of daily.VOICES) {
+  for (const v of voices) {
     const answer = path.join(out, daily.answerKey(n, v.id));
     const puzzle = path.join(out, daily.puzzleKey(n, v.id));
     fs.mkdirSync(path.dirname(answer), { recursive: true });
