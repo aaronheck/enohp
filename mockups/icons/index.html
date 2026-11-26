@@ -1,0 +1,40 @@
+<!doctype html><html><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<link href="https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:opsz,wght@12..96,700;12..96,800&display=swap" rel="stylesheet">
+<script src="icons.js"></script>
+<style>
+body{margin:0;background:#0a2219;color:#fff4dc;font-family:'Bricolage Grotesque',system-ui;padding:18px}
+h1{font-size:22px;margin:0 0 4px}p.n{color:rgba(255,244,220,.65);margin:0 0 16px;font-size:14px}
+.opt{background:#0f3a2d;border-radius:20px;padding:14px;margin-bottom:14px;display:grid;grid-template-columns:120px 1fr;gap:14px;align-items:center}
+.opt h2{grid-column:1/-1;margin:0;font-size:18px}.opt h2 b{color:#ffd84d}
+.tabs{display:flex;flex-direction:column;gap:8px}
+.tab{display:flex;align-items:center;gap:8px;background:#dee1e6;color:#202124;border-radius:10px 10px 0 0;padding:7px 12px;font:13px system-ui;width:190px}
+.tab.dark{background:#35363a;color:#e8eaed}
+.home{display:flex;gap:16px;align-items:flex-end;margin-top:6px;font:11px system-ui;color:#fff;text-align:center}
+.home .ic{border-radius:13px;overflow:hidden;width:60px;height:60px;box-shadow:0 2px 6px rgba(0,0,0,.4)}
+.home .ic svg{display:block}
+.big svg{border-radius:22px;display:block}
+</style></head><body>
+<h1>Pick an icon</h1><p class="n">Each shown big, as a browser tab (real 16px size) and as an iPhone home-screen icon.</p>
+<div id="list"></div>
+<script>
+const NOTES = {
+  'Bean': 'The red bean from the comics. Friendly, a character people will recognise.',
+  'Gibberish bubble': 'A yellow speech bubble full of sound. Says "talking game" at a glance.',
+  'Rewind': 'The ◀◀ rewind badge from the game. Very clear "backwards", but a bit generic.',
+  'Flip wave': 'A sound wave flipping across a mirror line, yellow to blue. Most "backwards sound".',
+  'Bean + bubble': 'The bean saying gibberish. Most story, but busiest when tiny.',
+  'Y': 'A bold Y lettermark. Clean brand mark, least about the game itself.',
+};
+document.getElementById('list').innerHTML = Object.entries(ICONS).map(([name, body], i) => `
+  <div class="opt"><h2><b>${i + 1}</b> · ${name}</h2>
+    <div class="big">${svg(body, 120)}</div>
+    <div>
+      <div class="tabs">
+        <div class="tab">${svg(body, 16)} Yelnats</div>
+        <div class="tab dark">${svg(body, 16)} Yelnats</div>
+      </div>
+      <div class="home"><div><div class="ic">${svg(body.replace('rx="22"', 'rx="0"'), 60)}</div>Yelnats</div><div>${svg(body, 32)}<br>32px</div></div>
+      <p class="n" style="margin:8px 0 0">${NOTES[name]}</p>
+    </div>
+  </div>`).join('');
+</script></body></html>
