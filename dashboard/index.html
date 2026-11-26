@@ -1,0 +1,386 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Yelnats analytics</title>
+<link href="https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:opsz,wght@12..96,500;12..96,700;12..96,800&display=swap" rel="stylesheet">
+<style>
+  :root {
+    color-scheme: dark;
+    --page: #0f3a2d; --surface-1: #0a2a20; --raised: #15493a;
+    --text-primary: #fff4dc; --text-secondary: rgba(255, 244, 220, 0.72); --text-muted: rgba(255, 244, 220, 0.5);
+    --grid: rgba(255, 244, 220, 0.12); --accent: #ffd84d;
+    --series-1: #3987e5;      /* main measure (validated on --surface-1) */
+    --status-critical: #e66767; /* out of tries */
+  }
+  * { box-sizing: border-box; }
+  body { margin: 0; background: var(--page); color: var(--text-primary); font-family: 'Bricolage Grotesque', system-ui, sans-serif; }
+  main { max-width: 1100px; margin: 0 auto; padding: 20px 16px 48px; }
+  h1 { font-size: 28px; margin: 0; letter-spacing: -0.02em; }
+  h2 { font-size: 17px; margin: 0 0 2px; }
+  .sub { color: var(--text-secondary); font-size: 14px; margin: 0 0 12px; }
+  .top { display: flex; justify-content: space-between; align-items: baseline; gap: 12px; flex-wrap: wrap; }
+  .muted { color: var(--text-muted); font-size: 13px; }
+  .filters { display: flex; gap: 8px; flex-wrap: wrap; align-items: center; margin: 16px 0 18px; }
+  .seg { display: inline-flex; background: var(--raised); border-radius: 999px; padding: 3px; }
+  .seg button { border: 0; background: none; color: var(--text-secondary); font: 700 14px inherit; font-family: inherit; padding: 7px 13px; border-radius: 999px; cursor: pointer; }
+  .seg button[aria-pressed="true"] { background: var(--accent); color: #14241d; }
+  select, .refresh { background: var(--raised); color: var(--text-primary); border: 0; border-radius: 999px; padding: 9px 14px; font: 700 14px inherit; font-family: inherit; cursor: pointer; }
+  .hero { display: flex; align-items: baseline; gap: 12px; margin: 4px 0 14px; }
+  .hero b { font-size: 64px; letter-spacing: -0.04em; line-height: 1; }
+  .hero span { color: var(--text-secondary); font-weight: 700; }
+  .tiles { display: grid; grid-template-columns: repeat(auto-fill, minmax(150px, 1fr)); gap: 10px; }
+  .tile { background: var(--raised); border-radius: 16px; padding: 12px 14px; }
+  .tile .label { color: var(--text-secondary); font-size: 13px; font-weight: 700; }
+  .tile .value { font-size: 26px; font-weight: 700; margin-top: 2px; }
+  .grid2 { display: grid; grid-template-columns: repeat(auto-fit, minmax(330px, 1fr)); gap: 14px; margin-top: 14px; }
+  .card { background: var(--surface-1); border-radius: 20px; padding: 16px; position: relative; min-width: 0; }
+  .card.wide { grid-column: 1 / -1; }
+  svg text { font-family: inherit; }
+  .axis { fill: var(--text-muted); font-size: 11px; font-variant-numeric: tabular-nums; }
+  .val { fill: var(--text-primary); font-size: 12px; font-weight: 700; font-variant-numeric: tabular-nums; }
+  .lbl { fill: var(--text-secondary); font-size: 13px; font-weight: 700; }
+  .hit { fill: transparent; cursor: default; }
+  .hit:hover + .mark, .mark.hot { filter: brightness(1.18); }
+  .tip { position: absolute; pointer-events: none; background: var(--text-primary); color: #14241d; border-radius: 10px; padding: 6px 10px; font-size: 13px; white-space: nowrap; opacity: 0; transition: opacity .1s; z-index: 5; }
+  .tip b { font-size: 15px; display: block; }
+  .tip .key { display: inline-block; width: 12px; height: 2px; vertical-align: middle; margin-right: 6px; }
+  table { width: 100%; border-collapse: collapse; font-size: 14px; }
+  th { text-align: left; color: var(--text-muted); font-weight: 700; font-size: 12px; padding: 6px 8px; border-bottom: 1px solid var(--grid); }
+  td { padding: 7px 8px; border-bottom: 1px solid var(--grid); font-variant-numeric: tabular-nums; }
+  td.num, th.num { text-align: right; }
+  .scroll { overflow-x: auto; }
+  details { margin-top: 8px; color: var(--text-secondary); font-size: 13px; }
+  summary { cursor: pointer; }
+  .empty { color: var(--text-muted); font-size: 14px; padding: 20px 0; text-align: center; }
+  .status { margin: 10px 0; color: var(--text-secondary); }
+  .error { color: var(--status-critical); font-weight: 700; }
+  .loading .card, .loading .tiles, .loading .hero { opacity: 0.5; transition: opacity .2s; }
+  .legend { display: flex; gap: 14px; color: var(--text-secondary); font-size: 13px; margin: 2px 0 8px; }
+  .legend i { display: inline-block; width: 10px; height: 10px; border-radius: 3px; margin-right: 6px; vertical-align: -1px; }
+</style>
+</head>
+<body>
+<main id="root">
+  <div class="top">
+    <h1>Yelnats analytics</h1>
+    <span class="muted" id="updated"></span>
+  </div>
+  <p class="sub">Real players on yelnatsgame.com only. Your ?dev=1 phone, test servers and ?puzzle=N previews are left out.</p>
+
+  <div class="filters">
+    <div class="seg" role="group" aria-label="Date range" id="range">
+      <button data-days="1">Today</button><button data-days="7">7 days</button><button data-days="30">30 days</button><button data-days="90">90 days</button>
+    </div>
+    <label class="muted" for="puzzle">Puzzle</label>
+    <select id="puzzle"></select>
+    <button class="refresh" id="refresh">↻ Refresh</button>
+  </div>
+  <p class="status" id="status">Loading…</p>
+
+  <div class="hero" id="hero"></div>
+  <div class="tiles" id="tiles"></div>
+
+  <div class="grid2">
+    <section class="card wide">
+      <h2>Daily players</h2>
+      <p class="sub">People who opened the daily puzzle each day (Pacific time).</p>
+      <div id="daily"></div>
+    </section>
+    <section class="card">
+      <h2 id="funnel-title">Funnel</h2>
+      <p class="sub">Unique players reaching each step.</p>
+      <div id="funnel"></div>
+    </section>
+    <section class="card">
+      <h2 id="tries-title">Tries to solve</h2>
+      <p class="sub">How many tries solvers took; X = ran out.</p>
+      <div id="tries"></div>
+    </section>
+    <section class="card">
+      <h2 id="guesses-title">What people misheard</h2>
+      <p class="sub">Most common wrong guesses.</p>
+      <div id="guesses"></div>
+    </section>
+    <section class="card">
+      <h2>How to play</h2>
+      <p class="sub">The daily puzzle's slideshow.</p>
+      <div id="howto"></div>
+    </section>
+    <section class="card wide">
+      <h2>Every puzzle</h2>
+      <p class="sub">Solve rate counts players who finished (solved or ran out).</p>
+      <div class="scroll" id="table"></div>
+    </section>
+    <section class="card wide">
+      <h2>Play with friends (chain game)</h2>
+      <div class="tiles" id="chain" style="margin-top:8px"></div>
+    </section>
+  </div>
+</main>
+<div class="tip" id="tip"></div>
+<script>
+const $ = (id) => document.getElementById(id);
+const el = (tag, attrs = {}, text) => {
+  const n = document.createElement(tag);
+  for (const [k, v] of Object.entries(attrs)) n.setAttribute(k, v);
+  if (text != null) n.textContent = text; // user-provided strings always go in as text
+  return n;
+};
+const SVG = 'http://www.w3.org/2000/svg';
+const s = (tag, attrs = {}, text) => {
+  const n = document.createElementNS(SVG, tag);
+  for (const [k, v] of Object.entries(attrs)) n.setAttribute(k, v);
+  if (text != null) n.textContent = text;
+  return n;
+};
+const fmt = (n) => (n == null ? '—' : n >= 10000 ? (n / 1000).toFixed(1).replace(/\.0$/, '') + 'K' : n.toLocaleString());
+const pct = (x) => (x == null ? '—' : Math.round(x * 100) + '%');
+const dec = (x) => (x == null ? '—' : x.toFixed(1));
+let state = { days: 7, puzzle: null, data: null };
+
+// ---- tooltip ----
+const tip = $('tip');
+function showTip(evt, value, label, color) {
+  tip.replaceChildren();
+  tip.append(el('b', {}, value));
+  const row = el('span');
+  if (color) { const k = el('span', { class: 'key' }); k.style.background = color; row.append(k); }
+  row.append(document.createTextNode(label));
+  tip.append(row);
+  const r = document.body.getBoundingClientRect();
+  tip.style.left = Math.min(evt.clientX + 12, window.innerWidth - tip.offsetWidth - 8) + 'px';
+  tip.style.top = evt.clientY + window.scrollY - tip.offsetHeight - 12 + 'px';
+  tip.style.opacity = 1;
+}
+const hideTip = () => (tip.style.opacity = 0);
+
+function niceMax(v) {
+  if (v <= 4) return 4;
+  const p = Math.pow(10, Math.floor(Math.log10(v)));
+  for (const m of [1, 2, 2.5, 5, 10]) if (m * p >= v) return m * p;
+  return v;
+}
+
+// ---- line chart: daily players ----
+function lineChart(box, points) {
+  box.replaceChildren();
+  if (!points.some((p) => p.players)) { box.append(el('p', { class: 'empty' }, 'No players in this range yet.')); return; }
+  // Drawn at the card's real width so text and the line keep their size on phones.
+  const W = Math.max(300, Math.round(box.clientWidth || 1000)), H = 220, L = 34, R = 14, T = 14, B = 26;
+  const max = niceMax(Math.max(...points.map((p) => p.players)));
+  const x = (i) => L + (points.length === 1 ? (W - L - R) / 2 : (i * (W - L - R)) / (points.length - 1));
+  const y = (v) => T + (H - T - B) * (1 - v / max);
+  const svg = s('svg', { viewBox: `0 0 ${W} ${H}`, width: '100%', role: 'img', 'aria-label': 'Daily players line chart' });
+  for (const t of [0, max / 2, max]) {
+    svg.append(s('line', { x1: L, x2: W - R, y1: y(t), y2: y(t), stroke: 'var(--grid)', 'stroke-width': 1 }));
+    svg.append(s('text', { x: L - 6, y: y(t) + 4, 'text-anchor': 'end', class: 'axis' }, fmt(t)));
+  }
+  const step = Math.max(1, Math.ceil(points.length / Math.max(3, Math.floor(W / 110))));
+  points.forEach((p, i) => { if (i % step === 0 || i === points.length - 1) svg.append(s('text', { x: x(i), y: H - 6, 'text-anchor': 'middle', class: 'axis' }, p.day.slice(5))); });
+  const d = points.map((p, i) => `${i ? 'L' : 'M'}${x(i)},${y(p.players)}`).join(' ');
+  svg.append(s('path', { d: d + ` L${x(points.length - 1)},${y(0)} L${x(0)},${y(0)} Z`, fill: 'var(--series-1)', opacity: 0.1 }));
+  svg.append(s('path', { d, fill: 'none', stroke: 'var(--series-1)', 'stroke-width': 2, 'stroke-linejoin': 'round', 'stroke-linecap': 'round' }));
+  const last = points[points.length - 1];
+  svg.append(s('circle', { cx: x(points.length - 1), cy: y(last.players), r: 5, fill: 'var(--series-1)', stroke: 'var(--surface-1)', 'stroke-width': 2 }));
+  svg.append(s('text', { x: x(points.length - 1) - 8, y: y(last.players) - 10, 'text-anchor': 'end', class: 'val' }, fmt(last.players)));
+  // crosshair
+  const cross = s('line', { y1: T, y2: H - B, stroke: 'var(--text-muted)', 'stroke-width': 1, opacity: 0 });
+  const dot = s('circle', { r: 5, fill: 'var(--series-1)', stroke: 'var(--surface-1)', 'stroke-width': 2, opacity: 0 });
+  svg.append(cross, dot);
+  const hit = s('rect', { x: L, y: T, width: W - L - R, height: H - T - B, fill: 'transparent' });
+  hit.addEventListener('pointermove', (e) => {
+    const r = svg.getBoundingClientRect();
+    const px = ((e.clientX - r.left) / r.width) * W;
+    const i = Math.max(0, Math.min(points.length - 1, Math.round(((px - L) / (W - L - R)) * (points.length - 1))));
+    const p = points[i];
+    cross.setAttribute('x1', x(i)); cross.setAttribute('x2', x(i)); cross.setAttribute('opacity', 1);
+    dot.setAttribute('cx', x(i)); dot.setAttribute('cy', y(p.players)); dot.setAttribute('opacity', 1);
+    showTip(e, `${fmt(p.players)} players`, `${p.day} · ${fmt(p.visitors)} visitors`, 'var(--series-1)');
+  });
+  hit.addEventListener('pointerleave', () => { cross.setAttribute('opacity', 0); dot.setAttribute('opacity', 0); hideTip(); });
+  svg.append(hit);
+  box.append(svg);
+  // table view
+  const det = el('details'); det.append(el('summary', {}, 'Show as table'));
+  const tbl = el('table'); const hr = el('tr'); hr.append(el('th', {}, 'Day'), el('th', { class: 'num' }, 'Players'), el('th', { class: 'num' }, 'Visitors')); tbl.append(hr);
+  points.slice().reverse().forEach((p) => { const tr = el('tr'); tr.append(el('td', {}, p.day), el('td', { class: 'num' }, fmt(p.players)), el('td', { class: 'num' }, fmt(p.visitors))); tbl.append(tr); });
+  det.append(tbl); box.append(det);
+}
+
+// ---- horizontal bars (funnel) ----
+function barRows(box, rows, { base } = {}) {
+  box.replaceChildren();
+  if (!rows.some((r) => r.value)) { box.append(el('p', { class: 'empty' }, 'Nothing yet for this puzzle.')); return; }
+  const W = 340, rowH = 32, LBL = 92, R = 66;
+  const max = Math.max(...rows.map((r) => r.value), 1);
+  const svg = s('svg', { viewBox: `0 0 ${W} ${rows.length * rowH + 4}`, width: '100%', role: 'img', 'aria-label': 'Funnel bar chart' });
+  rows.forEach((r, i) => {
+    const y = i * rowH + 6, h = 20, w = ((W - LBL - R) * r.value) / max;
+    svg.append(s('text', { x: 0, y: y + 15, class: 'lbl' }, r.label));
+    const color = r.color || 'var(--series-1)';
+    // square at the baseline, 4px rounded data-end
+    const path = w > 0 ? `M${LBL},${y} H${LBL + Math.max(0, w - 4)} Q${LBL + w},${y} ${LBL + w},${y + 4} V${y + h - 4} Q${LBL + w},${y + h} ${LBL + Math.max(0, w - 4)},${y + h} H${LBL} Z` : '';
+    const hit = s('rect', { x: LBL, y: y - 6, width: W - LBL, height: rowH, class: 'hit' });
+    const mark = s('path', { d: path, fill: color, class: 'mark' });
+    const share = base ? ` · ${pct(r.value / base)}` : '';
+    svg.append(hit, mark, s('text', { x: LBL + w + 6, y: y + 15, class: 'val' }, fmt(r.value) + share));
+    hit.addEventListener('pointermove', (e) => showTip(e, fmt(r.value) + share, r.label, color));
+    hit.addEventListener('pointerleave', hideTip);
+  });
+  box.append(svg);
+}
+
+// ---- columns (tries) ----
+function columns(box, cols) {
+  box.replaceChildren();
+  if (!cols.some((c) => c.count)) { box.append(el('p', { class: 'empty' }, 'No finished games for this puzzle yet.')); return; }
+  const legend = el('div', { class: 'legend' });
+  const l1 = el('span'); const i1 = el('i'); i1.style.background = 'var(--series-1)'; l1.append(i1, document.createTextNode('Solved in N tries'));
+  const l2 = el('span'); const i2 = el('i'); i2.style.background = 'var(--status-critical)'; l2.append(i2, document.createTextNode('✕ Out of tries'));
+  legend.append(l1, l2); box.append(legend);
+  const W = 340, H = 190, B = 22, T = 18, colW = 24;
+  const max = Math.max(...cols.map((c) => c.count), 1);
+  const band = W / cols.length;
+  const svg = s('svg', { viewBox: `0 0 ${W} ${H}`, width: '100%', role: 'img', 'aria-label': 'Tries distribution' });
+  svg.append(s('line', { x1: 0, x2: W, y1: H - B, y2: H - B, stroke: 'var(--grid)', 'stroke-width': 1 }));
+  cols.forEach((c, i) => {
+    const cx = band * i + band / 2, h = ((H - B - T) * c.count) / max, top = H - B - h;
+    const color = c.failed ? 'var(--status-critical)' : 'var(--series-1)';
+    const d = h > 0 ? `M${cx - colW / 2},${H - B} V${top + 4} Q${cx - colW / 2},${top} ${cx - colW / 2 + 4},${top} H${cx + colW / 2 - 4} Q${cx + colW / 2},${top} ${cx + colW / 2},${top + 4} V${H - B} Z` : '';
+    const hit = s('rect', { x: band * i, y: T, width: band, height: H - T, class: 'hit' });
+    svg.append(hit, s('path', { d, fill: color, class: 'mark' }));
+    if (c.count) svg.append(s('text', { x: cx, y: top - 5, 'text-anchor': 'middle', class: 'val' }, fmt(c.count)));
+    svg.append(s('text', { x: cx, y: H - 6, 'text-anchor': 'middle', class: 'axis' }, c.failed ? '✕' : c.label));
+    const what = c.failed ? 'ran out of tries' : `solved in ${c.label} ${c.label === '1' ? 'try' : 'tries'}`;
+    hit.addEventListener('pointermove', (e) => showTip(e, `${fmt(c.count)} players`, what, color));
+    hit.addEventListener('pointerleave', hideTip);
+  });
+  box.append(svg);
+}
+
+function tiles(box, list) {
+  box.replaceChildren();
+  for (const [label, value] of list) {
+    const t = el('div', { class: 'tile' });
+    t.append(el('div', { class: 'label' }, label), el('div', { class: 'value' }, value));
+    box.append(t);
+  }
+}
+
+function render() {
+  const d = state.data;
+  if (!d) return;
+  $('updated').textContent = `Updated ${new Date(d.generatedAt).toLocaleTimeString([], { hour: 'numeric', minute: '2-digit' })}` + (d.truncated ? ' · over 10,000 events, some left out' : '');
+  $('hero').replaceChildren(el('b', {}, fmt(d.totals.players)), el('span', {}, `daily players · ${d.days === 1 ? 'today' : 'last ' + d.days + ' days'}`));
+  tiles($('tiles'), [
+    ['Visitors', fmt(d.totals.visitors)],
+    ['Solves', fmt(d.totals.solves)],
+    ['Solve rate', pct(d.totals.solveRate)],
+    ['Avg tries to solve', dec(d.totals.avgTries)],
+    ['Mind readers', fmt(d.totals.mindReaders)],
+    ['Shares', fmt(d.totals.shares)],
+    ['Returning players', fmt(d.totals.returning)],
+  ]);
+  lineChart($('daily'), d.daily);
+
+  // puzzle picker (keep the selection if it still exists)
+  const sel = $('puzzle');
+  const nums = d.puzzles.map((p) => p.puzzle);
+  if (!nums.includes(state.puzzle)) state.puzzle = nums[0] ?? null;
+  sel.replaceChildren(...(nums.length ? nums.map((n) => { const o = el('option', { value: n }, `#${n}`); if (n === state.puzzle) o.selected = true; return o; }) : [el('option', {}, '—')]));
+  const p = d.puzzles.find((x) => x.puzzle === state.puzzle);
+  $('funnel-title').textContent = p ? `Funnel · puzzle #${p.puzzle}` : 'Funnel';
+  $('tries-title').textContent = p ? `Tries to solve · #${p.puzzle}` : 'Tries to solve';
+  $('guesses-title').textContent = p ? `What people misheard · #${p.puzzle}` : 'What people misheard';
+  if (p) {
+    barRows($('funnel'), [
+      { label: 'Opened', value: p.viewed },
+      { label: 'Listened', value: p.listened },
+      { label: 'Mimicked', value: p.mimicked },
+      { label: 'Guessed', value: p.guessed },
+      { label: 'Solved', value: p.solved },
+      { label: 'Out of tries', value: p.failed, color: 'var(--status-critical)' },
+    ], { base: p.viewed });
+    columns($('tries'), p.tries);
+    const g = $('guesses'); g.replaceChildren();
+    if (!p.wrongGuesses.length) g.append(el('p', { class: 'empty' }, 'No wrong guesses yet.'));
+    else {
+      const tbl = el('table'); const hr = el('tr'); hr.append(el('th', {}, 'Guess'), el('th', { class: 'num' }, 'Times')); tbl.append(hr);
+      for (const w of p.wrongGuesses) { const tr = el('tr'); tr.append(el('td', {}, w.text), el('td', { class: 'num' }, fmt(w.count))); tbl.append(tr); }
+      g.append(tbl);
+    }
+  } else {
+    for (const id of ['funnel', 'tries', 'guesses']) $(id).replaceChildren(el('p', { class: 'empty' }, 'No puzzle plays in this range yet.'));
+  }
+
+  const h = d.howto.daily;
+  const hb = $('howto');
+  barRows(hb, [
+    { label: 'Opened', value: h.opened },
+    { label: 'Finished', value: h.finished },
+    { label: 'Skipped', value: h.skipped },
+    { label: 'Closed early', value: h.dismissed },
+  ], { base: h.opened });
+  const left = Object.entries(h.leftOnSlide);
+  if (left.length) hb.append(el('p', { class: 'muted' }, 'Left early on slide: ' + left.sort((a, b) => a[0] - b[0]).map(([k, v]) => `${k} (${v})`).join(', ')));
+
+  const t = $('table'); t.replaceChildren();
+  if (!d.puzzles.length) t.append(el('p', { class: 'empty' }, 'No puzzle plays in this range yet.'));
+  else {
+    const tbl = el('table'); const hr = el('tr');
+    for (const [h2, num] of [['Puzzle'], ['Opened', 1], ['Listened', 1], ['Solved', 1], ['Out of tries', 1], ['Solve rate', 1], ['Avg tries', 1], ['Mind readers', 1], ['Shared', 1]]) hr.append(el('th', num ? { class: 'num' } : {}, h2));
+    tbl.append(hr);
+    for (const p2 of d.puzzles) {
+      const tr = el('tr');
+      tr.append(el('td', {}, '#' + p2.puzzle), ...[p2.viewed, p2.listened, p2.solved, p2.failed].map((v) => el('td', { class: 'num' }, fmt(v))),
+        el('td', { class: 'num' }, pct(p2.solveRate)), el('td', { class: 'num' }, dec(p2.avgTries)), el('td', { class: 'num' }, fmt(p2.mindReaders)), el('td', { class: 'num' }, fmt(p2.shared)));
+      tbl.append(tr);
+    }
+    t.append(tbl);
+  }
+  tiles($('chain'), [
+    ['"Play with friends" taps', fmt(d.chain.playWithFriends)],
+    ['Chains started', fmt(d.chain.started)],
+    ['Turns opened', fmt(d.chain.turnsOpened)],
+    ['New players via a friend', fmt(d.chain.newPlayersOnTurns)],
+    ['Turns sent', fmt(d.chain.turnsSent)],
+  ]);
+}
+
+async function load(fresh) {
+  $('root').classList.add('loading');
+  $('status').textContent = 'Loading…';
+  $('status').className = 'status';
+  try {
+    const r = await fetch(`/api/stats?days=${state.days}${fresh ? '&fresh=1' : ''}`);
+    const d = await r.json();
+    if (!r.ok) throw new Error(d.error || r.status);
+    state.data = d;
+    $('status').textContent = '';
+    render();
+  } catch (e) {
+    $('status').textContent = "Couldn't load analytics: " + e.message;
+    $('status').className = 'status error';
+  } finally {
+    $('root').classList.remove('loading');
+  }
+}
+
+for (const b of $('range').querySelectorAll('button')) {
+  b.setAttribute('aria-pressed', String(Number(b.dataset.days) === state.days));
+  b.onclick = () => {
+    state.days = Number(b.dataset.days);
+    $('range').querySelectorAll('button').forEach((x) => x.setAttribute('aria-pressed', String(x === b)));
+    load();
+  };
+}
+$('puzzle').onchange = (e) => { state.puzzle = Number(e.target.value); render(); };
+$('refresh').onclick = () => load(true);
+let resizeTimer;
+window.addEventListener('resize', () => { clearTimeout(resizeTimer); resizeTimer = setTimeout(render, 150); });
+load();
+</script>
+</body>
+</html>

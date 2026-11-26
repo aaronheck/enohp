@@ -1,0 +1,149 @@
+'use strict';
+// Turns raw analytics events (from the Lambda's CloudWatch logs) into dashboard numbers.
+// Pure functions so they can be tested without AWS.
+
+const TZ = 'America/Los_Angeles';
+const dayOf = (ts) =>
+  new Intl.DateTimeFormat('en-CA', { timeZone: TZ, year: 'numeric', month: '2-digit', day: '2-digit' }).format(new Date(ts));
+
+/** Keep real production traffic only. */
+function isReal(e) {
+  return !e.dev && /^(www\.)?yelnatsgame\.com$/.test(e.host || '');
+}
+
+const uniq = (list) => new Set(list).size;
+const normGuess = (s) => String(s || '').toLowerCase().replace(/\s+/g, ' ').trim();
+
+function summarise(events, { days, now = Date.now() }) {
+  const real = events.filter(isReal).sort((a, b) => a.ts - b.ts);
+  const by = (name) => real.filter((e) => e.name === name);
+  const devicesWhere = (name, pred = () => true) => uniq(by(name).filter(pred).map((e) => e.device));
+
+  // ---- daily active players (any event / played the daily) ----
+  const dayList = [];
+  for (let i = days - 1; i >= 0; i--) dayList.push(dayOf(now - i * 86400000));
+  const activeByDay = Object.fromEntries(dayList.map((d) => [d, new Set()]));
+  const playersByDay = Object.fromEntries(dayList.map((d) => [d, new Set()]));
+  for (const e of real) {
+    const d = dayOf(e.ts);
+    if (activeByDay[d]) activeByDay[d].add(e.device);
+    if (playersByDay[d] && e.name === 'daily_view' && !e.forced) playersByDay[d].add(e.device);
+  }
+  const daily = dayList.map((d) => ({ day: d, visitors: activeByDay[d].size, players: playersByDay[d].size }));
+
+  // ---- per puzzle ----
+  const puzzles = {};
+  const P = (n) =>
+    (puzzles[n] = puzzles[n] || {
+      puzzle: n,
+      viewed: new Set(), listened: new Set(), mimicked: new Set(), guessed: new Set(), solved: new Set(), failed: new Set(),
+      shared: new Set(), tries: [], mindReaders: 0, wrong: {},
+    });
+  for (const e of real) {
+    const n = Number(e.puzzle);
+    if (!Number.isInteger(n) || n < 1) continue;
+    if (e.forced) continue; // ?puzzle=N previews aren't real plays
+    const p = P(n);
+    if (e.name === 'daily_view') p.viewed.add(e.device);
+    if (e.name === 'daily_listened') p.listened.add(e.device);
+    if (e.name === 'mimic') p.mimicked.add(e.device);
+    if (e.name === 'guess') {
+      p.guessed.add(e.device);
+      if (e.correct === false && e.text) {
+        const g = normGuess(e.text);
+        p.wrong[g] = (p.wrong[g] || 0) + 1;
+      }
+    }
+    if (e.name === 'daily_solved' && !p.solved.has(e.device)) {
+      p.solved.add(e.device);
+      if (Number.isFinite(e.tries)) p.tries.push(e.tries);
+      if (e.mind_reader) p.mindReaders++;
+    }
+    if (e.name === 'daily_failed') p.failed.add(e.device);
+    if (e.name === 'share' && e.puzzle) p.shared.add(e.device);
+  }
+  const puzzleRows = Object.values(puzzles)
+    .map((p) => {
+      const finished = p.solved.size + p.failed.size;
+      const dist = [1, 2, 3, 4, 5].map((t) => ({ label: String(t), count: p.tries.filter((x) => x === t).length }));
+      dist.push({ label: 'X', count: p.failed.size, failed: true });
+      return {
+        puzzle: p.puzzle,
+        viewed: p.viewed.size,
+        listened: p.listened.size,
+        mimicked: p.mimicked.size,
+        guessed: p.guessed.size,
+        solved: p.solved.size,
+        failed: p.failed.size,
+        solveRate: finished ? p.solved.size / finished : null,
+        avgTries: p.tries.length ? p.tries.reduce((a, b) => a + b, 0) / p.tries.length : null,
+        mindReaders: p.mindReaders,
+        shared: p.shared.size,
+        tries: dist,
+        wrongGuesses: Object.entries(p.wrong)
+          .sort((a, b) => b[1] - a[1])
+          .slice(0, 12)
+          .map(([text, count]) => ({ text, count })),
+      };
+    })
+    // Puzzles nobody genuinely opened are ?puzzle=N previews (only the view is flagged).
+    .filter((p) => p.viewed > 0)
+    .sort((a, b) => b.puzzle - a.puzzle);
+
+  // ---- headline numbers ----
+  const players = devicesWhere('daily_view', (e) => !e.forced);
+  const allSolves = puzzleRows.reduce((s, p) => s + p.solved, 0);
+  const allFinished = puzzleRows.reduce((s, p) => s + p.solved + p.failed, 0);
+  const allTries = puzzleRows.flatMap((p) => p.tries.flatMap((t) => (t.failed ? [] : Array(t.count).fill(Number(t.label)))));
+  const deviceDays = {};
+  for (const e of real) (deviceDays[e.device] = deviceDays[e.device] || new Set()).add(dayOf(e.ts));
+  const returning = Object.values(deviceDays).filter((s) => s.size >= 2).length;
+
+  // ---- how-to ----
+  const howto = {};
+  for (const game of ['daily', 'chain']) {
+    const closes = by('howto_close').filter((e) => e.game === game);
+    const skipSlides = {};
+    for (const e of closes.filter((c) => c.how !== 'done')) skipSlides[e.slide] = (skipSlides[e.slide] || 0) + 1;
+    howto[game] = {
+      opened: by('howto_open').filter((e) => e.game === game).length,
+      autoOpened: by('howto_open').filter((e) => e.game === game && e.source === 'auto').length,
+      finished: closes.filter((e) => e.how === 'done').length,
+      skipped: closes.filter((e) => e.how === 'skip').length,
+      dismissed: closes.filter((e) => e.how === 'dismiss').length,
+      leftOnSlide: skipSlides,
+    };
+  }
+
+  const shareResults = {};
+  for (const e of by('share')) shareResults[e.result || 'unknown'] = (shareResults[e.result || 'unknown'] || 0) + 1;
+
+  return {
+    generatedAt: now,
+    days,
+    totals: {
+      visitors: uniq(real.map((e) => e.device)),
+      players,
+      solves: allSolves,
+      solveRate: allFinished ? allSolves / allFinished : null,
+      avgTries: allTries.length ? allTries.reduce((a, b) => a + b, 0) / allTries.length : null,
+      mindReaders: puzzleRows.reduce((s, p) => s + p.mindReaders, 0),
+      shares: by('share').length,
+      returning,
+      events: real.length,
+    },
+    daily,
+    puzzles: puzzleRows,
+    howto,
+    shareResults,
+    chain: {
+      started: by('chain_started').length,
+      turnsOpened: by('turn_opened').length,
+      newPlayersOnTurns: by('turn_opened').filter((e) => e.new_player && !e.starter).length,
+      turnsSent: by('turn_sent').length,
+      playWithFriends: by('play_with_friends').length,
+    },
+  };
+}
+
+module.exports = { summarise, isReal, dayOf };
