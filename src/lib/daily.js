@@ -72,9 +72,9 @@ export function isMindReader(state) {
   return state.solved && state.mimics === 0 && state.guesses.length === 0;
 }
 
-/** "2/5", or "X/5" when out of tries. */
+/** "1 try", "3 tries" or "Out of tries". Fewer is better, so no "/5". */
 export function score(state) {
-  return `${state.failed ? 'X' : triesUsed(state)}/${MAX_TRIES}`;
+  return state.failed ? 'Out of tries' : plural(triesUsed(state), 'try');
 }
 
 export function plural(n, word) {

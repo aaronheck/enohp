@@ -23,7 +23,7 @@ function roundRect(g, x, y, w, h, r) {
 }
 
 /**
- * result: { number, score: '2/5', failed, mindReader, used, max, actions: ['mimic','miss','hit'], streak }
+ * result: { number, score: '3 tries', failed, mindReader, used, max, actions: ['mimic','miss','hit'], streak }
  * Resolves to a PNG Blob, or null if the browser can't draw it.
  */
 export async function drawShareImage(result) {
@@ -69,8 +69,14 @@ export async function drawShareImage(result) {
     g.fillText(`Puzzle #${result.number}`, 0, -270);
 
     g.fillStyle = result.failed ? C.tomato : C.ink;
-    g.font = `800 260px ${FONT}`;
-    g.fillText(result.score, 0, -40);
+    // Largest size that fits the card ("3 tries", "Out of tries").
+    let size = 200;
+    g.font = `800 ${size}px ${FONT}`;
+    while (g.measureText(result.score).width > 780 && size > 80) {
+      size -= 8;
+      g.font = `800 ${size}px ${FONT}`;
+    }
+    g.fillText(result.score, 0, -60);
 
     // Tries dots
     const r = 30;
