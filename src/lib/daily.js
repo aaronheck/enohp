@@ -113,35 +113,3 @@ export function msUntilNextPuzzle(now = Date.now()) {
   const elapsed = ((parts.hour % 24) * 3600 + parts.minute * 60 + parts.second) * 1000 + (now % 1000);
   return 86400000 - elapsed;
 }
-
-// Puzzle #1 was on this date (Pacific). Must match the backend's DAILY_LAUNCH; it's only
-// used to show the number on the pre-game screen before the backend answers.
-export const DAILY_LAUNCH = process.env.REACT_APP_DAILY_LAUNCH || '2026-11-25';
-const TZ = 'America/Los_Angeles';
-const ymd = (ms) => new Intl.DateTimeFormat('en-CA', { timeZone: TZ, year: 'numeric', month: '2-digit', day: '2-digit' }).format(new Date(ms));
-const dayIndex = (d) => Math.round(Date.parse(`${d}T00:00:00Z`) / 86400000);
-
-/** Today's puzzle number, worked out on the device (same rule as the backend). */
-export function todaysNumber(now = Date.now()) {
-  return Math.max(1, dayIndex(ymd(now)) - dayIndex(DAILY_LAUNCH) + 1);
-}
-
-/** "Thursday, Nov 26" in Pacific time (the puzzle's day). */
-export function puzzleDateLabel(now = Date.now()) {
-  return new Intl.DateTimeFormat('en-US', { timeZone: TZ, weekday: 'long', month: 'short', day: 'numeric' }).format(new Date(now));
-}
-
-/** Lifetime numbers for the pre-game screen. */
-export function playerStats(today) {
-  const list = Object.entries(load().puzzles)
-    .filter(([n]) => Number(n) <= today)
-    .map(([, p]) => ({ ...blank(), ...p }));
-  const finished = list.filter((p) => p.solved || p.failed);
-  const solved = finished.filter((p) => p.solved);
-  return {
-    played: finished.length,
-    solved: solved.length,
-    avgTries: solved.length ? solved.reduce((s, p) => s + triesUsed(p), 0) / solved.length : null,
-    streak: streak(today),
-  };
-}
