@@ -17,6 +17,9 @@ import {
   hasPlayedDaily,
   streak,
   updatePuzzleState,
+  todaysNumber,
+  puzzleDateLabel,
+  playerStats,
 } from '../lib/daily';
 import { shareLink } from '../lib/share';
 import { drawShareImage } from '../lib/shareImage';
@@ -60,9 +63,14 @@ function useClip(url) {
   return { blob, error };
 }
 
+// The pre-game screen shows once per visit; moving around the app after that skips it.
+let pregameSeen = false;
+
 export default function Daily() {
   const [puzzle, setPuzzle] = useState(null);
   const [loadError, setLoadError] = useState(null);
+  const [playing, setPlaying] = useState(() => pregameSeen);
+  const [autoPlay, setAutoPlay] = useState(false);
 
   // TEMPORARY (pre-launch): ?puzzle=3 plays puzzle #3 instead of today's.
   const [forced] = useState(() => {
@@ -75,6 +83,21 @@ export default function Daily() {
       setLoadError(e.status === 503 ? "Today's puzzle isn't ready yet. Check back soon!" : e.message)
     );
   }, [forced]);
+
+  if (!playing) {
+    return (
+      <Pregame
+        puzzle={puzzle}
+        loadError={loadError}
+        forced={forced}
+        onPlay={(auto) => {
+          pregameSeen = true;
+          setAutoPlay(auto);
+          setPlaying(true);
+        }}
+      />
+    );
+  }
 
   if (loadError) {
     return (
@@ -90,7 +113,95 @@ export default function Daily() {
   }
   if (!puzzle) return <PuzzleSkeleton />;
 
-  return <Puzzle puzzle={puzzle} forced={forced && puzzle.number === forced} />;
+  return <Puzzle puzzle={puzzle} forced={forced && puzzle.number === forced} autoPlay={autoPlay} />;
+}
+
+/**
+ * The landing screen: shows instantly (the puzzle number is worked out on the device)
+ * while today's puzzle loads behind it. The "Let's play" tap also lets iPhones play
+ * audio, so returning players hear the puzzle straight away.
+ */
+function Pregame({ puzzle, loadError, forced, onPlay }) {
+  const n = puzzle ? puzzle.number : forced || todaysNumber();
+  const today = getPuzzleState(n);
+  const finished = today.solved || today.failed;
+  const started = !finished && (today.heard || today.mimics > 0 || today.guesses.length > 0);
+  const returning = hasPlayedDaily();
+  const stats = playerStats(n);
+  const next = useCountdown();
+  const [waiting, setWaiting] = useState(null); // tap time, if they tapped before it loaded
+
+  const go = (waitedMs) => {
+    track('pregame_play', { puzzle: n, state: finished ? 'finished' : started ? 'in_progress' : 'new', waited_ms: waitedMs });
+    // Returning players go straight into the audio; first-timers get How to play first.
+    onPlay(returning && !finished);
+  };
+  useEffect(() => {
+    if (waiting != null && (puzzle || loadError)) go(Math.round(performance.now() - waiting));
+  }, [waiting, puzzle, loadError]); // eslint-disable-line react-hooks/exhaustive-deps
+
+  const tap = () => {
+    unlockAudio(); // inside the tap, so the puzzle can start playing by itself
+    if (puzzle || loadError) go(0);
+    else setWaiting(performance.now());
+  };
+
+  return (
+    <Screen left="yelnats" right={stats.streak > 0 ? `🔥 ${plural(stats.streak, 'day')}` : null}>
+      <p className="pregame-date">{puzzleDateLabel()}</p>
+      <h1 className="title pregame-title">
+        Yelnats Daily
+        <br />
+        <span className="accent">Puzzle #{n}</span>
+      </h1>
+      <p className="lede" style={{ marginTop: 10 }}>
+        {returning ? 'A new backwards phrase every day.' : 'Hear a phrase played backwards. Mimic it. Guess what it says.'}
+      </p>
+
+      {stats.played > 0 && (
+        <div className="pregame-stats">
+          <div>
+            <b>{stats.streak}</b>
+            <span>🔥 streak</span>
+          </div>
+          <div>
+            <b>{stats.played}</b>
+            <span>played</span>
+          </div>
+          <div>
+            <b>{Math.round((stats.solved / stats.played) * 100)}%</b>
+            <span>solved</span>
+          </div>
+          <div>
+            <b>{stats.avgTries == null ? '–' : stats.avgTries.toFixed(1)}</b>
+            <span>avg tries</span>
+          </div>
+        </div>
+      )}
+
+      <div className="spacer" />
+      <div className="stack">
+        <Button onClick={tap} disabled={waiting != null} className={'pregame-play' + (waiting != null ? ' is-waiting' : '')}>
+          {waiting != null ? 'Rewinding…' : finished ? 'See your result' : started ? 'Keep going' : 'Let’s play'}
+        </Button>
+        {finished && (
+          <p className="next-puzzle">
+            Next puzzle in <b>{next}</b>
+          </p>
+        )}
+        {!returning && !practiceDone().length && (
+          <Link to="/practice/1" className="btn-text pregame-practice" onClick={() => (pregameSeen = true)}>
+            First time? Try a quick practice game →
+          </Link>
+        )}
+      </div>
+      <p className="pregame-friends">
+        <Link to="/friends" onClick={() => (pregameSeen = true)}>
+          Play with friends
+        </Link>
+      </p>
+    </Screen>
+  );
 }
 
 /**
@@ -123,7 +234,7 @@ function PuzzleSkeleton() {
   );
 }
 
-function Puzzle({ puzzle, forced }) {
+function Puzzle({ puzzle, forced, autoPlay }) {
   const n = puzzle.number;
   const [state, setState] = useState(() => getPuzzleState(n));
   // One voice for now; the backend still offers others for later.
@@ -317,6 +428,7 @@ function Puzzle({ puzzle, forced }) {
       <div className="section">
         <PuzzleClip
           url={puzzle.audio[voice]}
+          autoPlay={autoPlay && !howOpen}
           highlight={!heard}
           onEnded={() => {
             if (heard) return;
@@ -447,7 +559,7 @@ function DevReset() {
   );
 }
 
-function PuzzleClip({ url, highlight, onEnded }) {
+function PuzzleClip({ url, highlight, onEnded, autoPlay }) {
   const { blob, error } = useClip(url);
   return (
     <ReversedPlayer
@@ -460,6 +572,7 @@ function PuzzleClip({ url, highlight, onEnded }) {
       highlight={highlight}
       onEnded={onEnded}
       tapAnywhere
+      autoPlay={autoPlay}
       reverse={false}
     />
   );
