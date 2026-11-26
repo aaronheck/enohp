@@ -59,6 +59,7 @@
   .loading .card, .loading .tiles, .loading .hero { opacity: 0.5; transition: opacity .2s; }
   .legend { display: flex; gap: 14px; color: var(--text-secondary); font-size: 13px; margin: 2px 0 8px; }
   .legend i { display: inline-block; width: 10px; height: 10px; border-radius: 3px; margin-right: 6px; vertical-align: -1px; }
+.mini { font-size: 13px; font-weight: 700; color: var(--text-muted); margin: 14px 0 6px; text-transform: uppercase; letter-spacing: .04em; }
 </style>
 </head>
 <body>
@@ -107,6 +108,18 @@
       <h2>How to play</h2>
       <p class="sub">The daily puzzle's slideshow.</p>
       <div id="howto"></div>
+    </section>
+    <section class="card">
+      <h2>Who's playing</h2>
+      <p class="sub" id="aud-sub">Each device counted once (its latest visit).</p>
+      <h3 class="mini">Browser</h3><div id="aud-browser"></div>
+      <h3 class="mini">Device</h3><div id="aud-os"></div>
+    </section>
+    <section class="card">
+      <h2>Where (time zone)</h2>
+      <p class="sub">From the phone's clock setting. No GPS, no IP lookup.</p>
+      <div id="aud-tz"></div>
+      <h3 class="mini">Mic tip (iPhone Safari)</h3><div id="mictip"></div>
     </section>
     <section class="card wide">
       <h2>Every puzzle</h2>
@@ -210,10 +223,10 @@ function lineChart(box, points) {
 }
 
 // ---- horizontal bars (funnel) ----
-function barRows(box, rows, { base } = {}) {
+function barRows(box, rows, { base, label = 92, empty = 'Nothing yet for this puzzle.' } = {}) {
   box.replaceChildren();
-  if (!rows.some((r) => r.value)) { box.append(el('p', { class: 'empty' }, 'Nothing yet for this puzzle.')); return; }
-  const W = 340, rowH = 32, LBL = 92, R = 66;
+  if (!rows.some((r) => r.value)) { box.append(el('p', { class: 'empty' }, empty)); return; }
+  const W = 340, rowH = 32, LBL = label, R = 66;
   const max = Math.max(...rows.map((r) => r.value), 1);
   const svg = s('svg', { viewBox: `0 0 ${W} ${rows.length * rowH + 4}`, width: '100%', role: 'img', 'aria-label': 'Funnel bar chart' });
   rows.forEach((r, i) => {
@@ -325,6 +338,25 @@ function render() {
   ], { base: h.opened });
   const left = Object.entries(h.leftOnSlide);
   if (left.length) hb.append(el('p', { class: 'muted' }, 'Left early on slide: ' + left.sort((a, b) => a[0] - b[0]).map(([k, v]) => `${k} (${v})`).join(', ')));
+
+  const a = d.audience;
+  $('aud-sub').textContent = `${fmt(a.devices)} devices, each counted once (its latest visit).` + (a.homeScreen ? ` ${fmt(a.homeScreen)} play from the home screen.` : '');
+  const list = (id, rows) => {
+    if (!rows.length) return $(id).replaceChildren(el('p', { class: 'empty' }, 'No data yet (new since this update).'));
+    $(id).replaceChildren();
+    barRows($(id), rows.map((r) => ({ label: r.label, value: r.count })), { base: a.devices, label: 150 });
+  };
+  list('aud-browser', a.browsers);
+  list('aud-os', a.os);
+  list('aud-tz', a.timeZones);
+  const m = d.micTip;
+  $('mictip').replaceChildren();
+  barRows($('mictip'), [
+    { label: 'Popup shown', value: m.popupShown },
+    { label: 'Set it up', value: m.finished },
+    { label: 'Not now', value: m.notNow },
+    { label: 'Opened from results', value: m.cardOpened },
+  ], { base: m.popupShown || 1, label: 150, empty: 'Not shown to anyone yet.' });
 
   const t = $('table'); t.replaceChildren();
   if (!d.puzzles.length) t.append(el('p', { class: 'empty' }, 'No puzzle plays in this range yet.'));

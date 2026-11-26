@@ -14,7 +14,11 @@ function fakeEvents(days, now = Date.now()) {
       const base = { device, session: device, host: 'yelnatsgame.com', puzzle };
       let t = dayTs + i * 60000;
       const push = (name, props = {}) => ev.push({ t: 'evt', name, ts: (t += 4000), ...base, ...props });
-      push('page_view', { path: '/' });
+      const r = rnd();
+      const [browser, os] = r < 0.45 ? ['safari', 'ios'] : r < 0.6 ? ['chrome', 'android'] : r < 0.7 ? ['instagram', 'ios'] : r < 0.78 ? ['chrome', 'ios'] : r < 0.85 ? ['tiktok', 'android'] : r < 0.93 ? ['chrome', 'mac'] : ['samsung', 'android'];
+      const tzs = ['America/Los_Angeles', 'America/New_York', 'America/Chicago', 'America/Denver', 'Europe/London', 'America/Phoenix', 'Australia/Sydney', 'America/Toronto'];
+      push('page_view', { path: '/', browser, os, tz: tzs[Math.floor(rnd() * rnd() * tzs.length)], standalone: rnd() < 0.05 });
+      if (browser === 'safari' && rnd() < 0.08) { push('howto_open', { game: 'mic', source: 'popup' }); push('howto_close', { game: 'mic', source: 'popup', how: rnd() < 0.6 ? 'done' : 'skip' }); }
       push('daily_view', { forced: false });
       if (rnd() < 0.3) { push('howto_open', { game: 'daily', source: 'auto' }); push('howto_close', { game: 'daily', how: rnd() < 0.5 ? 'done' : 'skip', slide: 1 + Math.floor(rnd() * 4) }); }
       if (rnd() < 0.9) push('daily_listened'); else continue;

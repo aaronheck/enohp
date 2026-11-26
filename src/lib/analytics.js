@@ -64,13 +64,95 @@ export function flush(leaving = false) {
   if (queue.length) flush(leaving);
 }
 
+/**
+ * Coarse, non-identifying context for page views: browser, OS, in-app browsers
+ * (Instagram, TikTok…), home-screen app, time zone and language. The time zone is
+ * the only location we keep, and it's what the device already says, no permission.
+ */
+export function deviceContext(ua = navigator.userAgent, touch = navigator.maxTouchPoints || 0) {
+  const ios = /iPhone|iPad|iPod/.test(ua) || (/Macintosh/.test(ua) && touch > 1);
+  const os = ios
+    ? 'ios'
+    : /Android/.test(ua)
+    ? 'android'
+    : /CrOS/.test(ua)
+    ? 'chromeos'
+    : /Windows/.test(ua)
+    ? 'windows'
+    : /Macintosh/.test(ua)
+    ? 'mac'
+    : /Linux/.test(ua)
+    ? 'linux'
+    : 'other';
+  const inApp = /Instagram/.test(ua)
+    ? 'instagram'
+    : /FBAN|FBAV|FB_IAB/.test(ua)
+    ? 'facebook'
+    : /musical_ly|BytedanceWebview|TikTok/i.test(ua)
+    ? 'tiktok'
+    : /Snapchat/.test(ua)
+    ? 'snapchat'
+    : /LinkedInApp/.test(ua)
+    ? 'linkedin'
+    : /\bTwitter|TwitterAndroid/.test(ua)
+    ? 'x'
+    : /GSA\//.test(ua)
+    ? 'google_app'
+    : null;
+  const browser =
+    inApp ||
+    (/CriOS/.test(ua)
+      ? 'chrome'
+      : /FxiOS|Firefox\//.test(ua)
+      ? 'firefox'
+      : /EdgiOS|Edg\//.test(ua)
+      ? 'edge'
+      : /SamsungBrowser/.test(ua)
+      ? 'samsung'
+      : /OPR\/|OPiOS/.test(ua)
+      ? 'opera'
+      : ios
+      ? 'safari'
+      : /Chrome\//.test(ua)
+      ? 'chrome'
+      : /Safari\//.test(ua)
+      ? 'safari'
+      : 'other');
+  let tz = '';
+  try {
+    tz = Intl.DateTimeFormat().resolvedOptions().timeZone || '';
+  } catch (e) {
+    // old browser
+  }
+  let standalone = false;
+  try {
+    standalone = !!(navigator.standalone || (window.matchMedia && window.matchMedia('(display-mode: standalone)').matches));
+  } catch (e) {
+    // ignore
+  }
+  return {
+    browser,
+    os,
+    in_app: !!inApp,
+    mobile: ios || /Android|Mobile/.test(ua),
+    standalone,
+    tz,
+    lang: (navigator.language || '').slice(0, 10),
+  };
+}
+
 /** Records an event, e.g. track('guess', { puzzle: 3, correct: false, try: 2, text: 'pea and butter' }). */
 export function track(name, props = {}) {
   if (!enabled()) return;
   queue.push({
     name,
     ts: Date.now(),
-    props: { ...props, host: window.location.host, ...(isDevDevice() ? { dev: true } : {}) },
+    props: {
+      ...props,
+      ...(name === 'page_view' ? deviceContext() : {}),
+      host: window.location.host,
+      ...(isDevDevice() ? { dev: true } : {}),
+    },
   });
   if (!timer) timer = setTimeout(() => flush(false), FLUSH_MS);
 }

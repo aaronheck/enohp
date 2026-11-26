@@ -11,6 +11,13 @@ function isReal(e) {
   return !e.dev && /^(www\.)?yelnatsgame\.com$/.test(e.host || '');
 }
 
+const BROWSER_NAMES = {
+  safari: 'Safari', chrome: 'Chrome', firefox: 'Firefox', edge: 'Edge', samsung: 'Samsung Internet', opera: 'Opera',
+  instagram: 'Instagram app', facebook: 'Facebook app', tiktok: 'TikTok app', snapchat: 'Snapchat app',
+  linkedin: 'LinkedIn app', x: 'X app', google_app: 'Google app',
+};
+const OS_NAMES = { ios: 'iPhone / iPad', android: 'Android', mac: 'Mac', windows: 'Windows', chromeos: 'ChromeOS', linux: 'Linux' };
+
 const uniq = (list) => new Set(list).size;
 const normGuess = (s) => String(s || '').toLowerCase().replace(/\s+/g, ' ').trim();
 
@@ -115,6 +122,39 @@ function summarise(events, { days, now = Date.now() }) {
     };
   }
 
+  // ---- who's playing: each device's latest page view (browser, OS, time zone) ----
+  const latest = {};
+  for (const e of by('page_view')) if (e.browser) latest[e.device] = e;
+  const countBy = (key, map = (v) => v) => {
+    const c = {};
+    for (const e of Object.values(latest)) {
+      const k = map(e[key]);
+      if (k) c[k] = (c[k] || 0) + 1;
+    }
+    return Object.entries(c)
+      .sort((a, b) => b[1] - a[1])
+      .map(([label, count]) => ({ label, count }));
+  };
+  const top = (list, n) => (list.length > n ? [...list.slice(0, n - 1), { label: 'Other', count: list.slice(n - 1).reduce((s, x) => s + x.count, 0) }] : list);
+  const audience = {
+    devices: Object.keys(latest).length,
+    browsers: top(countBy('browser', (b) => BROWSER_NAMES[b] || b), 8),
+    os: top(countBy('os', (o) => OS_NAMES[o] || o), 6),
+    // "America/Los_Angeles" -> "Los Angeles (America)"
+    timeZones: top(countBy('tz', (z) => (z ? z.split('/').slice(1).join(' / ').replace(/_/g, ' ') + ` (${z.split('/')[0]})` : null)), 10),
+    homeScreen: Object.values(latest).filter((e) => e.standalone).length,
+  };
+
+  // ---- mic tip (iPhone Safari "always allow the mic" walkthrough) ----
+  const micOpens = by('howto_open').filter((e) => e.game === 'mic');
+  const micCloses = by('howto_close').filter((e) => e.game === 'mic');
+  const micTip = {
+    popupShown: micOpens.filter((e) => e.source === 'popup').length,
+    cardOpened: micOpens.filter((e) => e.source === 'card').length,
+    finished: micCloses.filter((e) => e.how === 'done').length,
+    notNow: micCloses.filter((e) => e.source === 'popup' && e.how !== 'done').length,
+  };
+
   const shareResults = {};
   for (const e of by('share')) shareResults[e.result || 'unknown'] = (shareResults[e.result || 'unknown'] || 0) + 1;
 
@@ -135,6 +175,8 @@ function summarise(events, { days, now = Date.now() }) {
     daily,
     puzzles: puzzleRows,
     howto,
+    audience,
+    micTip,
     shareResults,
     chain: {
       started: by('chain_started').length,
