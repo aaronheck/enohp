@@ -9,7 +9,7 @@ set -euo pipefail
 WHAT=${1:-events}; DAYS=${2:-7}
 export AWS_PROFILE=${AWS_PROFILE:-enohp}
 GROUP=/aws/lambda/enohp
-BASE='fields @message | filter @message like /"t":"evt"/ | parse @message /(?<json>\{"t":"evt".*\})/ | fields json
+BASE='fields @message | filter @message like /"t":"evt"/ | parse @message /(?<json>\{"t":"evt".*\})/
 | filter json not like /"dev":true/ and json like /"host":"(www\.)?yelnatsgame\.com"/'
 case "$WHAT" in
   daily) Q="$BASE | parse json /\"name\":\"(?<name>[a-z_]+)\"/ | parse json /\"puzzle\":(?<puzzle>[0-9]+)/
@@ -27,10 +27,13 @@ START=$(( $(date +%s) - DAYS * 86400 )); END=$(date +%s)
 ID=$(aws logs start-query --region us-east-1 --log-group-name "$GROUP" --start-time $START --end-time $END --query-string "$Q" --query queryId --output text)
 for i in $(seq 1 30); do
   OUT=$(aws logs get-query-results --region us-east-1 --query-id "$ID" --output json)
-  [ "$(echo "$OUT" | python3 -c 'import sys,json;print(json.load(sys.stdin)["status"])')" = Complete ] && break; sleep 2
+  STATUS=$(echo "$OUT" | python3 -c 'import sys, json; print(json.load(sys.stdin)["status"])')
+  [ "$STATUS" = Complete ] && break
+  sleep 2
 done
 echo "$OUT" | python3 -c '
-import sys,json
-rows=json.load(sys.stdin)["results"]
-for r in rows: print("  ".join(f"{c[\"field\"]}={c[\"value\"]}" for c in r if not c["field"].startswith("@ptr")))
-print(f"({len(rows)} rows)")'
+import sys, json
+rows = json.load(sys.stdin)["results"]
+for r in rows:
+    print("  ".join("%s=%s" % (c["field"], c["value"]) for c in r if not c["field"].startswith("@")))
+print("(%d rows)" % len(rows))'

@@ -33,6 +33,8 @@ function ids() {
 
 function isDevDevice() {
   try {
+    // Check the URL too: the first page view fires before ?dev=1 is saved.
+    if (new URLSearchParams(window.location.search).get('dev') === '1') return true;
     return localStorage.getItem('yelnats.dev') === '1';
   } catch (e) {
     return false;
