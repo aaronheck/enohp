@@ -65,33 +65,92 @@ function wrap(g, text, maxWidth) {
   return lines;
 }
 
-function drawFrame(g, t, { n, peaks, d }) {
+const ACTION_EMOJI = { mimic: '🎙', miss: '❌', hit: '✅' };
+
+/** The brag: headline + dare, from how they did. */
+export function bragFor(r) {
+  if (!r) return { headline: 'Can you decode this?', dare: 'A phrase, played backwards. 🔊' };
+  if (r.failed) return { headline: 'This one beat me 😵', dare: 'Think you can crack it? 🔊' };
+  if (r.mindReader) return { headline: 'First try. No mimic. 🤯', dare: 'Mind reader. Beat that. 🔊' };
+  const line = {
+    1: 'I got it in 1! 🤯',
+    2: 'I got it in 2! 🔥',
+    3: 'I got it in 3! 💪',
+    4: 'Got it in 4! 😎',
+    5: 'Clutch: got it in 5! 😮‍💨',
+  }[r.tries] || `I got it in ${r.tries}!`;
+  return { headline: line, dare: r.tries <= 2 ? 'Bet you can’t beat that. 🔊' : 'Can you beat that? 🔊' };
+}
+
+function drawScorecard(g, x, y, w, h, r) {
+  g.fillStyle = C.cream;
+  roundRect(g, x, y, w, h, 32);
+  g.fill();
+  g.fillStyle = r.failed ? C.tomato : C.deep;
+  g.textAlign = 'left';
+  g.font = `800 72px ${FONT}`;
+  const score = `${r.failed ? 'X' : r.tries}/5`;
+  g.fillText(score, x + 32, y + h / 2 + 26);
+  const sw = g.measureText(score).width;
+  // Tries as dots, then the moves.
+  let cx = x + 32 + sw + 34;
+  for (let i = 0; i < 5; i++) {
+    g.beginPath();
+    g.arc(cx + i * 30, y + h / 2 - 16, 11, 0, Math.PI * 2);
+    const on = i < Math.min(r.used, 5);
+    g.fillStyle = on ? (r.failed ? C.tomato : C.butter) : 'rgba(20,36,29,0.12)';
+    g.fill();
+  }
+  g.font = `400 34px ${FONT}`;
+  g.fillStyle = C.deep;
+  g.fillText((r.actions || []).map((a) => ACTION_EMOJI[a] || '').join(''), cx - 11, y + h / 2 + 38);
+  if (r.streak >= 2) {
+    g.textAlign = 'right';
+    g.font = `800 30px ${FONT}`;
+    g.fillStyle = C.deep;
+    g.fillText(`🔥 ${r.streak}`, x + w - 32, y + h / 2 + 12);
+  }
+  g.textAlign = 'left';
+}
+
+function drawFrame(g, t, { n, peaks, d, result }) {
   const first = [INTRO, INTRO + d];
   const second = [INTRO + d + GAP, INTRO + 2 * d + GAP];
   const end = second[1];
   const ease = (x) => 1 - Math.pow(1 - Math.min(1, Math.max(0, x)), 3);
+  const brag = bragFor(result);
 
   g.fillStyle = C.bg;
   g.fillRect(0, 0, W, H);
 
-  // Header
+  // Header: the brag
   const inA = ease(t / 0.5);
   g.globalAlpha = inA;
   g.fillStyle = C.butter;
   g.font = `800 34px ${FONT}`;
   g.textAlign = 'left';
-  g.fillText(`YELNATS DAILY · #${n}`, 64, 150);
+  g.fillText(`YELNATS DAILY · #${n}`, 64, 130);
   g.fillStyle = C.cream;
-  g.font = `800 96px ${FONT}`;
-  wrap(g, 'Can you decode this?', W - 128).forEach((l, i) => g.fillText(l, 64, 270 + i * 100));
+  g.font = `800 84px ${FONT}`;
+  const lines = wrap(g, brag.headline, W - 128).slice(0, 2);
+  lines.forEach((l, i) => g.fillText(l, 64, 230 + i * 92));
   g.fillStyle = C.muted;
   g.font = `600 36px ${FONT}`;
-  g.fillText('A phrase, played backwards. 🔊', 64, 500);
+  g.fillText(brag.dare, 64, 230 + lines.length * 92 + 8);
   g.globalAlpha = 1;
+  // Scorecard pops in just after the headline.
+  if (result) {
+    const pop = ease((t - 0.25) / 0.45);
+    g.save();
+    g.globalAlpha = pop;
+    g.translate(0, (1 - pop) * 24);
+    drawScorecard(g, 48, 430, W - 96, 130, result);
+    g.restore();
+  }
 
   // Waveform card
-  const cardY = 580;
-  const cardH = 360;
+  const cardY = result ? 600 : 580;
+  const cardH = result ? 330 : 360;
   g.fillStyle = C.raised;
   roundRect(g, 48, cardY, W - 96, cardH, 40);
   g.fill();
@@ -177,7 +236,8 @@ const step = (name, fn) =>
       throw err;
     });
 
-export async function makePuzzleVideo({ blob, n, onProgress }) {
+/** result: { tries, used, failed, mindReader, actions, streak } — the player's brag (optional). */
+export async function makePuzzleVideo({ blob, n, result, onProgress }) {
   if (!videoMimeTypes().length) throw new Error('This browser can’t make videos.');
   if (document.fonts && document.fonts.load) {
     await Promise.all([document.fonts.load(`800 96px ${FONT}`), document.fonts.load(`600 36px ${FONT}`)]).catch(() => {});
@@ -198,7 +258,7 @@ export async function makePuzzleVideo({ blob, n, onProgress }) {
   Object.assign(canvas.style, { position: 'fixed', left: '0', bottom: '0', width: '2px', height: '2px', opacity: '0.01', pointerEvents: 'none', zIndex: '-1' });
   document.body.appendChild(canvas);
   const g = canvas.getContext('2d');
-  drawFrame(g, 0, { n, peaks, d });
+  drawFrame(g, 0, { n, peaks, d, result });
 
   // Audio goes only into the recording (not the speakers).
   const dest = ctx.createMediaStreamDestination();
@@ -236,7 +296,7 @@ export async function makePuzzleVideo({ blob, n, onProgress }) {
   await new Promise((resolve) => {
     const tick = () => {
       const t = ctx.currentTime - t0;
-      drawFrame(g, Math.max(0, t), { n, peaks, d });
+      drawFrame(g, Math.max(0, t), { n, peaks, d, result });
       if (onProgress) onProgress(Math.min(1, Math.max(0, t / total)));
       if (t >= total) return resolve();
       // rAF pauses in background tabs; a timer keeps going.

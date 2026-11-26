@@ -587,7 +587,11 @@ function Solved({ n, state, answers, voice, days, top, mimics, puzzle }) {
       <div className="stack" style={{ marginTop: 18 }}>
         <Button onClick={share}>{image ? '📤 Share result' : 'Share result'}</Button>
         {status && <p className="muted center">{status}</p>}
-        <PuzzleVideo url={puzzle.audio[puzzle.audio[voice] ? voice : Object.keys(puzzle.audio)[0]]} n={n} />
+        <PuzzleVideo
+          url={puzzle.audio[puzzle.audio[voice] ? voice : Object.keys(puzzle.audio)[0]]}
+          n={n}
+          result={{ tries: total, used: total, failed: !!state.failed, mindReader: isMindReader(state), actions, streak: days }}
+        />
         <Button variant="ghost" to="/friends" onClick={() => track('play_with_friends', { from: 'solved' })}>
           Play with friends
         </Button>

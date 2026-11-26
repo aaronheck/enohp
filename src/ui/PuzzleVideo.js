@@ -1,7 +1,7 @@
 import React, { useState } from 'react';
 import { fetchRecording } from '../api/client';
 import { unlockAudio } from '../audio/context';
-import { canMakeVideo, makePuzzleVideo } from '../lib/puzzleVideo';
+import { bragFor, canMakeVideo, makePuzzleVideo } from '../lib/puzzleVideo';
 import { track } from '../lib/analytics';
 import { reportError } from '../lib/errors';
 import './PuzzleVideo.css';
@@ -13,7 +13,7 @@ const SITE = 'https://yelnatsgame.com';
  * no answer) and shares it. Two taps: phones only open the share sheet straight from a
  * tap, and the video takes a few seconds to make.
  */
-export default function PuzzleVideo({ url, n }) {
+export default function PuzzleVideo({ url, n, result }) {
   const [state, setState] = useState('idle'); // idle | making | ready | error
   const [progress, setProgress] = useState(0);
   const [file, setFile] = useState(null);
@@ -30,7 +30,7 @@ export default function PuzzleVideo({ url, n }) {
     track('share', { puzzle: n, method: 'video', result: 'make' });
     try {
       const blob = await fetchRecording(url, { retries: 1 });
-      const f = await makePuzzleVideo({ blob, n, onProgress: setProgress });
+      const f = await makePuzzleVideo({ blob, n, result, onProgress: setProgress });
       setFile(f);
       setPreview(URL.createObjectURL(f));
       setState('ready');
@@ -41,7 +41,8 @@ export default function PuzzleVideo({ url, n }) {
     }
   };
 
-  const text = `Can you decode this? 🔊 Yelnats Daily #${n} — it's played backwards.`;
+  const brag = bragFor(result);
+  const text = result ? `${brag.headline} Yelnats Daily #${n}. ${brag.dare}` : `Can you decode this? 🔊 Yelnats Daily #${n}, played backwards.`;
   const share = async () => {
     let result = 'failed';
     try {
@@ -78,9 +79,9 @@ export default function PuzzleVideo({ url, n }) {
       {state === 'idle' && (
         <>
           <button className="btn btn-ghost" onClick={make}>
-            🎬 Challenge friends with a video
+            🎬 Brag with a video
           </button>
-          <p className="pvideo-note">A 7-second clip of the puzzle, played backwards. No spoilers.</p>
+          <p className="pvideo-note">Your score + the puzzle played backwards, as a 7-second clip. No spoilers.</p>
         </>
       )}
       {state === 'making' && (
