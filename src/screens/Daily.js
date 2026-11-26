@@ -5,11 +5,10 @@ import useRecorder from '../audio/useRecorder';
 import {
   PAR,
   getPuzzleState,
-  getVoice,
   golf,
   plural,
-  setVoice as saveVoice,
   shareText,
+  hasPlayedDaily,
   streak,
   updatePuzzleState,
 } from '../lib/daily';
@@ -17,10 +16,12 @@ import { shareLink } from '../lib/share';
 import { Button, Notice, Screen } from '../ui/components';
 import { RecordButton, ReversedPlayer } from '../ui/audio';
 import { VibratingString } from '../ui/waves';
+import DailyHowTo from '../ui/DailyHowTo';
 import './screens.css';
 import './Daily.css';
 
 const SITE = 'https://yelnatsgame.com';
+const DEFAULT_VOICE = 'Kevin';
 
 /** Loads (and caches) one voice's audio for a puzzle. */
 function useClip(url) {
@@ -56,9 +57,9 @@ export default function Daily() {
     return (
       <Screen left="yelnats" right={<Link to="/friends">Play with friends</Link>}>
         <h1 className="title title-sm turn-title">
-          {loadError ? 'Hmm.' : 'Warming up'}
+          {loadError ? 'Hmm.' : 'Rewinding'}
           <br />
-          <span className="accent">{loadError ? '' : 'the robot…'}</span>
+          <span className="accent">{loadError ? '' : "today's puzzle…"}</span>
         </h1>
         {loadError && <p className="lede" style={{ marginTop: 12 }}>{loadError}</p>}
         <div className="spacer" />
@@ -75,15 +76,15 @@ export default function Daily() {
 function Puzzle({ puzzle }) {
   const n = puzzle.number;
   const [state, setState] = useState(() => getPuzzleState(n));
-  const [voice, setVoiceState] = useState(() => {
-    const saved = getVoice();
-    return puzzle.voices.some((v) => v.id === saved) ? saved : puzzle.voices[0].id;
-  });
+  // One voice for now; the backend still offers others for later.
+  const voice = puzzle.audio[DEFAULT_VOICE] ? DEFAULT_VOICE : puzzle.voices[0].id;
   const [answers, setAnswers] = useState(null);
   const [guess, setGuess] = useState('');
   const [checking, setChecking] = useState(false);
   const [error, setError] = useState(null);
   const [mimic, setMimic] = useState(null);
+  // Open the how-to automatically the first time someone plays any daily puzzle.
+  const [howOpen, setHowOpen] = useState(() => !hasPlayedDaily());
   const recorder = useRecorder();
   const recording = recorder.status === 'recording';
   const update = (patch) => setState(updatePuzzleState(n, patch));
@@ -94,11 +95,6 @@ function Puzzle({ puzzle }) {
       guessDaily(n, state.phrase).then((r) => r.correct && setAnswers(r.answers), () => {});
     }
   }, [state.solved, state.phrase, answers, n]);
-
-  const pickVoice = (id) => {
-    setVoiceState(id);
-    saveVoice(id);
-  };
 
   async function stopMimic() {
     const blob = await recorder.stop();
@@ -142,32 +138,24 @@ function Puzzle({ puzzle }) {
 
   return (
     <Screen {...top}>
-      <p className="step-note" style={{ marginTop: 14 }}>
-        Daily puzzle #{n}
-      </p>
+      <div className="daily-head">
+        <p className="step-note">Daily puzzle #{n}</p>
+        <button className="how-btn" onClick={() => setHowOpen(true)}>
+          How to play
+        </button>
+      </div>
+      <DailyHowTo open={howOpen} onClose={() => setHowOpen(false)} />
       <h1 className="title title-sm">
-        What's the
+        Today's phrase,
         <br />
-        <span className="accent">robot saying?</span>
+        <span className="accent">backwards.</span>
       </h1>
+      <p className="lede" style={{ marginTop: 8 }}>
+        Can you work out what it says?
+      </p>
 
       <div className="section">
         <PuzzleClip url={puzzle.audio[voice]} />
-        <div className="voice-row">
-          <span className="voice-label">Robot voice</span>
-          <div className="chips">
-            {puzzle.voices.map((v) => (
-              <button
-                key={v.id}
-                className={'chip chip-btn' + (v.id === voice ? ' chip-on' : '')}
-                onClick={() => pickVoice(v.id)}
-                aria-pressed={v.id === voice}
-              >
-                {v.label}
-              </button>
-            ))}
-          </div>
-        </div>
       </div>
 
       {state.guesses.length > 0 && (
@@ -217,7 +205,7 @@ function Puzzle({ puzzle }) {
           />
           <div>
             <b>{recording ? 'Recording… tap to stop' : state.mimics ? 'Mimic again' : 'Stuck? Mimic it'}</b>
-            <small>Copy the robot's sound. We'll flip your recording so it sounds forwards. Costs a stroke.</small>
+            <small>Copy the backwards sound. We'll flip your recording so it plays forwards. Costs a stroke.</small>
           </div>
         </div>
         {recording && <VibratingString active={recording} getLevel={recorder.getLevel} height={56} />}

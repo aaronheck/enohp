@@ -64,3 +64,14 @@
 
 @keyframes sheet-up { from { transform: translateY(100%); } }
 @keyframes sheet-fade { from { opacity: 0; } }
+
+/* Daily how-to: golf scorecard instead of an illustration */
+.scorecard { width: 100%; max-width: 300px; display: flex; flex-direction: column; gap: 6px; }
+.scorecard-row {
+  display: flex; align-items: center; gap: 12px; background: var(--bg-raised);
+  border-radius: 14px; padding: 8px 14px;
+}
+.scorecard-row span { font-size: 22px; width: 28px; text-align: center; }
+.scorecard-row b { flex: 1; font-size: 17px; }
+.scorecard-row small { color: var(--muted); font-weight: 700; font-size: 13px; }
+.scorecard-par { box-shadow: 0 0 0 2px var(--butter); }

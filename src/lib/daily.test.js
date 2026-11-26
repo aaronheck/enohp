@@ -30,6 +30,12 @@ test('streak counts consecutive solved days and survives an unsolved today', () 
 
 test('share text has the result but never the answer', () => {
   const text = shareText(12, { mimics: 1, guesses: ['a', 'b'], voice: 'Kevin', phrase: 'peanut butter' }, 'https://yelnatsgame.com');
-  expect(text).toBe('Yelnats Daily #12\n🐦 Birdie · 1 mimic\n🎙 Kevin · ❌❌✅\nhttps://yelnatsgame.com');
+  expect(text).toBe('Yelnats Daily #12\n🐦 Birdie · 1 mimic\n❌❌✅\nhttps://yelnatsgame.com');
   expect(text).not.toMatch(/peanut/);
+});
+
+test('first-timer detection', () => {
+  expect(require('./daily').hasPlayedDaily()).toBe(false);
+  updatePuzzleState(1, { guesses: ['x'] });
+  expect(require('./daily').hasPlayedDaily()).toBe(true);
 });

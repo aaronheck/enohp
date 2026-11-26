@@ -10,7 +10,7 @@ import { ReactComponent as Slide5 } from './art/turn-slide-5.svg';
 // One illustration per step (see mockups/art/turn-slides).
 const SLIDE_ART = [Slide1, Slide2, Slide3, Slide4, Slide5];
 
-function slides(from) {
+function turnSlides(from) {
   return [
     ['Listen', `${from} said a word backwards and we reversed it so it sounds forwards.`],
     ['Guess', 'Type what you think they said.'],
@@ -26,18 +26,26 @@ function slides(from) {
       'Send it on',
       'The next friend hears your backwards recording played in reverse, so it sounds forwards and… it’s confusing, we know. That’s why it’s fun.',
     ],
-  ];
+  ].map(([title, body], i) => {
+    const Art = SLIDE_ART[i];
+    return { title, body, art: <Art /> };
+  });
+}
+
+/** How to play a friend's chain turn. */
+export default function HowToPlaySheet({ open, onClose, from = 'your friend' }) {
+  return <Slideshow open={open} onClose={onClose} slides={turnSlides(from)} label="How to play your turn" />;
 }
 
 const SWIPE_PX = 50;
 
-/** Bottom-sheet slideshow explaining a friend's turn, one step per slide. */
-export default function HowToPlaySheet({ open, onClose, from = 'your friend' }) {
+/** Bottom-sheet slideshow, one step per slide. slides: [{ title, body, art }]. */
+export function Slideshow({ open, onClose, slides, label }) {
   const [index, setIndex] = useState(0);
   const [dir, setDir] = useState(1);
   const dialogRef = useRef(null);
   const touchX = useRef(null);
-  const list = slides(from);
+  const list = slides;
   const last = index === list.length - 1;
 
   const go = (next) => {
@@ -75,8 +83,7 @@ export default function HowToPlaySheet({ open, onClose, from = 'your friend' }) 
     if (dx > SWIPE_PX) go(index - 1);
   };
 
-  const [title, body] = list[index];
-  const Art = SLIDE_ART[index];
+  const { title, body, art } = list[index];
 
   return (
     <div className="sheet-backdrop" onClick={onClose}>
@@ -86,7 +93,7 @@ export default function HowToPlaySheet({ open, onClose, from = 'your friend' }) 
         tabIndex={-1}
         role="dialog"
         aria-modal="true"
-        aria-label="How to play your turn"
+        aria-label={label}
         onClick={(e) => e.stopPropagation()}
         onKeyDown={onKeyDown}
         onTouchStart={onTouchStart}
@@ -107,7 +114,7 @@ export default function HowToPlaySheet({ open, onClose, from = 'your friend' }) 
 
         <div className={'slide ' + (dir > 0 ? 'slide-next' : 'slide-prev')} key={index} aria-live="polite">
           <div className="slide-art" aria-hidden="true">
-            <Art />
+            {art}
           </div>
           <p className="slide-step">
             Step {index + 1} of {list.length}

@@ -1,6 +1,5 @@
-.voice-row { margin-top: 12px; }
-.voice-label { display: block; font-weight: 700; font-size: 13px; color: var(--muted); margin-bottom: 6px; }
-.chip-btn { border: 0; cursor: pointer; font-family: inherit; }
+.daily-head { display: flex; align-items: center; justify-content: space-between; margin: 12px 0 8px; }
+.daily-head .step-note { margin: 0; }
 
 .par-box {
   margin-top: 16px; display: flex; align-items: center; justify-content: space-between;

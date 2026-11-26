@@ -31,14 +31,9 @@ export function updatePuzzleState(n, patch) {
   return d.puzzles[n];
 }
 
-export function getVoice() {
-  return load().voice;
-}
-
-export function setVoice(voice) {
-  const d = load();
-  d.voice = voice;
-  save(d);
+/** Has this device played any daily puzzle before (guessed or mimicked)? */
+export function hasPlayedDaily() {
+  return Object.values(load().puzzles).some((p) => p.solved || p.mimics > 0 || (p.guesses && p.guesses.length));
 }
 
 /** Days in a row solved, counting back from today (or yesterday if today isn't solved yet). */
@@ -67,7 +62,7 @@ export function golf(mimics) {
 
 export const plural = (n, word) => `${n} ${word}${n === 1 ? '' : 's'}`;
 
-/** Spoiler-free share text, e.g. "Yelnats Daily #12 / 🐦 Birdie · 1 mimic / 🎙 Kevin · ❌❌✅". */
+/** Spoiler-free share text, e.g. "Yelnats Daily #12 / 🐦 Birdie · 1 mimic / ❌❌✅". */
 export function shareText(number, state, url) {
   const g = golf(state.mimics);
   const misses = Math.min(state.guesses.length, 10);
@@ -75,7 +70,7 @@ export function shareText(number, state, url) {
   return [
     `Yelnats Daily #${number}`,
     `${g.emoji} ${g.name} · ${plural(state.mimics, 'mimic')}`,
-    `🎙 ${state.voice || 'Kevin'} · ${marks}`,
+    marks,
     url,
   ].join('\n');
 }
