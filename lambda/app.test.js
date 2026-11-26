@@ -35,6 +35,7 @@ function fakeWorld(env = {}) {
     games,
     files,
     logged,
+    deps,
     tick: (ms) => (clock += ms),
     handler: createHandler(deps),
   };
@@ -237,16 +238,27 @@ test('daily: answers are forgiving about case, spacing, punctuation and small ty
   assert.ok(!daily.isCorrect('', 'hot dog'));
 });
 
-test('daily: today\'s puzzle returns signed audio for every voice, never the phrase', async () => {
+test('daily: today\'s puzzle returns signed audio for the one voice (Kevin), never the phrase', async () => {
   const w = fakeWorld();
   for (const v of daily.VOICES) w.files.add(daily.puzzleKey(3, v.id));
   const r = await call(w, 'GET', '/daily');
   assert.equal(r.status, 200);
   assert.equal(r.body.number, 3);
   assert.equal(r.body.date, '2026-11-28');
-  assert.deepEqual(Object.keys(r.body.audio).sort(), daily.VOICES.map((v) => v.id).sort());
+  assert.deepEqual(Object.keys(r.body.audio), ['Kevin']);
+  assert.deepEqual(r.body.voices.map((v) => v.id), ['Kevin']);
   assert.ok(!JSON.stringify(r.body).includes(daily.phraseFor(3)));
   assert.ok(!JSON.stringify(r.body).includes('answer'));
+});
+
+test('daily: the audio check is remembered, so S3 is only asked once per puzzle', async () => {
+  const w = fakeWorld();
+  w.files.add(daily.puzzleKey(3, 'Kevin'));
+  let checks = 0;
+  const has = w.deps.recordingExists;
+  w.deps.recordingExists = async (k) => (checks++, has(k));
+  for (let i = 0; i < 3; i++) assert.equal((await call(w, 'GET', '/daily')).status, 200);
+  assert.equal(checks, 1);
 });
 
 test('daily: missing audio is a 503, not a broken puzzle', async () => {

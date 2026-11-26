@@ -201,17 +201,23 @@ function createHandler(deps) {
   const overrideAllowed = () => (deps.env || process.env).DAILY_ALLOW_OVERRIDE === '1';
   const latestAllowed = () => (overrideAllowed() ? Infinity : daily.puzzleNumber(now()));
 
+  const VOICE = daily.VOICES[0];
+  const knownAudio = new Set();
+
   async function readDaily(event) {
     const asked = Number((event.queryStringParameters || {}).n);
     const n = overrideAllowed() && Number.isInteger(asked) && asked >= 1 ? asked : daily.puzzleNumber(now());
     if (n < 1) return fail(404, 'No puzzle yet');
-    // Audio is generated ahead of time; make sure today's is there.
-    if (!(await deps.recordingExists(daily.puzzleKey(n, daily.VOICES[0].id)))) {
-      return fail(503, "Today's puzzle isn't ready yet");
+    // Audio is generated ahead of time; make sure today's is there. Remembered per
+    // container, so only the first request for a puzzle pays for the S3 check.
+    const key = daily.puzzleKey(n, VOICE.id);
+    if (!knownAudio.has(key)) {
+      if (!(await deps.recordingExists(key))) return fail(503, "Today's puzzle isn't ready yet");
+      knownAudio.add(key);
     }
-    const audio = {};
-    for (const v of daily.VOICES) audio[v.id] = await deps.signGet(daily.puzzleKey(n, v.id), SIGNED_URL_SECONDS * 6);
-    return respond(200, { number: n, date: daily.localDate(now()), voices: daily.VOICES, audio });
+    // One voice per puzzle (the site only plays Kevin), so only one link to sign.
+    const audio = { [VOICE.id]: await deps.signGet(key, SIGNED_URL_SECONDS * 6) };
+    return respond(200, { number: n, date: daily.localDate(now()), voices: [VOICE], audio });
   }
 
   async function guessDaily(event) {
@@ -223,7 +229,7 @@ function createHandler(deps) {
     const phrase = daily.phraseFor(n);
     if (!daily.isCorrect(guess, phrase)) return respond(200, { correct: false });
     const answers = {};
-    for (const v of daily.VOICES) answers[v.id] = await deps.signGet(daily.answerKey(n, v.id), SIGNED_URL_SECONDS * 6);
+    answers[VOICE.id] = await deps.signGet(daily.answerKey(n, VOICE.id), SIGNED_URL_SECONDS * 6);
     return respond(200, { correct: true, phrase, answers });
   }
 
@@ -232,7 +238,7 @@ function createHandler(deps) {
     const n = Number(body.number);
     if (!Number.isInteger(n) || n < 1 || n > latestAllowed()) return fail(400, 'No such puzzle');
     const answers = {};
-    for (const v of daily.VOICES) answers[v.id] = await deps.signGet(daily.answerKey(n, v.id), SIGNED_URL_SECONDS * 6);
+    answers[VOICE.id] = await deps.signGet(daily.answerKey(n, VOICE.id), SIGNED_URL_SECONDS * 6);
     return respond(200, { phrase: daily.phraseFor(n), answers });
   }
 

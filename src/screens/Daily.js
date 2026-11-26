@@ -482,7 +482,8 @@ function Solved({ n, state, answers, voice, days, top, mimics }) {
   const [micTip, setMicTip] = useState(() => shouldShowMicCard(n));
   const total = triesUsed(state);
   const answerVoice = state.voice || voice;
-  const answer = useClip(answers ? answers[answerVoice] : null);
+  // Older saves may name a voice we no longer serve: fall back to the one we do.
+  const answer = useClip(answers ? answers[answerVoice] || Object.values(answers)[0] : null);
   const text = shareText(n, state, SITE, days);
   const next = useCountdown();
   const actions = state.actions && state.actions.length ? state.actions : [state.failed ? 'miss' : 'hit'];
