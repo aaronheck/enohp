@@ -1,4 +1,4 @@
-import { canMimic, getPuzzleState, hasPlayedDaily, isMindReader, msUntilNextPuzzle, plural, score, shareText, streak, triesUsed, updatePuzzleState } from './daily';
+import { canMimic, getPuzzleState, hasPlayedDaily, isMindReader, msUntilNextPuzzle, plural, score, shareText, streak, triesUsed, updatePuzzleState, pastPuzzles } from './daily';
 
 beforeEach(() => localStorage.clear());
 
@@ -68,4 +68,20 @@ test('countdown to the next puzzle at Pacific midnight', () => {
   expect(msUntilNextPuzzle(Date.parse('2026-11-26T06:30:00Z'))).toBe(90 * 60 * 1000);
   // just after midnight Pacific -> almost a full day
   expect(msUntilNextPuzzle(Date.parse('2026-11-26T08:00:01Z'))).toBe(86400000 - 1000);
+});
+
+test('streak ignores past puzzles played late', () => {
+  const save = (puzzles) => localStorage.setItem('yelnats.daily', JSON.stringify({ puzzles }));
+  save({ 4: { solved: true }, 5: { solved: true }, 6: { solved: true } });
+  expect(streak(6)).toBe(3);
+  save({ 4: { solved: true }, 5: { solved: true, late: true }, 6: { solved: true } });
+  expect(streak(6)).toBe(1);
+});
+
+test('past puzzles: the 5 before today, newest first, never below #1', () => {
+  localStorage.clear();
+  expect(pastPuzzles(9, '2026-12-03').map((p) => `${p.n} ${p.date}`)).toEqual([
+    '8 Wed, Dec 2', '7 Tue, Dec 1', '6 Mon, Nov 30', '5 Sun, Nov 29', '4 Sat, Nov 28',
+  ]);
+  expect(pastPuzzles(3, '2026-11-27').map((p) => p.n)).toEqual([2, 1]);
 });

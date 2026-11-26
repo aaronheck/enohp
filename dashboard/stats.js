@@ -34,7 +34,7 @@ function summarise(events, { days, now = Date.now() }) {
   for (const e of real) {
     const d = dayOf(e.ts);
     if (activeByDay[d]) activeByDay[d].add(e.device);
-    if (playersByDay[d] && e.name === 'daily_view' && !e.forced) playersByDay[d].add(e.device);
+    if (playersByDay[d] && e.name === 'daily_view' && !e.forced && !e.archive) playersByDay[d].add(e.device);
   }
   const daily = dayList.map((d) => ({ day: d, visitors: activeByDay[d].size, players: playersByDay[d].size }));
 

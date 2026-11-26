@@ -42,7 +42,8 @@ export function streak(today) {
   const { puzzles } = load();
   let n = puzzles[today] && puzzles[today].solved ? today : today - 1;
   let count = 0;
-  while (n >= 1 && puzzles[n] && puzzles[n].solved) {
+  // Past puzzles played late don't count: a streak is days you played on the day.
+  while (n >= 1 && puzzles[n] && puzzles[n].solved && !puzzles[n].late) {
     count++;
     n--;
   }
@@ -130,4 +131,22 @@ export function markHowtoSeen() {
   } catch (e) {
     // private mode
   }
+}
+
+export const ARCHIVE_DAYS = 5;
+
+/** "Wed, Nov 25" for a YYYY-MM-DD date, minus `back` days. */
+export function shortDate(ymd, back = 0) {
+  const t = Date.parse(`${ymd}T12:00:00Z`) - back * 86400000;
+  return new Intl.DateTimeFormat('en-US', { timeZone: 'UTC', weekday: 'short', month: 'short', day: 'numeric' }).format(new Date(t));
+}
+
+/** The past puzzles anyone can still play, newest first, with this device's progress. */
+export function pastPuzzles(today, todayDate) {
+  const out = [];
+  for (let n = today - 1; n >= Math.max(1, today - ARCHIVE_DAYS); n--) {
+    const st = getPuzzleState(n);
+    out.push({ n, date: shortDate(todayDate, today - n), state: st, finished: st.solved || st.failed });
+  }
+  return out;
 }

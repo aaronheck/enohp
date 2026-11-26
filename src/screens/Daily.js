@@ -1,5 +1,5 @@
 import React, { useEffect, useState } from 'react';
-import { Link, useNavigate } from 'react-router-dom';
+import { Link, useNavigate, useParams } from 'react-router-dom';
 import { fetchRecording, getDaily, guessDaily, revealDaily } from '../api/client';
 import useRecorder from '../audio/useRecorder';
 import {
@@ -19,6 +19,7 @@ import {
   markHowtoSeen,
   streak,
   updatePuzzleState,
+  shortDate,
 } from '../lib/daily';
 import { shareLink } from '../lib/share';
 import { drawShareImage } from '../lib/shareImage';
@@ -37,6 +38,7 @@ import MicWarmup from '../ui/MicWarmup';
 import { MicTipCard, MicTipPopup } from '../ui/MicTip';
 import { shouldPopMicTip, shouldShowMicCard } from '../lib/micTip';
 import DailyHowTo from '../ui/DailyHowTo';
+import PastPuzzles from '../ui/PastPuzzles';
 import './screens.css';
 import './Daily.css';
 
@@ -76,12 +78,24 @@ export default function Daily() {
     return Number.isInteger(v) && v >= 1 ? v : null;
   });
 
+  // /puzzle/4 plays a past puzzle (the backend allows the last 5).
+  const params = useParams();
+  const target = Number(params.n) || forced;
+
   useEffect(() => {
-    getDaily(forced).then(setPuzzle, (e) => {
-      reportError('api', { what: 'daily', msg: e.message, status: e.status });
-      setLoadError(e.status === 503 ? "Today's puzzle isn't ready yet. Check back soon!" : e.message);
-    });
-  }, [forced]);
+    let cancelled = false;
+    setPuzzle(null);
+    getDaily(target).then(
+      (p) => !cancelled && setPuzzle(p),
+      (e) => {
+        reportError('api', { what: 'daily', msg: e.message, status: e.status });
+        if (!cancelled) setLoadError(e.status === 503 ? "Today's puzzle isn't ready yet. Check back soon!" : e.message);
+      }
+    );
+    return () => {
+      cancelled = true;
+    };
+  }, [target]);
 
   if (loadError) {
     return (
@@ -97,7 +111,7 @@ export default function Daily() {
   }
   if (!puzzle) return <PuzzleSkeleton />;
 
-  return <Puzzle puzzle={puzzle} forced={forced && puzzle.number === forced} />;
+  return <Puzzle key={puzzle.number} puzzle={puzzle} forced={!params.n && forced && puzzle.number === forced} />;
 }
 
 /**
@@ -132,6 +146,7 @@ function PuzzleSkeleton() {
 
 function Puzzle({ puzzle, forced }) {
   const n = puzzle.number;
+  const archive = !!puzzle.archive; // a past puzzle, played late
   const [state, setState] = useState(() => getPuzzleState(n));
   // One voice for now; the backend still offers others for later.
   const voice = puzzle.audio[DEFAULT_VOICE] ? DEFAULT_VOICE : puzzle.voices[0].id;
@@ -155,6 +170,7 @@ function Puzzle({ puzzle, forced }) {
     track('daily_view', {
       puzzle: n,
       forced: !!forced,
+      archive,
       returning: hasPlayedDaily(),
       streak: streak(n),
       state: state.solved ? 'solved' : state.failed ? 'failed' : state.mimics || state.guesses.length ? 'in_progress' : 'new',
@@ -215,9 +231,9 @@ function Puzzle({ puzzle, forced }) {
         setAnswers(r.answers);
         const done = { ...state, solved: true };
         track('guess', { puzzle: n, correct: true, try: used + 1 });
-        track('daily_solved', { puzzle: n, tries: triesUsed(done), mimics: state.mimics, mind_reader: isMindReader(done) });
+        track('daily_solved', { puzzle: n, tries: triesUsed(done), mimics: state.mimics, mind_reader: isMindReader(done), archive });
         setJustSolved(true);
-        update({ solved: true, phrase: r.phrase, voice, actions: [...state.actions, 'hit'] });
+        update({ solved: true, phrase: r.phrase, voice, actions: [...state.actions, 'hit'], ...(archive ? { late: true } : {}) });
       } else {
         const next = { guesses: [...state.guesses, g], actions: [...state.actions, 'miss'] };
         track('guess', { puzzle: n, correct: false, try: used + 1, text: g });
@@ -227,7 +243,7 @@ function Puzzle({ puzzle, forced }) {
           const rev = await revealDaily(n);
           setAnswers(rev.answers);
           track('daily_failed', { puzzle: n, mimics: state.mimics });
-          update({ ...next, failed: true, phrase: rev.phrase, voice });
+          update({ ...next, failed: true, phrase: rev.phrase, voice, ...(archive ? { late: true } : {}) });
         } else {
           update(next);
         }
@@ -250,14 +266,22 @@ function Puzzle({ puzzle, forced }) {
   const days = streak(n);
   const top = {
     left: 'yelnats',
-    right: forced ? <span className="forced-tag">forced #{n}</span> : days > 0 ? `🔥 ${plural(days, 'day')}` : `Daily #${n}`,
+    right: forced ? (
+      <span className="forced-tag">forced #{n}</span>
+    ) : archive ? (
+      <Link to="/">Today’s puzzle →</Link>
+    ) : days > 0 ? (
+      `🔥 ${plural(days, 'day')}`
+    ) : (
+      `Daily #${n}`
+    ),
   };
 
   if (state.solved || state.failed) {
     return (
       <>
         {justSolved && <Confetti />}
-        <Solved n={n} state={state} answers={answers} voice={voice} days={days} top={top} mimics={mimics} />
+        <Solved n={n} state={state} answers={answers} voice={voice} days={days} top={top} mimics={mimics} puzzle={puzzle} />
       </>
     );
   }
@@ -317,7 +341,7 @@ function Puzzle({ puzzle, forced }) {
         }}
       />
       <p className="lede" style={{ marginTop: 8 }}>
-        Here's the phrase in reverse.
+        {archive ? `From ${shortDate(puzzle.date)}. ` : ''}Here's the phrase in reverse.
       </p>
       {!heard && !practiceDone().length && (
         <Link to="/practice/1" className="practice-link" onClick={() => track('page_view', { path: '/practice-link' })}>
@@ -441,6 +465,7 @@ function Puzzle({ puzzle, forced }) {
           Play with friends
         </Link>
         <Link to="/practice/1">Practice</Link>
+        <Link to="/past">Past puzzles</Link>
         <Link to="/previous">My chains</Link>
       </div>
       <DevReset />
@@ -486,7 +511,8 @@ function useCountdown() {
   return mins >= 60 ? `${Math.floor(mins / 60)}h ${mins % 60}m` : `${mins}m`;
 }
 
-function Solved({ n, state, answers, voice, days, top, mimics }) {
+function Solved({ n, state, answers, voice, days, top, mimics, puzzle }) {
+  const archive = !!puzzle.archive;
   const [status, setStatus] = useState(null);
   const [showMimics, setShowMimics] = useState(false);
   const [image, setImage] = useState(null);
@@ -564,10 +590,18 @@ function Solved({ n, state, answers, voice, days, top, mimics }) {
           Play with friends
         </Button>
       </div>
-      <p className="next-puzzle">
-        {state.failed ? 'Out of tries. ' : ''}Next puzzle in <b>{next}</b>
-      </p>
+      {archive ? (
+        <p className="next-puzzle">
+          {state.failed ? 'Out of tries. ' : ''}
+          <Link to="/">Back to today’s puzzle →</Link>
+        </p>
+      ) : (
+        <p className="next-puzzle">
+          {state.failed ? 'Out of tries. ' : ''}Next puzzle in <b>{next}</b>
+        </p>
+      )}
       {micTip && <MicTipCard puzzle={n} onGone={() => setMicTip(false)} />}
+      <PastPuzzles today={puzzle.today} todayDate={puzzle.todayDate} title={archive ? 'More past puzzles' : undefined} />
 
       {mimics.length > 0 && (
         <div className="section">
@@ -602,5 +636,25 @@ function MimicList({ mimics, autoPlayIndex }) {
           />
         ))}
     </div>
+  );
+}
+
+/** /past: the last few puzzles, for anyone who missed a day. */
+export function PastScreen() {
+  const [today, setToday] = useState(null);
+  const [error, setError] = useState(null);
+  useEffect(() => {
+    getDaily().then(setToday, (e) => setError(e.message));
+  }, []);
+  return (
+    <Screen left={<Link to="/">← Today’s puzzle</Link>}>
+      <h1 className="title title-sm">Past puzzles</h1>
+      <p className="lede" style={{ marginTop: 8 }}>
+        Missed a day? The last 5 puzzles are free to play. They don’t count toward your streak.
+      </p>
+      {error && <Notice>{error}</Notice>}
+      {!today && !error && <div className="skel skel-player" style={{ marginTop: 24 }} />}
+      {today && <PastPuzzles today={today.today} todayDate={today.todayDate} title="" />}
+    </Screen>
   );
 }

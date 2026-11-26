@@ -118,7 +118,16 @@ async function handle(req, res) {
       }
       const audio = {};
       for (const v of daily.VOICES) audio[v.id] = `${PREFIX}/${daily.puzzleKey(n, v.id)}`;
-      return send(res, 200, { number: n, date: daily.localDate(Date.now()), voices: daily.VOICES, audio });
+      const today = mockPuzzle();
+      return send(res, 200, {
+        number: n,
+        date: daily.localDate(Date.now() - (today - n) * 86400000),
+        today,
+        todayDate: daily.localDate(Date.now()),
+        archive: n < today,
+        voices: daily.VOICES,
+        audio,
+      });
     }
     if (path === '/daily/guess' && req.method === 'POST') {
       const body = JSON.parse((await readBody(req, MAX_JSON_BYTES)).toString() || '{}');

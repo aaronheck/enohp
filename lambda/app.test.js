@@ -333,3 +333,17 @@ test('events: known events are logged one per line, junk is dropped', async () =
   assert.equal(weirdIds.statusCode, 204);
   assert.equal(w.logged[2].device, 'unknown');
 });
+
+test('daily: the last 5 puzzles can be played late; older or future ones fall back to today', async () => {
+  const w = fakeWorld({ DAILY_LAUNCH: '2026-11-26' });
+  for (let n = 1; n <= 9; n++) w.files.add(daily.puzzleKey(n, 'Kevin'));
+  w.tick(6 * 86400000); // today is #9
+  const get = async (n) => (await call(w, 'GET', '/daily', { query: { n: String(n) } })).body;
+  assert.equal((await call(w, 'GET', '/daily')).body.number, 9);
+  const past = await get(4);
+  assert.deepEqual([past.number, past.archive, past.today], [4, true, 9]);
+  assert.equal(past.date, '2026-11-29');
+  assert.equal((await get(3)).number, 9); // 6 days back: too old
+  assert.equal((await get(10)).number, 9); // tomorrow: no peeking
+  assert.equal((await get(9)).archive, false);
+});

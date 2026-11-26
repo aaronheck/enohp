@@ -1,7 +1,7 @@
 import React, { useEffect } from 'react';
 import { Navigate, Route, Routes, useLocation } from 'react-router-dom';
 import { track } from './lib/analytics';
-import Daily from './screens/Daily';
+import Daily, { PastScreen } from './screens/Daily';
 import Home from './screens/Home';
 import Turn from './screens/Turn';
 import Recap from './screens/Recap';
@@ -21,6 +21,8 @@ export default function App() {
       <InAppBanner />
       <Routes>
         <Route path="/" element={<Daily />} />
+        <Route path="puzzle/:n" element={<Daily />} />
+        <Route path="past" element={<PastScreen />} />
         <Route path="friends" element={<Home />} />
         <Route path="game" element={<Turn />} />
         <Route path="recap" element={<Recap />} />

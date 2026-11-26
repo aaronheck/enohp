@@ -42,6 +42,7 @@ const EVENT_NAMES = new Set([
   'daily_solved', 'daily_failed', 'share', 'play_with_friends', 'chain_started', 'turn_opened', 'turn_sent', 'client_error', 'inapp_banner',
 ]);
 const MAX_EVENTS = 50;
+const ARCHIVE_DAYS = 5; // how many past puzzles anyone can play
 const MAX_PROPS = 15;
 const MAX_STRING = 120;
 const ID_LIKE = /^[a-z0-9-]{8,40}$/i;
@@ -206,7 +207,11 @@ function createHandler(deps) {
 
   async function readDaily(event) {
     const asked = Number((event.queryStringParameters || {}).n);
-    const n = overrideAllowed() && Number.isInteger(asked) && asked >= 1 ? asked : daily.puzzleNumber(now());
+    const today = daily.puzzleNumber(now());
+    // ?n= picks one of the last ARCHIVE_DAYS puzzles (free to play late); anything else
+    // gets today's, unless the pre-launch override is on.
+    const inArchive = Number.isInteger(asked) && asked >= 1 && asked < today && asked >= today - ARCHIVE_DAYS;
+    const n = Number.isInteger(asked) && asked >= 1 && (overrideAllowed() || inArchive) ? asked : today;
     if (n < 1) return fail(404, 'No puzzle yet');
     // Audio is generated ahead of time; make sure today's is there. Remembered per
     // container, so only the first request for a puzzle pays for the S3 check.
@@ -217,7 +222,15 @@ function createHandler(deps) {
     }
     // One voice per puzzle (the site only plays Kevin), so only one link to sign.
     const audio = { [VOICE.id]: await deps.signGet(key, SIGNED_URL_SECONDS * 6) };
-    return respond(200, { number: n, date: daily.localDate(now()), voices: [VOICE], audio });
+    return respond(200, {
+      number: n,
+      date: daily.localDate(now() - (today - n) * 86400000),
+      today,
+      todayDate: daily.localDate(now()),
+      archive: n < today,
+      voices: [VOICE],
+      audio,
+    });
   }
 
   async function guessDaily(event) {
