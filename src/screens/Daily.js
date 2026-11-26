@@ -13,6 +13,7 @@ import {
   updatePuzzleState,
 } from '../lib/daily';
 import { shareLink } from '../lib/share';
+import { listMimics, saveMimic } from '../lib/mimicStore';
 import { Button, Notice, Screen } from '../ui/components';
 import { RecordButton, ReversedPlayer } from '../ui/audio';
 import { VibratingString } from '../ui/waves';
@@ -82,7 +83,8 @@ function Puzzle({ puzzle }) {
   const [guess, setGuess] = useState('');
   const [checking, setChecking] = useState(false);
   const [error, setError] = useState(null);
-  const [mimic, setMimic] = useState(null);
+  const [mimics, setMimics] = useState([]); // [{ index, blob }], oldest first
+  const [justRecorded, setJustRecorded] = useState(null);
   // Open the how-to automatically the first time someone plays any daily puzzle.
   const [howOpen, setHowOpen] = useState(() => !hasPlayedDaily());
   const recorder = useRecorder();
@@ -96,11 +98,23 @@ function Puzzle({ puzzle }) {
     }
   }, [state.solved, state.phrase, answers, n]);
 
+  // Earlier mimics for this puzzle, saved on this device.
+  useEffect(() => {
+    let cancelled = false;
+    listMimics(n).then((saved) => !cancelled && setMimics(saved));
+    return () => {
+      cancelled = true;
+    };
+  }, [n]);
+
   async function stopMimic() {
     const blob = await recorder.stop();
     if (blob && blob.size) {
-      setMimic(blob);
-      update({ mimics: state.mimics + 1 });
+      const index = state.mimics + 1;
+      update({ mimics: index });
+      setMimics((prev) => [...prev, { index, blob }]);
+      setJustRecorded(index);
+      saveMimic(n, index, blob);
     }
   }
 
@@ -133,7 +147,7 @@ function Puzzle({ puzzle }) {
   };
 
   if (state.solved) {
-    return <Solved n={n} state={state} answers={answers} voice={voice} days={days} top={top} />;
+    return <Solved n={n} state={state} answers={answers} voice={voice} days={days} top={top} mimics={mimics} />;
   }
 
   return (
@@ -210,11 +224,7 @@ function Puzzle({ puzzle }) {
         </div>
         {recording && <VibratingString active={recording} getLevel={recorder.getLevel} height={56} />}
         <Notice>{recorder.error}</Notice>
-        {mimic && !recording && (
-          <div style={{ marginTop: 12 }}>
-            <ReversedPlayer blob={mimic} caption={`mimic #${state.mimics}, flipped`} dark autoPlay />
-          </div>
-        )}
+        {!recording && <MimicList mimics={mimics} autoPlayIndex={justRecorded} />}
       </div>
 
       <div className="daily-foot">
@@ -230,7 +240,7 @@ function PuzzleClip({ url }) {
   return <ReversedPlayer key={url} blob={blob} error={error} caption="the puzzle" tilt reverse={false} />;
 }
 
-function Solved({ n, state, answers, voice, days, top }) {
+function Solved({ n, state, answers, voice, days, top, mimics }) {
   const [status, setStatus] = useState(null);
   const g = golf(state.mimics);
   const answerVoice = state.voice || voice;
@@ -279,6 +289,12 @@ function Solved({ n, state, answers, voice, days, top }) {
           reverse={false}
         />
       </div>
+      {mimics.length > 0 && (
+        <div className="section">
+          <p className="step-note">Your mimics</p>
+          <MimicList mimics={mimics} />
+        </div>
+      )}
       <div className="spacer" />
       <div className="stack">
         {status && <p className="muted center">{status}</p>}
@@ -288,5 +304,27 @@ function Solved({ n, state, answers, voice, days, top }) {
         </Button>
       </div>
     </Screen>
+  );
+}
+
+/** Every mimic for this puzzle, newest first. Only a just-recorded one plays by itself. */
+function MimicList({ mimics, autoPlayIndex }) {
+  if (!mimics.length) return null;
+  return (
+    <div className="mimic-list">
+      {mimics
+        .slice()
+        .reverse()
+        .map((m) => (
+          <ReversedPlayer
+            key={m.index}
+            blob={m.blob}
+            caption={`mimic #${m.index}, flipped`}
+            dark
+            compact
+            autoPlay={m.index === autoPlayIndex}
+          />
+        ))}
+    </div>
   );
 }

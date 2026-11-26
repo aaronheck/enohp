@@ -11,7 +11,7 @@ function fmt(seconds) {
 }
 
 /** Card that plays a recording rewound, with a ½× toggle. */
-export function ReversedPlayer({ blob, caption, dark, tilt, error: loadError, autoPlay, reverse = true }) {
+export function ReversedPlayer({ blob, caption, dark, tilt, compact, error: loadError, autoPlay, reverse = true }) {
   const p = useReversedPlayer(blob, { reverse });
   const error = loadError || p.error;
   const slow = p.rate !== 1;
@@ -35,7 +35,7 @@ export function ReversedPlayer({ blob, caption, dark, tilt, error: loadError, au
   };
 
   return (
-    <div className={'player' + (dark ? ' player-dark' : '') + (tilt ? ' player-tilt' : '')}>
+    <div className={'player' + (dark ? ' player-dark' : '') + (tilt ? ' player-tilt' : '') + (compact ? ' player-compact' : '')}>
       <div className="player-main">
         <button
           className="player-play"

@@ -38,6 +38,12 @@
 }
 .player-meta button[aria-pressed='true'] { background: var(--ink); color: var(--cream); border-color: var(--ink); }
 .player-dark { background: var(--bg-raised); color: var(--cream); }
+.player-compact { padding: 10px 12px; border-radius: 18px; }
+.player-compact .player-main { gap: 10px; }
+.player-compact .player-play { width: 44px; height: 44px; box-shadow: 0 3px 0 #c7402a; }
+.player-compact .player-play svg { width: 18px; height: 18px; }
+.player-compact .waveshape { height: 36px; }
+.player-compact .player-meta { margin-top: 6px; font-size: 12px; }
 .player-dark .player-meta { color: var(--muted); }
 .player-dark .player-meta button { color: var(--cream); border-color: rgba(255, 244, 220, 0.25); }
 .player-dark .player-meta button[aria-pressed='true'] { background: var(--cream); color: var(--ink); }
