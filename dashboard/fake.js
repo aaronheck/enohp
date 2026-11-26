@@ -21,6 +21,8 @@ function fakeEvents(days, now = Date.now()) {
       if (browser === 'safari' && rnd() < 0.08) { push('howto_open', { game: 'mic', source: 'popup' }); push('howto_close', { game: 'mic', source: 'popup', how: rnd() < 0.6 ? 'done' : 'skip' }); }
       push('daily_view', { forced: false });
       if (rnd() < 0.3) { push('howto_open', { game: 'daily', source: 'auto' }); push('howto_close', { game: 'daily', how: rnd() < 0.5 ? 'done' : 'skip', slide: 1 + Math.floor(rnd() * 4) }); }
+      if (rnd() < 0.04) push('client_error', { kind: 'mic', err: 'NotAllowedError', msg: 'The request is not allowed by the user agent' });
+      if (rnd() < 0.01) push('client_error', { kind: 'audio', where: 'clip', status: 403, msg: 'Request failed' });
       if (rnd() < 0.9) push('daily_listened'); else continue;
       let tries = 0, mimics = 0;
       while (tries < 5) {

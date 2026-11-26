@@ -155,6 +155,59 @@ function summarise(events, { days, now = Date.now() }) {
     notNow: micCloses.filter((e) => e.source === 'popup' && e.how !== 'done').length,
   };
 
+  // ---- retention: of the devices first seen on a day, how many came back ----
+  // A device's first day is its first day in this window; devices already active on
+  // the window's first day are left out (they may be older players).
+  const dayNo = (d) => Math.round(Date.parse(d + 'T00:00:00Z') / 86400000);
+  const todayNo = dayNo(dayOf(now));
+  const firstDayNo = dayNo(dayList[0]);
+  const daysByDevice = {};
+  for (const e of real) (daysByDevice[e.device] = daysByDevice[e.device] || new Set()).add(dayNo(dayOf(e.ts)));
+  const cohorts = {};
+  for (const set of Object.values(daysByDevice)) {
+    const first = Math.min(...set);
+    if (first === firstDayNo && days > 1) continue;
+    const c = (cohorts[first] = cohorts[first] || { size: 0, d1: 0, d7: 0 });
+    c.size++;
+    if (set.has(first + 1)) c.d1++;
+    for (let k = 1; k <= 7; k++) if (set.has(first + k)) { c.d7++; break; }
+  }
+  const sum = (pred, key) => Object.entries(cohorts).filter(([d]) => pred(Number(d))).reduce((s, [, c]) => s + c[key], 0);
+  const d1Eligible = (d) => d + 1 <= todayNo - 1; // the next day is over
+  const d7Eligible = (d) => d + 7 <= todayNo - 1;
+  const retention = {
+    newPlayers: sum(() => true, 'size'),
+    d1: { eligible: sum(d1Eligible, 'size'), back: sum(d1Eligible, 'd1') },
+    d7: { eligible: sum(d7Eligible, 'size'), back: sum(d7Eligible, 'd7') },
+    byDay: Object.entries(cohorts)
+      .map(([d, c]) => ({
+        day: new Date(Number(d) * 86400000).toISOString().slice(0, 10),
+        size: c.size,
+        d1: d1Eligible(Number(d)) ? c.d1 / c.size : null,
+        d7: d7Eligible(Number(d)) ? c.d7 / c.size : null,
+      }))
+      .sort((a, b) => (a.day < b.day ? 1 : -1)),
+  };
+
+  // ---- errors from players' phones ----
+  const errorEvents = by('client_error');
+  const groups = {};
+  for (const e of errorEvents) {
+    const key = [e.kind, e.what || e.err || '', e.msg || ''].join('|');
+    const g = (groups[key] = groups[key] || { kind: e.kind, detail: [e.what, e.err, e.status].filter(Boolean).join(' · '), msg: e.msg || '', count: 0, devices: new Set(), last: 0 });
+    g.count++;
+    g.devices.add(e.device);
+    g.last = Math.max(g.last, e.ts);
+  }
+  const errors = {
+    total: errorEvents.length,
+    devices: uniq(errorEvents.map((e) => e.device)),
+    top: Object.values(groups)
+      .sort((a, b) => b.devices.size - a.devices.size || b.count - a.count)
+      .slice(0, 15)
+      .map((g) => ({ kind: g.kind, detail: g.detail, msg: g.msg, count: g.count, devices: g.devices.size, last: g.last })),
+  };
+
   const shareResults = {};
   for (const e of by('share')) shareResults[e.result || 'unknown'] = (shareResults[e.result || 'unknown'] || 0) + 1;
 
@@ -177,6 +230,8 @@ function summarise(events, { days, now = Date.now() }) {
     howto,
     audience,
     micTip,
+    retention,
+    errors,
     shareResults,
     chain: {
       started: by('chain_started').length,

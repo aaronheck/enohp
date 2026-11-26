@@ -127,6 +127,17 @@
       <div class="scroll" id="table"></div>
     </section>
     <section class="card wide">
+      <h2>Do they come back?</h2>
+      <p class="sub" id="ret-sub">New players by the day we first saw them. Pick 30 or 90 days for the week-later numbers.</p>
+      <div class="tiles" id="ret-tiles" style="margin-top:8px"></div>
+      <div class="scroll" id="ret-table" style="margin-top:12px"></div>
+    </section>
+    <section class="card wide">
+      <h2 id="err-title">Errors on players' phones</h2>
+      <p class="sub" id="err-sub">Crashes, mic problems, audio and API failures.</p>
+      <div class="scroll" id="err-table"></div>
+    </section>
+    <section class="card wide">
       <h2>Play with friends (chain game)</h2>
       <div class="tiles" id="chain" style="margin-top:8px"></div>
     </section>
@@ -372,6 +383,48 @@ function render() {
     }
     t.append(tbl);
   }
+  const r = d.retention;
+  const rate = (x) => (x.eligible ? `${pct(x.back / x.eligible)}` : '—');
+  tiles($('ret-tiles'), [
+    ['New players', fmt(r.newPlayers)],
+    ['Came back next day', rate(r.d1)],
+    ['Came back within a week', rate(r.d7)],
+  ]);
+  $('ret-sub').textContent = `New players by the day we first saw them. Next day: ${fmt(r.d1.back)} of ${fmt(r.d1.eligible)}. Within a week: ${fmt(r.d7.back)} of ${fmt(r.d7.eligible)}` + (r.d7.eligible ? '.' : ' (needs players at least 8 days old: pick 30 or 90 days).');
+  const rt = $('ret-table'); rt.replaceChildren();
+  if (!r.byDay.length) rt.append(el('p', { class: 'empty' }, 'No new players in this range yet.'));
+  else {
+    const tbl = el('table'); const hr = el('tr');
+    for (const [h, num] of [['First seen'], ['New players', 1], ['Back next day', 1], ['Back within a week', 1]]) hr.append(el('th', num ? { class: 'num' } : {}, h));
+    tbl.append(hr);
+    for (const row of r.byDay.slice(0, 30)) {
+      const tr = el('tr');
+      tr.append(el('td', {}, new Date(row.day + 'T12:00:00Z').toLocaleDateString([], { month: 'short', day: 'numeric', timeZone: 'UTC' })), el('td', { class: 'num' }, fmt(row.size)), el('td', { class: 'num' }, row.d1 == null ? 'not yet' : pct(row.d1)), el('td', { class: 'num' }, row.d7 == null ? 'not yet' : pct(row.d7)));
+      tbl.append(tr);
+    }
+    rt.append(tbl);
+  }
+
+  const er = d.errors;
+  $('err-title').textContent = er.total ? `Errors on players' phones · ${fmt(er.devices)} devices` : "Errors on players' phones";
+  $('err-sub').textContent = er.total
+    ? `${fmt(er.total)} errors from ${fmt(er.devices)} devices (${pct(er.devices / Math.max(1, d.totals.visitors))} of visitors). Most widespread first.`
+    : 'Crashes, mic problems, audio and API failures.';
+  const et = $('err-table'); et.replaceChildren();
+  if (!er.total) et.append(el('p', { class: 'empty' }, 'No errors reported. 🎉'));
+  else {
+    const tbl = el('table'); const hr = el('tr');
+    for (const [h, num] of [['Kind'], ['What'], ['Devices', 1], ['Times', 1], ['Last seen', 1]]) hr.append(el('th', num ? { class: 'num' } : {}, h));
+    tbl.append(hr);
+    for (const g of er.top) {
+      const tr = el('tr');
+      tr.append(el('td', {}, g.kind), el('td', {}, [g.detail, g.msg].filter(Boolean).join(' — ')), el('td', { class: 'num' }, fmt(g.devices)), el('td', { class: 'num' }, fmt(g.count)),
+        el('td', { class: 'num' }, new Date(g.last).toLocaleDateString([], { month: 'short', day: 'numeric' })));
+      tbl.append(tr);
+    }
+    et.append(tbl);
+  }
+
   tiles($('chain'), [
     ['"Play with friends" taps', fmt(d.chain.playWithFriends)],
     ['Chains started', fmt(d.chain.started)],

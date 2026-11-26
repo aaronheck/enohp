@@ -1,5 +1,6 @@
 import { useCallback, useEffect, useRef, useState } from 'react';
 import { getAudioContext } from './context';
+import { reportError } from '../lib/errors';
 
 function micErrorMessage(err) {
   if (!navigator.mediaDevices || !window.MediaRecorder) {
@@ -162,6 +163,7 @@ export default function useRecorder({ warm = false } = {}) {
     } catch (err) {
       if (err && err.name === 'ReleasedError') return; // released while the mic was opening
       setError(micErrorMessage(err));
+      reportError('mic', { msg: err && err.message, err: (err && err.name) || (navigator.mediaDevices ? 'unknown' : 'NoMediaDevices') });
       setStatus('idle');
     }
   }, [acquire]);

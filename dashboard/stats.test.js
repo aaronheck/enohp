@@ -35,3 +35,32 @@ test('funnel, tries and wrong guesses per puzzle', () => {
   assert.equal(r.daily.length, 7);
   assert.equal(r.daily[6].players, 2);
 });
+
+test('retention: came back next day / within a week, only for days old enough', () => {
+  const day = 86400000;
+  const at = (dAgo, name, device, props = {}) => ({ ...ev(name, device, props), ts: now - dAgo * day });
+  const events = [
+    at(13, 'page_view', 'old'), at(2, 'page_view', 'old'), // active on the window's first day: left out
+    at(10, 'page_view', 'a'), at(9, 'page_view', 'a'), // back next day
+    at(10, 'page_view', 'b'), at(5, 'page_view', 'b'), // back within a week, not next day
+    at(10, 'page_view', 'c'), // never back
+    at(1, 'page_view', 'd'), // too new for next-day (yesterday)
+  ];
+  const r = summarise(events, { days: 14, now }).retention;
+  assert.equal(r.newPlayers, 4);
+  assert.deepEqual(r.d1, { eligible: 3, back: 1 });
+  assert.deepEqual(r.d7, { eligible: 3, back: 2 });
+});
+
+test('errors: grouped, counted by devices', () => {
+  const events = [
+    ev('client_error', 'a', { kind: 'mic', err: 'NotAllowedError', msg: 'denied' }),
+    ev('client_error', 'b', { kind: 'mic', err: 'NotAllowedError', msg: 'denied' }),
+    ev('client_error', 'b', { kind: 'crash', msg: 'x is undefined', src: 'main.js', line: 3 }),
+  ];
+  const e = summarise(events, { days: 7, now }).errors;
+  assert.equal(e.total, 3);
+  assert.equal(e.devices, 2);
+  assert.equal(e.top[0].kind, 'mic');
+  assert.equal(e.top[0].devices, 2);
+});

@@ -4,12 +4,17 @@ import './ui/theme.css';
 import App from './App';
 import * as serviceWorker from './serviceWorker';
 import { BrowserRouter } from 'react-router-dom';
+import { ErrorBoundary, installErrorHandlers } from './lib/errors';
+
+installErrorHandlers();
 
 const root = createRoot(document.getElementById('root'));
 root.render(
-  <BrowserRouter>
-    <App />
-  </BrowserRouter>
+  <ErrorBoundary>
+    <BrowserRouter>
+      <App />
+    </BrowserRouter>
+  </ErrorBoundary>
 );
 
 // If you want your app to work offline and load faster, you can change

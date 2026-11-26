@@ -39,7 +39,7 @@ const KEY_RE = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}\.w
 // Analytics: which events we accept, and limits so junk can't flood the logs.
 const EVENT_NAMES = new Set([
   'page_view', 'daily_view', 'daily_listened', 'howto_open', 'howto_close', 'mimic', 'guess',
-  'daily_solved', 'daily_failed', 'share', 'play_with_friends', 'chain_started', 'turn_opened', 'turn_sent',
+  'daily_solved', 'daily_failed', 'share', 'play_with_friends', 'chain_started', 'turn_opened', 'turn_sent', 'client_error',
 ]);
 const MAX_EVENTS = 50;
 const MAX_PROPS = 15;
@@ -257,7 +257,7 @@ function createHandler(deps) {
     for (const e of list) {
       if (!e || !EVENT_NAMES.has(e.name)) continue;
       const ts = Number.isFinite(e.ts) && Math.abs(e.ts - now()) < 86400000 ? e.ts : now();
-      log(JSON.stringify({ t: 'evt', name: e.name, ts, device, session, ...cleanProps(e.props) }));
+      log(JSON.stringify({ ...cleanProps(e.props), t: 'evt', name: e.name, ts, device, session })); // props can't overwrite these
     }
     return { statusCode: 204, headers: HEADERS, body: '' };
   }

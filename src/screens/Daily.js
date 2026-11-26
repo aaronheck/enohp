@@ -26,6 +26,7 @@ import { listMimics, saveMimic } from '../lib/mimicStore';
 import { stopShared, unlockAudio } from '../audio/context';
 import { isDev, resetDaily } from '../lib/devReset';
 import { track } from '../lib/analytics';
+import { reportError } from '../lib/errors';
 import { practiceDone } from '../lib/practice';
 import { Button, Notice, Screen } from '../ui/components';
 import { ReversedPlayer } from '../ui/audio';
@@ -53,7 +54,10 @@ function useClip(url) {
     if (!url) return undefined;
     fetchRecording(url, { retries: 1 }).then(
       (b) => !cancelled && setBlob(b),
-      () => !cancelled && setError("Couldn't load the audio.")
+      (e) => {
+        reportError('audio', { msg: e && e.message, status: e && e.status, where: 'clip' });
+        if (!cancelled) setError("Couldn't load the audio.");
+      }
     );
     return () => {
       cancelled = true;
@@ -73,9 +77,10 @@ export default function Daily() {
   });
 
   useEffect(() => {
-    getDaily(forced).then(setPuzzle, (e) =>
-      setLoadError(e.status === 503 ? "Today's puzzle isn't ready yet. Check back soon!" : e.message)
-    );
+    getDaily(forced).then(setPuzzle, (e) => {
+      reportError('api', { what: 'daily', msg: e.message, status: e.status });
+      setLoadError(e.status === 503 ? "Today's puzzle isn't ready yet. Check back soon!" : e.message);
+    });
   }, [forced]);
 
   if (loadError) {
@@ -226,6 +231,7 @@ function Puzzle({ puzzle, forced }) {
         }
       }
     } catch (err) {
+      reportError('api', { what: 'guess', msg: err.message, status: err.status });
       setError(err.message);
     } finally {
       setChecking(false);

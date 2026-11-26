@@ -2,6 +2,7 @@ import React, { useEffect, useState } from 'react';
 import { Link, useParams } from 'react-router-dom';
 import { fetchRecording } from '../api/client';
 import useRecorder from '../audio/useRecorder';
+import { reportError } from '../lib/errors';
 import { stopShared, unlockAudio } from '../audio/context';
 import { PRACTICE, coachStep, isCorrect, markPracticeDone, practiceAudio } from '../lib/practice';
 import { Button, Notice, Screen } from '../ui/components';
@@ -28,7 +29,10 @@ function useClip(url) {
   useEffect(() => {
     let cancelled = false;
     setBlob(null);
-    fetchRecording(url, { retries: 1 }).then((b) => !cancelled && setBlob(b), () => {});
+    fetchRecording(url, { retries: 1 }).then(
+      (b) => !cancelled && setBlob(b),
+      (e) => reportError('audio', { msg: e && e.message, status: e && e.status, where: 'practice' })
+    );
     return () => {
       cancelled = true;
     };
