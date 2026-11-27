@@ -42,7 +42,16 @@ function isDevDevice() {
 }
 
 // Tests and local dev talk to the mock API, so their events never reach the real logs.
-const enabled = () => typeof window !== 'undefined' && process.env.NODE_ENV !== 'test' && process.env.REACT_APP_ADMIN !== '1';
+// Crawlers (Google renders pages in headless Chrome) and automated browsers aren't players.
+const isBot = () => {
+  try {
+    return !!navigator.webdriver || /bot|crawl|spider|slurp|headless|lighthouse|preview|facebookexternalhit|embedly/i.test(navigator.userAgent);
+  } catch (e) {
+    return false;
+  }
+};
+const enabled = () =>
+  typeof window !== 'undefined' && process.env.NODE_ENV !== 'test' && process.env.REACT_APP_ADMIN !== '1' && !isBot();
 
 /** Sends whatever is queued. Uses sendBeacon when the page is going away. */
 export function flush(leaving = false) {

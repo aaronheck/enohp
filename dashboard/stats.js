@@ -18,13 +18,21 @@ const BROWSER_NAMES = {
 };
 const OS_NAMES = { ios: 'iPhone / iPad', android: 'Android', mac: 'Mac', windows: 'Windows', chromeos: 'ChromeOS', linux: 'Linux' };
 
+// Hand-picked devices to leave out (Aaron's own, crawlers): dashboard/excluded-devices.json.
+let EXCLUDED = [];
+try {
+  EXCLUDED = require('./excluded-devices.json').devices || [];
+} catch (e) {
+  EXCLUDED = [];
+}
+
 const uniq = (list) => new Set(list).size;
 const normGuess = (s) => String(s || '').toLowerCase().replace(/\s+/g, ' ').trim();
 
 function summarise(events, { days, now = Date.now() }) {
   // Devices that ever played from Aaron's home IP are his (or family's): leave them out
   // entirely, including their older plays from before the home tag existed.
-  const homeDevices = new Set(events.filter((e) => e.home).map((e) => e.device));
+  const homeDevices = new Set([...events.filter((e) => e.home || e.bot).map((e) => e.device), ...EXCLUDED]);
   const real = events.filter((e) => isReal(e) && !homeDevices.has(e.device)).sort((a, b) => a.ts - b.ts);
   const by = (name) => real.filter((e) => e.name === name);
   const devicesWhere = (name, pred = () => true) => uniq(by(name).filter(pred).map((e) => e.device));
