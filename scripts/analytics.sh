@@ -9,7 +9,7 @@ set -euo pipefail
 WHAT=${1:-events}; DAYS=${2:-7}
 export AWS_PROFILE=${AWS_PROFILE:-enohp}
 GROUP=/aws/lambda/enohp
-BASE='fields @message | filter @message like /"t":"evt"/ | parse @message /(?<json>\{"t":"evt".*\})/
+BASE='fields @message | filter @message like /"t":"evt"/ | parse @message /(?<json>\{.*"t":"evt".*\})/
 | filter json not like /"dev":true/ and json like /"host":"(www\.)?yelnatsgame\.com"/'
 case "$WHAT" in
   daily) Q="$BASE | parse json /\"name\":\"(?<name>[a-z_]+)\"/ | parse json /\"puzzle\":(?<puzzle>[0-9]+)/

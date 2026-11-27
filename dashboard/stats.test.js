@@ -1,7 +1,7 @@
 'use strict';
 const test = require('node:test');
 const assert = require('node:assert/strict');
-const { summarise, isReal } = require('./stats');
+const { summarise, isReal, parseLogLine } = require('./stats');
 
 const now = Date.parse('2026-11-26T20:00:00Z');
 const ev = (name, device, props = {}) => ({ t: 'evt', name, device, session: device, ts: now - 60000, host: 'yelnatsgame.com', ...props });
@@ -63,4 +63,12 @@ test('errors: grouped, counted by devices', () => {
   assert.equal(e.devices, 2);
   assert.equal(e.top[0].kind, 'mic');
   assert.equal(e.top[0].devices, 2);
+});
+
+test('log lines: events are found whatever order their fields are in', () => {
+  const pre = '2026-11-27T01:02:03.000Z\tabc-123\tINFO\t';
+  assert.equal(parseLogLine(pre + '{"t":"evt","name":"page_view","device":"d"}').name, 'page_view');
+  assert.equal(parseLogLine(pre + '{"puzzle":3,"host":"yelnatsgame.com","t":"evt","name":"guess","device":"d"}').name, 'guess');
+  assert.equal(parseLogLine(pre + '{"msg":"not an event"}'), null);
+  assert.equal(parseLogLine('START RequestId: abc'), null);
 });

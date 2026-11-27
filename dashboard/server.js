@@ -7,7 +7,7 @@ const http = require('http');
 const fs = require('fs');
 const path = require('path');
 const { execFile } = require('child_process');
-const { summarise } = require('./stats');
+const { summarise, parseLogLine } = require('./stats');
 
 const PORT = Number(process.env.DASH_PORT || 8090);
 const AWS = process.env.AWS_CLI || path.join(process.env.HOME, '.local/bin/aws');
@@ -37,13 +37,8 @@ async function fetchEvents(days) {
       const events = [];
       for (const row of r.results) {
         const msg = (row.find((c) => c.field === '@message') || {}).value || '';
-        const at = msg.indexOf('{"t":"evt"');
-        if (at < 0) continue;
-        try {
-          events.push(JSON.parse(msg.slice(at)));
-        } catch (e) {
-          // skip malformed lines
-        }
+        const e = parseLogLine(msg);
+        if (e) events.push(e);
       }
       return { events, truncated: r.results.length >= 10000 };
     }

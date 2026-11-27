@@ -243,4 +243,19 @@ function summarise(events, { days, now = Date.now() }) {
   };
 }
 
-module.exports = { summarise, isReal, dayOf };
+/**
+ * One analytics event from a Lambda log line ("<time>\t<request id>\tINFO\t{...}"), or null.
+ * The event's fields can come in any order, so don't rely on a fixed prefix.
+ */
+function parseLogLine(msg) {
+  const at = String(msg || '').indexOf('{');
+  if (at < 0) return null;
+  try {
+    const e = JSON.parse(msg.slice(at));
+    return e && e.t === 'evt' ? e : null;
+  } catch (err) {
+    return null;
+  }
+}
+
+module.exports = { summarise, isReal, dayOf, parseLogLine };
