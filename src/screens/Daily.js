@@ -32,7 +32,7 @@ import { isDev, resetDaily } from '../lib/devReset';
 import { deviceContext, track } from '../lib/analytics';
 import { reportError } from '../lib/errors';
 import { SLOGAN } from '../lib/brand';
-import { IS_ADMIN, finishPlay, uploadMimic } from '../lib/admin';
+import { IS_ADMIN, finishPlay, serverMimics, uploadMimic } from '../lib/admin';
 import AdminReview from '../ui/AdminReview';
 import { practiceDone } from '../lib/practice';
 import { Button, Notice, Screen } from '../ui/components';
@@ -216,7 +216,9 @@ function Puzzle({ puzzle, forced }) {
   // Earlier mimics for this puzzle, saved on this device.
   useEffect(() => {
     let cancelled = false;
-    listMimics(n).then((saved) => !cancelled && setMimics(saved));
+    listMimics(n)
+      .then((saved) => (saved.length || !IS_ADMIN ? saved : serverMimics(n)))
+      .then((saved) => !cancelled && setMimics(saved));
     return () => {
       cancelled = true;
     };
@@ -660,6 +662,14 @@ function Solved({ n, state, answers, voice, days, top, mimics, puzzle, onStats }
         </div>
       </div>
       <ReversedPlayer blob={answer.blob} error={answer.error} caption="hear it forwards" dark compact reverse={false} />
+      {mimics.length > 0 && (
+        <div className="mimics-near">
+          <button className="btn-text mimics-toggle" onClick={() => setShowMimics((v) => !v)} aria-expanded={showMimics}>
+            {showMimics ? '▾' : '▸'} Your mimics ({mimics.length})
+          </button>
+          {showMimics && <MimicList mimics={mimics} />}
+        </div>
+      )}
 
       {IS_ADMIN && <AdminReview n={n} state={state} />}
       {!IS_ADMIN && (
@@ -713,14 +723,6 @@ function Solved({ n, state, answers, voice, days, top, mimics, puzzle, onStats }
         </>
       )}
 
-      {mimics.length > 0 && (
-        <div className="section">
-          <button className="btn-text mimics-toggle" onClick={() => setShowMimics((v) => !v)} aria-expanded={showMimics}>
-            {showMimics ? '▾' : '▸'} Your mimics ({mimics.length})
-          </button>
-          {showMimics && <MimicList mimics={mimics} />}
-        </div>
-      )}
       <div className="spacer" />
       {!IS_ADMIN && (
         <>

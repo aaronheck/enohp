@@ -31,7 +31,10 @@ function tx(db, mode, fn) {
 export async function saveMimic(puzzle, index, blob) {
   try {
     const db = await open();
-    await tx(db, 'readwrite', (s) => s.put({ id: `${puzzle}:${index}`, puzzle, index, blob, at: Date.now() }));
+    // Stored as plain bytes, not a Blob: Safari can't store Blobs in some modes
+    // (private tabs, some versions), which silently lost the recordings.
+    const bytes = await blob.arrayBuffer();
+    await tx(db, 'readwrite', (s) => s.put({ id: `${puzzle}:${index}`, puzzle, index, bytes, type: blob.type, at: Date.now() }));
     // Forget mimics from puzzles more than a week old.
     await tx(db, 'readwrite', (s) => {
       const req = s.index('puzzle').openCursor(IDBKeyRange.upperBound(puzzle - KEEP_PUZZLES));
@@ -53,7 +56,9 @@ export async function listMimics(puzzle) {
   try {
     const db = await open();
     const rows = await tx(db, 'readonly', (s) => s.index('puzzle').getAll(puzzle));
-    return (rows || []).sort((a, b) => a.index - b.index).map(({ index, blob }) => ({ index, blob }));
+    return (rows || [])
+      .sort((a, b) => a.index - b.index)
+      .map((r) => ({ index: r.index, blob: r.blob || new Blob([r.bytes], { type: r.type || 'audio/webm' }) })); // r.blob: older saves
   } catch (e) {
     return [];
   }

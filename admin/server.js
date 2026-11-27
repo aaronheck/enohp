@@ -130,6 +130,22 @@ async function api(req, res, url) {
     db.prepare('INSERT INTO mimics (play_id, candidate_id, file, bytes) VALUES (?, ?, ?, ?)').run(play.id, c.id, path.relative(DATA, file), buf.length);
     return send(res, 200, { ok: true });
   }
+  if (p === '/api/admin/mimics' && m === 'GET') {
+    // Recordings from this candidate's most recent play that has any.
+    const id = Number(url.searchParams.get('n'));
+    const last = db.prepare('SELECT play_id FROM mimics WHERE candidate_id = ? ORDER BY id DESC LIMIT 1').get(id);
+    if (!last) return send(res, 200, []);
+    const rows = db.prepare('SELECT id FROM mimics WHERE play_id = ? ORDER BY id').all(last.play_id);
+    return send(res, 200, rows.map((r) => ({ url: `/api/admin/mimic-file/${r.id}` })));
+  }
+  const mf = p.match(/^\/api\/admin\/mimic-file\/(\d+)$/);
+  if (mf && m === 'GET') {
+    const row = db.prepare('SELECT file FROM mimics WHERE id = ?').get(Number(mf[1]));
+    if (!row) return send(res, 404, { error: 'No such recording' });
+    const file = path.join(DATA, row.file);
+    const type = file.endsWith('.mp4') ? 'audio/mp4' : file.endsWith('.ogg') ? 'audio/ogg' : 'audio/webm';
+    return send(res, 200, fs.readFileSync(file), type);
+  }
   if (p === '/api/admin/finish' && m === 'POST') {
     const b = await json(req);
     const c = candidate(b.n);

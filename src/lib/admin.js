@@ -19,3 +19,18 @@ export function uploadMimic(n, blob) {
 export function finishPlay(n, { outcome, tries, mimics, actions }) {
   return post('/api/admin/finish', { n, outcome, tries, mimics, actions }).catch(() => {});
 }
+
+/** Review build: this candidate's recordings from the Pi's database (latest play), as [{ index, blob }]. */
+export async function serverMimics(n) {
+  try {
+    const list = await call(`/api/admin/mimics?n=${n}`);
+    const out = [];
+    for (const [i, m] of list.entries()) {
+      const r = await fetch(m.url);
+      if (r.ok) out.push({ index: i + 1, blob: await r.blob() });
+    }
+    return out;
+  } catch (e) {
+    return [];
+  }
+}

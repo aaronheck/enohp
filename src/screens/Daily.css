@@ -187,3 +187,4 @@
 .result-dots i.on.ok { background: var(--butter); border-color: #c9a52a; }
 .result-dots i.on.bad { background: var(--tomato); border-color: #c4432a; }
 .slogan { text-align: center; font-weight: 800; font-size: 15px; color: var(--butter); opacity: 0.85; margin-top: 18px; letter-spacing: 0.01em; }
+.mimics-near { margin-top: 10px; }
