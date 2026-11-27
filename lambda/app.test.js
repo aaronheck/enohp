@@ -360,3 +360,15 @@ test('daily: the ?n= override only works from the allowed IPs', async () => {
   assert.equal(await guess('198.51.100.7'), 200);
   assert.equal(await guess('203.0.113.50'), 400); // can't guess future puzzles either
 });
+
+test('events: plays from the home IP are tagged home (the IP itself is never logged)', async () => {
+  const w = fakeWorld({ DAILY_OVERRIDE_IPS: '198.51.100.7' });
+  const send = (ip) =>
+    call(w, 'POST', '/events', { body: JSON.stringify({ device: 'device-1234', session: 'session-1234', events: [{ name: 'page_view', ts: Date.now(), props: { home: true } }] }), ip });
+  await send('198.51.100.7');
+  await send('203.0.113.50');
+  const lines = w.logged.filter((e) => e.t === 'evt');
+  assert.equal(lines[0].home, true);
+  assert.equal(lines[1].home, undefined); // a player can't tag themselves
+  assert.ok(!JSON.stringify(w.logged).includes('198.51.100.7'));
+});

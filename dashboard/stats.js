@@ -22,7 +22,10 @@ const uniq = (list) => new Set(list).size;
 const normGuess = (s) => String(s || '').toLowerCase().replace(/\s+/g, ' ').trim();
 
 function summarise(events, { days, now = Date.now() }) {
-  const real = events.filter(isReal).sort((a, b) => a.ts - b.ts);
+  // Devices that ever played from Aaron's home IP are his (or family's): leave them out
+  // entirely, including their older plays from before the home tag existed.
+  const homeDevices = new Set(events.filter((e) => e.home).map((e) => e.device));
+  const real = events.filter((e) => isReal(e) && !homeDevices.has(e.device)).sort((a, b) => a.ts - b.ts);
   const by = (name) => real.filter((e) => e.name === name);
   const devicesWhere = (name, pred = () => true) => uniq(by(name).filter(pred).map((e) => e.device));
 

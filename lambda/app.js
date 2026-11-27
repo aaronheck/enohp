@@ -206,6 +206,14 @@ function createHandler(deps) {
     const rc = (event && event.requestContext) || {};
     return (rc.identity && rc.identity.sourceIp) || (rc.http && rc.http.sourceIp) || '';
   };
+  // Home IPs (comma-separated): ANALYTICS_HOME_IPS, else the override allowlist.
+  const homeIps = () => {
+    const env = deps.env || process.env;
+    return String(env.ANALYTICS_HOME_IPS || env.DAILY_OVERRIDE_IPS || '')
+      .split(',')
+      .map((x) => x.trim())
+      .filter(Boolean);
+  };
   const overrideAllowed = (event) => {
     const env = deps.env || process.env;
     if (env.DAILY_ALLOW_OVERRIDE !== '1') return false;
@@ -279,10 +287,16 @@ function createHandler(deps) {
     const session = ID_LIKE.test(body.session || '') ? body.session : 'unknown';
     const list = Array.isArray(body.events) ? body.events.slice(0, MAX_EVENTS) : [];
     const log = deps.logEvent || ((line) => console.log(line));
+    // Aaron's own plays (from the home IPs) are tagged so the dashboard can leave them
+    // out. Only the tag is logged, never the IP address.
+    const home = homeIps().includes(sourceIp(event));
     for (const e of list) {
       if (!e || !EVENT_NAMES.has(e.name)) continue;
       const ts = Number.isFinite(e.ts) && Math.abs(e.ts - now()) < 86400000 ? e.ts : now();
-      log(JSON.stringify({ ...cleanProps(e.props), t: 'evt', name: e.name, ts, device, session })); // props can't overwrite these
+      const props = cleanProps(e.props);
+      delete props.home;
+      // Core fields last, so props can't overwrite them.
+      log(JSON.stringify({ ...props, ...(home ? { home: true } : {}), t: 'evt', name: e.name, ts, device, session }));
     }
     return { statusCode: 204, headers: HEADERS, body: '' };
   }

@@ -72,3 +72,13 @@ test('log lines: events are found whatever order their fields are in', () => {
   assert.equal(parseLogLine(pre + '{"msg":"not an event"}'), null);
   assert.equal(parseLogLine('START RequestId: abc'), null);
 });
+
+test('home devices are left out, including their plays from before they were tagged', () => {
+  const events = [
+    ev('page_view', 'me', { ts: now - 3 * 86400000 }), // old, untagged
+    ev('page_view', 'me', { home: true }),
+    ev('page_view', 'player'),
+  ];
+  const t = summarise(events, { days: 7, now }).totals;
+  assert.equal(t.visitors, 1);
+});
