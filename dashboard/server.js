@@ -12,7 +12,7 @@ const { summarise, parseLogLine } = require('./stats');
 const PORT = Number(process.env.DASH_PORT || 8090);
 const AWS = process.env.AWS_CLI || path.join(process.env.HOME, '.local/bin/aws');
 const GROUP = '/aws/lambda/enohp';
-const CACHE_MS = 2 * 60 * 1000;
+const CACHE_MS = 5 * 60 * 1000; // refresh at most every 5 minutes
 const cache = new Map();
 
 const allowed = (ip) => /^(::ffff:)?(127\.|10\.8\.0\.|192\.168\.(4|5|6|7)\.)/.test(ip) || ip === '::1';
@@ -48,15 +48,43 @@ async function fetchEvents(days) {
   throw new Error('Query timed out');
 }
 
-async function stats(days) {
-  const hit = cache.get(days);
-  if (hit && Date.now() - hit.at < CACHE_MS) return hit.data;
+// Numbers are kept ready in memory and refreshed in the background, so the page loads
+// instantly: each refresh shells out to the AWS CLI a few times (~3 s each on the Pi).
+// Querying costs a tiny fraction of a cent.
+async function load(days) {
   // DASH_FAKE=1: made-up data for checking the layout.
   const { events, truncated } = process.env.DASH_FAKE ? { events: require('./fake').fakeEvents(days), truncated: false } : await fetchEvents(days);
-  const data = { ...summarise(events, { days }), truncated };
-  cache.set(days, { at: Date.now(), data });
-  return data;
+  return { ...summarise(events, { days }), truncated };
 }
+
+function refresh(days) {
+  const entry = cache.get(days) || {};
+  if (entry.pending) return entry.pending;
+  entry.pending = load(days)
+    .then((data) => {
+      cache.set(days, { at: Date.now(), data });
+      return data;
+    })
+    .finally(() => {
+      const e = cache.get(days);
+      if (e) delete e.pending;
+    });
+  cache.set(days, entry);
+  return entry.pending;
+}
+
+/** Fresh enough: return it. Stale: return it now and refresh behind the scenes. None yet: wait. */
+async function stats(days, { fresh = false } = {}) {
+  const hit = cache.get(days);
+  if (fresh || !hit || !hit.data) return refresh(days);
+  if (Date.now() - hit.at > CACHE_MS) refresh(days).catch(() => {});
+  return { ...hit.data, staleSeconds: Math.round((Date.now() - hit.at) / 1000) };
+}
+
+// Keep the default view (7 days) warm.
+const warm = () => refresh(7).catch((e) => console.error('warm-up failed:', e.message));
+warm();
+setInterval(warm, CACHE_MS);
 
 http
   .createServer(async (req, res) => {
@@ -68,8 +96,7 @@ http
     try {
       if (url.pathname === '/api/stats') {
         const days = Math.min(90, Math.max(1, Number(url.searchParams.get('days')) || 7));
-        if (url.searchParams.get('fresh')) cache.delete(days);
-        const data = await stats(days);
+        const data = await stats(days, { fresh: !!url.searchParams.get('fresh') });
         res.writeHead(200, { 'Content-Type': 'application/json', 'Cache-Control': 'no-store' });
         return res.end(JSON.stringify(data));
       }
