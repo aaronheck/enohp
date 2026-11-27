@@ -1,0 +1,30 @@
+.review { margin-top: 22px; background: var(--bg-raised); border-radius: 22px; padding: 18px 16px; }
+.review-title { font-weight: 800; font-size: 20px; }
+.review-verdict { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; margin-top: 10px; }
+.review-btn { min-height: 56px; border-radius: 16px; border: 2px solid rgba(255, 244, 220, 0.25); background: transparent; color: var(--cream); font: inherit; font-weight: 800; font-size: 18px; cursor: pointer; }
+.review-btn.keep.on { background: #43c46e; border-color: #43c46e; color: var(--ink); }
+.review-btn.ditch.on { background: var(--tomato); border-color: var(--tomato); color: var(--ink); }
+.review-sub { font-weight: 700; color: var(--muted); margin-top: 16px; }
+.review-levels { display: grid; grid-template-columns: repeat(5, 1fr); gap: 6px; margin-top: 8px; }
+.review-level { border-radius: 12px; border: 2px solid rgba(255, 244, 220, 0.2); background: transparent; color: var(--cream); padding: 6px 0; cursor: pointer; font: inherit; }
+.review-level b { display: block; font-size: 18px; }
+.review-level span { display: block; font-size: 11px; font-weight: 700; color: var(--muted); }
+.review-level.on { background: var(--butter); border-color: var(--butter); color: var(--ink); }
+.review-level.on span { color: var(--ink); }
+.review-notes { width: 100%; box-sizing: border-box; margin-top: 12px; border-radius: 12px; border: 2px solid rgba(255, 244, 220, 0.2); background: var(--bg-deep); color: var(--cream); padding: 10px; font: inherit; font-size: 15px; }
+.review-saved { color: var(--mint); font-weight: 700; font-size: 14px; margin-top: 6px; }
+.review-actions { display: flex; flex-direction: column; align-items: center; gap: 10px; margin-top: 14px; }
+.review-actions .btn { width: 100%; }
+.review-again { color: var(--muted); text-decoration: underline; text-underline-offset: 3px; }
+.review-meta { color: var(--muted); font-size: 13px; text-align: center; margin-top: 10px; }
+
+/* candidate list */
+.cands { list-style: none; padding: 0; margin: 16px 0 0; display: flex; flex-direction: column; gap: 8px; }
+.cand { display: flex; align-items: center; gap: 12px; padding: 14px 16px; border-radius: 16px; background: var(--bg-raised); color: var(--cream); text-decoration: none; }
+.cand-n { font-weight: 800; min-width: 44px; }
+.cand-main { flex: 1; min-width: 0; }
+.cand-phrase { display: block; font-weight: 800; }
+.cand-sub { display: block; color: var(--muted); font-size: 13px; font-weight: 700; }
+.cand-go { color: var(--butter); font-weight: 800; }
+.cand-verdict { font-size: 22px; }
+.cands-summary { color: var(--muted); font-weight: 700; margin-top: 8px; }

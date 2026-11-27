@@ -42,7 +42,7 @@ function isDevDevice() {
 }
 
 // Tests and local dev talk to the mock API, so their events never reach the real logs.
-const enabled = () => typeof window !== 'undefined' && process.env.NODE_ENV !== 'test';
+const enabled = () => typeof window !== 'undefined' && process.env.NODE_ENV !== 'test' && process.env.REACT_APP_ADMIN !== '1';
 
 /** Sends whatever is queued. Uses sendBeacon when the page is going away. */
 export function flush(leaving = false) {

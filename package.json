@@ -17,6 +17,7 @@
     "start:mock": "REACT_APP_API_BASE=/mock-api HTTPS=true react-scripts start",
     "mock-api": "node scripts/mock-api.js",
     "build": "react-scripts build",
+    "build:admin": "REACT_APP_ADMIN=1 REACT_APP_API_BASE=/api BUILD_PATH=admin/build react-scripts build",
     "test": "react-scripts test",
     "eject": "react-scripts eject",
     "predeploy": "npm run build",

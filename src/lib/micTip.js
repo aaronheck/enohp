@@ -47,6 +47,7 @@ const forced = () => /[?&]mictip=1\b/.test(window.location.search); // preview i
 
 /** Pop up the walkthrough when they tap Mimic it? (3rd day or later, used the mic before.) */
 export function shouldPopMicTip(today) {
+  if (process.env.REACT_APP_ADMIN === '1') return false;
   if (forced()) return !load();
   if (load() || !isIOSSafari()) return false;
   const { daysBefore, mimicked } = playHistory(today);

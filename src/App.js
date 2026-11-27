@@ -10,12 +10,25 @@ import HowToPlay from './screens/HowToPlay';
 import Practice from './screens/Practice';
 import InAppBanner from './ui/InAppBanner';
 import Privacy from './screens/Privacy';
+import AdminList from './screens/AdminList';
+import { IS_ADMIN } from './lib/admin';
 
 export default function App() {
   const { pathname } = useLocation();
   useEffect(() => {
     track('page_view', { path: pathname });
   }, [pathname]);
+
+  // The puzzle review build (on the Pi): just the candidate list and the puzzle screen.
+  if (IS_ADMIN) {
+    return (
+      <Routes>
+        <Route path="/" element={<AdminList />} />
+        <Route path="puzzle/:n" element={<Daily />} />
+        <Route path="*" element={<Navigate to="/" replace />} />
+      </Routes>
+    );
+  }
 
   return (
     <>

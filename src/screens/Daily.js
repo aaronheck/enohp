@@ -32,6 +32,8 @@ import { isDev, resetDaily } from '../lib/devReset';
 import { deviceContext, track } from '../lib/analytics';
 import { reportError } from '../lib/errors';
 import { SLOGAN } from '../lib/brand';
+import { IS_ADMIN, finishPlay, uploadMimic } from '../lib/admin';
+import AdminReview from '../ui/AdminReview';
 import { practiceDone } from '../lib/practice';
 import { Button, Notice, Screen } from '../ui/components';
 import { ReversedPlayer } from '../ui/audio';
@@ -65,7 +67,7 @@ function useClip(url) {
       (e) => {
         reportError('audio', { msg: e && e.message, status: e && e.status, where: 'clip' });
         if (!cancelled) setError("Couldn't load the audio.");
-      }
+      },
     );
     return () => {
       cancelled = true;
@@ -96,7 +98,7 @@ export default function Daily() {
       (e) => {
         reportError('api', { what: 'daily', msg: e.message, status: e.status });
         if (!cancelled) setLoadError(e.status === 503 ? "Today's puzzle isn't ready yet. Check back soon!" : e.message);
-      }
+      },
     );
     return () => {
       cancelled = true;
@@ -107,7 +109,9 @@ export default function Daily() {
     return (
       <Screen left="yelnats">
         <h1 className="title title-sm turn-title">Hmm.</h1>
-        <p className="lede" style={{ marginTop: 12 }}>{loadError}</p>
+        <p className="lede" style={{ marginTop: 12 }}>
+          {loadError}
+        </p>
         <div className="spacer" />
         <Button variant="ghost" to="/friends">
           Play with friends instead
@@ -167,7 +171,7 @@ function Puzzle({ puzzle, forced }) {
   const [justRecorded, setJustRecorded] = useState(null);
   // Open the how-to automatically the first time someone plays any daily puzzle.
   // Inside Instagram/TikTok etc. the "open in your browser" banner comes first.
-  const autoHow = () => !hasPlayedDaily() && !howtoSeen() && !deviceContext().in_app;
+  const autoHow = () => !IS_ADMIN && !hasPlayedDaily() && !howtoSeen() && !deviceContext().in_app;
   const [howOpen, setHowOpen] = useState(autoHow);
   const [howSource, setHowSource] = useState(() => (autoHow() ? 'auto' : 'button'));
   const navigate = useNavigate();
@@ -196,9 +200,16 @@ function Puzzle({ puzzle, forced }) {
   // Coming back to a finished puzzle: fetch fresh answer audio links.
   useEffect(() => {
     if (answers) return;
-    if (state.failed) revealDaily(n).then((r) => setAnswers(r.answers), () => {});
+    if (state.failed)
+      revealDaily(n).then(
+        (r) => setAnswers(r.answers),
+        () => {},
+      );
     else if (state.solved && state.phrase) {
-      guessDaily(n, state.phrase).then((r) => r.correct && setAnswers(r.answers), () => {});
+      guessDaily(n, state.phrase).then(
+        (r) => r.correct && setAnswers(r.answers),
+        () => {},
+      );
     }
   }, [state.solved, state.failed, state.phrase, answers, n]);
 
@@ -220,6 +231,7 @@ function Puzzle({ puzzle, forced }) {
       setJustRecorded(index);
       track('mimic', { puzzle: n, n: index, tries_used: triesUsed({ ...state, mimics: index }) });
       saveMimic(n, index, blob);
+      if (IS_ADMIN) uploadMimic(n, blob);
     }
   }
 
@@ -240,9 +252,17 @@ function Puzzle({ puzzle, forced }) {
         setAnswers(r.answers);
         const done = { ...state, solved: true };
         track('guess', { puzzle: n, correct: true, try: used + 1 });
-        track('daily_solved', { puzzle: n, tries: triesUsed(done), mimics: state.mimics, mind_reader: isMindReader(done), archive });
+        track('daily_solved', {
+          puzzle: n,
+          tries: triesUsed(done),
+          mimics: state.mimics,
+          mind_reader: isMindReader(done),
+          archive,
+        });
         setJustSolved(true);
         update({ solved: true, phrase: r.phrase, voice, actions: [...state.actions, 'hit'], ...(archive ? { late: true } : {}) });
+        if (IS_ADMIN)
+          finishPlay(n, { outcome: 'solved', tries: triesUsed(done), mimics: state.mimics, actions: [...state.actions, 'hit'] });
       } else {
         const next = { guesses: [...state.guesses, g], actions: [...state.actions, 'miss'] };
         nope();
@@ -255,6 +275,7 @@ function Puzzle({ puzzle, forced }) {
           setAnswers(rev.answers);
           track('daily_failed', { puzzle: n, mimics: state.mimics });
           sadTrombone();
+          if (IS_ADMIN) finishPlay(n, { outcome: 'failed', tries: MAX_TRIES, mimics: state.mimics, actions: next.actions });
           update({ ...next, failed: true, phrase: rev.phrase, voice, ...(archive ? { late: true } : {}) });
         } else {
           update(next);
@@ -277,8 +298,10 @@ function Puzzle({ puzzle, forced }) {
 
   const days = streak(n);
   const top = {
-    left: 'yelnats',
-    right: forced ? (
+    left: IS_ADMIN ? <Link to="/">← All candidates</Link> : 'yelnats',
+    right: IS_ADMIN ? (
+      `Candidate #${n}`
+    ) : forced ? (
       <span className="forced-tag">forced #{n}</span>
     ) : archive ? (
       <Link to="/">Today’s puzzle →</Link>
@@ -293,8 +316,23 @@ function Puzzle({ puzzle, forced }) {
     return (
       <>
         {justSolved && <Confetti />}
-        <Solved n={n} state={state} answers={answers} voice={voice} days={days} top={top} mimics={mimics} puzzle={puzzle} onStats={() => setStatsOpen(true)} />
-        <StatsSheet open={statsOpen} onClose={() => setStatsOpen(false)} today={puzzle.today || n} todayState={archive ? null : state} />
+        <Solved
+          n={n}
+          state={state}
+          answers={answers}
+          voice={voice}
+          days={days}
+          top={top}
+          mimics={mimics}
+          puzzle={puzzle}
+          onStats={() => setStatsOpen(true)}
+        />
+        <StatsSheet
+          open={statsOpen}
+          onClose={() => setStatsOpen(false)}
+          today={puzzle.today || n}
+          todayState={archive ? null : state}
+        />
       </>
     );
   }
@@ -392,10 +430,10 @@ function Puzzle({ puzzle, forced }) {
             (starting
               ? ' mimic-starting'
               : recording
-              ? ' mimic-recording'
-              : heard && firstMimic && mimicOk
-              ? ' mimic-shimmer'
-              : '')
+                ? ' mimic-recording'
+                : heard && firstMimic && mimicOk
+                  ? ' mimic-shimmer'
+                  : '')
           }
         >
           {starting ? (
@@ -420,12 +458,12 @@ function Puzzle({ puzzle, forced }) {
           {starting
             ? 'Don’t start yet. It turns red when it’s listening.'
             : recording
-            ? 'Go! Copy the sound you just heard.'
-            : !heard
-            ? 'Listen to the puzzle first.'
-            : !mimicOk
-            ? 'Your last try has to be a guess.'
-            : 'Mimic the puzzle audio to decode the word.'}
+              ? 'Go! Copy the sound you just heard.'
+              : !heard
+                ? 'Listen to the puzzle first.'
+                : !mimicOk
+                  ? 'Your last try has to be a guess.'
+                  : 'Mimic the puzzle audio to decode the word.'}
         </p>
         <Notice>{recorder.error}</Notice>
         <MicTipPopup
@@ -483,16 +521,20 @@ function Puzzle({ puzzle, forced }) {
         <TryDots used={used} max={MAX_TRIES} note="Guesses and mimics cost tries." />
       </div>
       <div className="spacer" />
-      <p className="slogan">{SLOGAN}</p>
-      <div className="daily-foot">
-        <Link to="/friends" onClick={() => track('play_with_friends', { from: 'puzzle' })}>
-          Play with friends
-        </Link>
-        <Link to="/practice/1">Practice</Link>
-        <Link to="/past">Past puzzles</Link>
-        <Link to="/previous">My chains</Link>
-        <Link to="/privacy">Privacy</Link>
-      </div>
+      {!IS_ADMIN && (
+        <>
+          <p className="slogan">{SLOGAN}</p>
+          <div className="daily-foot">
+            <Link to="/friends" onClick={() => track('play_with_friends', { from: 'puzzle' })}>
+              Play with friends
+            </Link>
+            <Link to="/practice/1">Practice</Link>
+            <Link to="/past">Past puzzles</Link>
+            <Link to="/previous">My chains</Link>
+            <Link to="/privacy">Privacy</Link>
+          </div>
+        </>
+      )}
       <DevReset />
       <StatsSheet open={statsOpen} onClose={() => setStatsOpen(false)} today={puzzle.today || n} todayState={null} />
     </Screen>
@@ -619,40 +661,57 @@ function Solved({ n, state, answers, voice, days, top, mimics, puzzle, onStats }
       </div>
       <ReversedPlayer blob={answer.blob} error={answer.error} caption="hear it forwards" dark compact reverse={false} />
 
-      {/* Bragging: one row, two ways (image card or video). */}
-      <div className={'brag-row' + (videoOk ? '' : ' single')}>
-        <button className="btn btn-primary brag-btn" onClick={share}>
-          🖼 Brag with an image
-        </button>
-        {videoOk && (
-          <PuzzleVideo
-            url={puzzle.audio[puzzle.audio[voice] ? voice : Object.keys(puzzle.audio)[0]]}
-            n={n}
-            date={puzzle.date}
-            mimic={mimics.length ? mimics[mimics.length - 1].blob : null}
-            result={{ tries: total, used: total, failed: !!state.failed, mindReader: isMindReader(state), actions, streak: days, rating: rated }}
-            onError={setVideoError}
-          />
-        )}
-      </div>
-      {status && <p className="muted center" style={{ marginTop: 8 }}>{status}</p>}
-      {videoError && <p className="pvideo-err">{videoError}</p>}
-      {archive ? (
-        <p className="next-puzzle">
-          {state.failed ? 'Out of tries. ' : ''}
-          <Link to="/">Back to today’s puzzle →</Link>
-        </p>
-      ) : (
-        <p className="next-puzzle">
-          {state.failed ? 'Out of tries. ' : ''}Next puzzle in <b>{next}</b>
-          <span aria-hidden="true"> · </span>
-          <button className="btn-text stats-link" onClick={onStats}>
-            📊 Your stats
-          </button>
-        </p>
+      {IS_ADMIN && <AdminReview n={n} state={state} />}
+      {!IS_ADMIN && (
+        <>
+          {/* Bragging: one row, two ways (image card or video). */}
+          <div className={'brag-row' + (videoOk ? '' : ' single')}>
+            <button className="btn btn-primary brag-btn" onClick={share}>
+              🖼 Brag with an image
+            </button>
+            {videoOk && (
+              <PuzzleVideo
+                url={puzzle.audio[puzzle.audio[voice] ? voice : Object.keys(puzzle.audio)[0]]}
+                n={n}
+                date={puzzle.date}
+                mimic={mimics.length ? mimics[mimics.length - 1].blob : null}
+                result={{
+                  tries: total,
+                  used: total,
+                  failed: !!state.failed,
+                  mindReader: isMindReader(state),
+                  actions,
+                  streak: days,
+                  rating: rated,
+                }}
+                onError={setVideoError}
+              />
+            )}
+          </div>
+          {status && (
+            <p className="muted center" style={{ marginTop: 8 }}>
+              {status}
+            </p>
+          )}
+          {videoError && <p className="pvideo-err">{videoError}</p>}
+          {archive ? (
+            <p className="next-puzzle">
+              {state.failed ? 'Out of tries. ' : ''}
+              <Link to="/">Back to today’s puzzle →</Link>
+            </p>
+          ) : (
+            <p className="next-puzzle">
+              {state.failed ? 'Out of tries. ' : ''}Next puzzle in <b>{next}</b>
+              <span aria-hidden="true"> · </span>
+              <button className="btn-text stats-link" onClick={onStats}>
+                📊 Your stats
+              </button>
+            </p>
+          )}
+          {micTip && <MicTipCard puzzle={n} onGone={() => setMicTip(false)} />}
+          <PastPuzzles today={puzzle.today} todayDate={puzzle.todayDate} title={archive ? 'More past puzzles' : undefined} />
+        </>
       )}
-      {micTip && <MicTipCard puzzle={n} onGone={() => setMicTip(false)} />}
-      <PastPuzzles today={puzzle.today} todayDate={puzzle.todayDate} title={archive ? 'More past puzzles' : undefined} />
 
       {mimics.length > 0 && (
         <div className="section">
@@ -663,16 +722,20 @@ function Solved({ n, state, answers, voice, days, top, mimics, puzzle, onStats }
         </div>
       )}
       <div className="spacer" />
-      <p className="slogan">{SLOGAN}</p>
-      <p className="solved-foot">
-        <Link to="/friends" onClick={() => track('play_with_friends', { from: 'solved' })}>
-          Play with friends
-        </Link>
-        <span aria-hidden="true"> · </span>
-        <Link to="/practice/1">Practice</Link>
-        <span aria-hidden="true"> · </span>
-        <Link to="/privacy">Privacy</Link>
-      </p>
+      {!IS_ADMIN && (
+        <>
+          <p className="slogan">{SLOGAN}</p>
+          <p className="solved-foot">
+            <Link to="/friends" onClick={() => track('play_with_friends', { from: 'solved' })}>
+              Play with friends
+            </Link>
+            <span aria-hidden="true"> · </span>
+            <Link to="/practice/1">Practice</Link>
+            <span aria-hidden="true"> · </span>
+            <Link to="/privacy">Privacy</Link>
+          </p>
+        </>
+      )}
       <DevReset />
     </Screen>
   );
@@ -719,4 +782,3 @@ export function PastScreen() {
     </Screen>
   );
 }
-
